@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Logo, LogoIcon } from "@/components/ui/logo";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -106,12 +107,9 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
 export function Sidebar() {
   return (
     <div className="hidden md:flex h-full w-64 flex-col border-r bg-card">
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-            LW
-          </div>
-          <span className="font-semibold text-lg">LogixWeave</span>
+      <div className="flex h-16 items-center border-b px-4">
+        <Link href="/dashboard" className="flex items-center">
+          <Logo size="sm" />
         </Link>
       </div>
       <SidebarContent />

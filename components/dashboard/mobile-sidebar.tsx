@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
 import {
   Sheet,
   SheetContent,
@@ -24,16 +25,13 @@ export function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-0">
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center border-b px-6">
+          <div className="flex h-16 items-center border-b px-4">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2"
+              className="flex items-center"
               onClick={() => setOpen(false)}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                LW
-              </div>
-              <span className="font-semibold text-lg">LogixWeave</span>
+              <Logo size="sm" />
             </Link>
           </div>
           <SidebarContent onNavClick={() => setOpen(false)} />

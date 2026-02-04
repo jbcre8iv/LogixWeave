@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Logo } from "@/components/ui/logo";
 import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function HomePage() {
@@ -10,12 +11,9 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              LW
-            </div>
-            <span className="font-semibold text-lg">LogixWeave</span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <Logo size="sm" />
+          </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" asChild>
