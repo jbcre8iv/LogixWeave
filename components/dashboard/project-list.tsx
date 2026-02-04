@@ -449,7 +449,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                 <TableHead className="hidden md:table-cell">Description</TableHead>
                 <TableHead className="w-[100px]">Files</TableHead>
                 <TableHead className="w-[120px]">Updated</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="w-[50px] pr-4"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -491,7 +491,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                     <TableCell className="text-muted-foreground">
                       {new Date(project.updated_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell onClick={(e) => e.stopPropagation()} className="pr-4">
                       <Button
                         variant="ghost"
                         size="icon"
