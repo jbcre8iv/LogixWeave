@@ -34,6 +34,6 @@
   
   <!-- Text -->
   <text x="95" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="600" fill="#1E293B">
-    <tspan fill="url(#weaveGrad)">Logix</tspan><tspan fill="#475569">Weaver</tspan>
+    <tspan fill="url(#weaveGrad)">Logix</tspan><tspan fill="#475569">Weave</tspan>
   </text>
 </svg>

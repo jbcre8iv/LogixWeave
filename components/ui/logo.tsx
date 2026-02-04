@@ -30,8 +30,8 @@ export function Logo({ className, showText = true, size = "md" }: LogoProps) {
 
   return (
     <Image
-      src="/logixweaver-logo.svg"
-      alt="LogixWeaver"
+      src="/logixweave-logo.svg"
+      alt="LogixWeave"
       width={widthMap[size]}
       height={heightMap[size]}
       className={cn(sizeClasses[size], className)}
