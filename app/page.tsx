@@ -204,8 +204,18 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} LogixWeave. Built for Studio 5000 programmers.</p>
+        <div className="container mx-auto px-4 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <p>&copy; {new Date().getFullYear()} LogixWeave. Built for Studio 5000 programmers.</p>
+              <p className="text-xs mt-1">Not affiliated with Rockwell Automation, Inc.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href="/legal" className="hover:text-foreground transition-colors">
+                Terms & Privacy
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
