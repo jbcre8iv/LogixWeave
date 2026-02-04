@@ -129,16 +129,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Card>
         </Link>
 
-        <Card className="opacity-60">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Routines</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{routineCount}</div>
-            <p className="text-xs text-muted-foreground">Coming soon</p>
-          </CardContent>
-        </Card>
+        <Link href={`/dashboard/projects/${projectId}/routines`}>
+          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Routines</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{routineCount}</div>
+              <p className="text-xs text-muted-foreground">Programs/routines found</p>
+            </CardContent>
+          </Card>
+        </Link>
 
         <Link href={`/dashboard/projects/${projectId}/io-mapping`}>
           <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
@@ -241,13 +243,21 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </p>
               </div>
             </div>
-            {(tagCount > 0 || moduleCount > 0) && (
+            {(tagCount > 0 || routineCount > 0 || moduleCount > 0) && (
               <div className="pt-4 space-y-2">
                 {tagCount > 0 && (
                   <Button asChild variant="outline" className="w-full">
                     <Link href={`/dashboard/projects/${projectId}/tags`}>
                       <Tags className="mr-2 h-4 w-4" />
                       Browse Tags
+                    </Link>
+                  </Button>
+                )}
+                {routineCount > 0 && (
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href={`/dashboard/projects/${projectId}/routines`}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Browse Routines
                     </Link>
                   </Button>
                 )}
