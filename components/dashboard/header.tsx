@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MobileSidebar } from "./mobile-sidebar";
 import { LogOut, User, Settings } from "lucide-react";
 
 interface HeaderProps {
@@ -42,8 +43,9 @@ export function Header({ user }: HeaderProps) {
     : user.email[0].toUpperCase();
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
-      <div className="flex items-center gap-4">
+    <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
+      <div className="flex items-center gap-3">
+        <MobileSidebar />
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">
