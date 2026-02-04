@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui/logo";
-import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2, LifeBuoy } from "lucide-react";
+import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2, HelpCircle } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -15,9 +15,10 @@ export default function HomePage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <a href="mailto:support@jbcre8iv.com" title="Contact Support">
-                <LifeBuoy className="h-5 w-5" />
+            <Button variant="ghost" size="sm" asChild>
+              <a href="mailto:support@jbcre8iv.com">
+                <HelpCircle className="h-4 w-4 mr-1" />
+                Support
               </a>
             </Button>
             <ThemeToggle />

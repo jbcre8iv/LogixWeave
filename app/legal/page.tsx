@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, LifeBuoy } from "lucide-react";
+import { ArrowLeft, HelpCircle } from "lucide-react";
 
 export default function LegalPage() {
   return (
@@ -14,9 +14,10 @@ export default function LegalPage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <a href="mailto:support@jbcre8iv.com" title="Contact Support">
-                <LifeBuoy className="h-5 w-5" />
+            <Button variant="ghost" size="sm" asChild>
+              <a href="mailto:support@jbcre8iv.com">
+                <HelpCircle className="h-4 w-4 mr-1" />
+                Support
               </a>
             </Button>
             <ThemeToggle />
