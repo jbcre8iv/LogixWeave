@@ -259,6 +259,397 @@ export interface Database {
           created_at?: string;
         };
       };
+      parsed_rungs: {
+        Row: {
+          id: string;
+          file_id: string;
+          routine_id: string | null;
+          routine_name: string;
+          program_name: string;
+          number: number;
+          content: string | null;
+          comment: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          file_id: string;
+          routine_id?: string | null;
+          routine_name: string;
+          program_name: string;
+          number: number;
+          content?: string | null;
+          comment?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          file_id?: string;
+          routine_id?: string | null;
+          routine_name?: string;
+          program_name?: string;
+          number?: number;
+          content?: string | null;
+          comment?: string | null;
+          created_at?: string;
+        };
+      };
+      tag_references: {
+        Row: {
+          id: string;
+          file_id: string;
+          tag_name: string;
+          routine_name: string;
+          program_name: string;
+          rung_number: number;
+          usage_type: "read" | "write" | "both";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          file_id: string;
+          tag_name: string;
+          routine_name: string;
+          program_name: string;
+          rung_number: number;
+          usage_type: "read" | "write" | "both";
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          file_id?: string;
+          tag_name?: string;
+          routine_name?: string;
+          program_name?: string;
+          rung_number?: number;
+          usage_type?: "read" | "write" | "both";
+          created_at?: string;
+        };
+      };
+      parsed_udts: {
+        Row: {
+          id: string;
+          file_id: string;
+          name: string;
+          description: string | null;
+          family_type: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          file_id: string;
+          name: string;
+          description?: string | null;
+          family_type?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          file_id?: string;
+          name?: string;
+          description?: string | null;
+          family_type?: string | null;
+          created_at?: string;
+        };
+      };
+      parsed_udt_members: {
+        Row: {
+          id: string;
+          udt_id: string;
+          name: string;
+          data_type: string;
+          dimension: string | null;
+          radix: string | null;
+          external_access: string | null;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          udt_id: string;
+          name: string;
+          data_type: string;
+          dimension?: string | null;
+          radix?: string | null;
+          external_access?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          udt_id?: string;
+          name?: string;
+          data_type?: string;
+          dimension?: string | null;
+          radix?: string | null;
+          external_access?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+      };
+      parsed_aois: {
+        Row: {
+          id: string;
+          file_id: string;
+          name: string;
+          description: string | null;
+          revision: string | null;
+          vendor: string | null;
+          execute_prescan: boolean;
+          execute_postscan: boolean;
+          execute_enable_in_false: boolean;
+          created_date: string | null;
+          created_by: string | null;
+          edited_date: string | null;
+          edited_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          file_id: string;
+          name: string;
+          description?: string | null;
+          revision?: string | null;
+          vendor?: string | null;
+          execute_prescan?: boolean;
+          execute_postscan?: boolean;
+          execute_enable_in_false?: boolean;
+          created_date?: string | null;
+          created_by?: string | null;
+          edited_date?: string | null;
+          edited_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          file_id?: string;
+          name?: string;
+          description?: string | null;
+          revision?: string | null;
+          vendor?: string | null;
+          execute_prescan?: boolean;
+          execute_postscan?: boolean;
+          execute_enable_in_false?: boolean;
+          created_date?: string | null;
+          created_by?: string | null;
+          edited_date?: string | null;
+          edited_by?: string | null;
+          created_at?: string;
+        };
+      };
+      parsed_aoi_parameters: {
+        Row: {
+          id: string;
+          aoi_id: string;
+          name: string;
+          data_type: string;
+          usage: "Input" | "Output" | "InOut";
+          required: boolean;
+          visible: boolean;
+          external_access: string | null;
+          description: string | null;
+          default_value: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          aoi_id: string;
+          name: string;
+          data_type: string;
+          usage: "Input" | "Output" | "InOut";
+          required?: boolean;
+          visible?: boolean;
+          external_access?: string | null;
+          description?: string | null;
+          default_value?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          aoi_id?: string;
+          name?: string;
+          data_type?: string;
+          usage?: "Input" | "Output" | "InOut";
+          required?: boolean;
+          visible?: boolean;
+          external_access?: string | null;
+          description?: string | null;
+          default_value?: string | null;
+          created_at?: string;
+        };
+      };
+      parsed_aoi_local_tags: {
+        Row: {
+          id: string;
+          aoi_id: string;
+          name: string;
+          data_type: string;
+          radix: string | null;
+          external_access: string | null;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          aoi_id: string;
+          name: string;
+          data_type: string;
+          radix?: string | null;
+          external_access?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          aoi_id?: string;
+          name?: string;
+          data_type?: string;
+          radix?: string | null;
+          external_access?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+      };
+      parsed_aoi_routines: {
+        Row: {
+          id: string;
+          aoi_id: string;
+          name: string;
+          type: string;
+          description: string | null;
+          rung_count: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          aoi_id: string;
+          name: string;
+          type: string;
+          description?: string | null;
+          rung_count?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          aoi_id?: string;
+          name?: string;
+          type?: string;
+          description?: string | null;
+          rung_count?: number | null;
+          created_at?: string;
+        };
+      };
+      naming_rules: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          description: string | null;
+          pattern: string;
+          applies_to: "all" | "controller" | "program" | "io" | "udt" | "aoi";
+          severity: "error" | "warning" | "info";
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          description?: string | null;
+          pattern: string;
+          applies_to: "all" | "controller" | "program" | "io" | "udt" | "aoi";
+          severity?: "error" | "warning" | "info";
+          is_active?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          name?: string;
+          description?: string | null;
+          pattern?: string;
+          applies_to?: "all" | "controller" | "program" | "io" | "udt" | "aoi";
+          severity?: "error" | "warning" | "info";
+          is_active?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      ai_analysis_cache: {
+        Row: {
+          id: string;
+          file_id: string;
+          analysis_type: "explain" | "issues" | "search";
+          target: string;
+          input_hash: string;
+          result: Record<string, unknown>;
+          tokens_used: number | null;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          file_id: string;
+          analysis_type: "explain" | "issues" | "search";
+          target: string;
+          input_hash: string;
+          result: Record<string, unknown>;
+          tokens_used?: number | null;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          file_id?: string;
+          analysis_type?: "explain" | "issues" | "search";
+          target?: string;
+          input_hash?: string;
+          result?: Record<string, unknown>;
+          tokens_used?: number | null;
+          created_at?: string;
+          expires_at?: string;
+        };
+      };
+      ai_usage_log: {
+        Row: {
+          id: string;
+          user_id: string;
+          organization_id: string;
+          analysis_type: string;
+          input_tokens: number;
+          output_tokens: number;
+          total_tokens: number;
+          cached: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          organization_id: string;
+          analysis_type: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          total_tokens?: number;
+          cached?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          organization_id?: string;
+          analysis_type?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          total_tokens?: number;
+          cached?: boolean;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

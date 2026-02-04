@@ -55,10 +55,35 @@ export async function POST(request: Request) {
       const serviceSupabase = await createServiceClient();
 
       // Delete any existing parsed data for this file
+      // First delete child tables that reference other parsed tables
+      await Promise.all([
+        serviceSupabase.from("parsed_udt_members").delete().in(
+          "udt_id",
+          (await serviceSupabase.from("parsed_udts").select("id").eq("file_id", fileId)).data?.map(u => u.id) || []
+        ),
+        serviceSupabase.from("parsed_aoi_parameters").delete().in(
+          "aoi_id",
+          (await serviceSupabase.from("parsed_aois").select("id").eq("file_id", fileId)).data?.map(a => a.id) || []
+        ),
+        serviceSupabase.from("parsed_aoi_local_tags").delete().in(
+          "aoi_id",
+          (await serviceSupabase.from("parsed_aois").select("id").eq("file_id", fileId)).data?.map(a => a.id) || []
+        ),
+        serviceSupabase.from("parsed_aoi_routines").delete().in(
+          "aoi_id",
+          (await serviceSupabase.from("parsed_aois").select("id").eq("file_id", fileId)).data?.map(a => a.id) || []
+        ),
+      ]);
+
+      // Then delete parent tables
       await Promise.all([
         serviceSupabase.from("parsed_tags").delete().eq("file_id", fileId),
         serviceSupabase.from("parsed_io_modules").delete().eq("file_id", fileId),
         serviceSupabase.from("parsed_routines").delete().eq("file_id", fileId),
+        serviceSupabase.from("parsed_rungs").delete().eq("file_id", fileId),
+        serviceSupabase.from("tag_references").delete().eq("file_id", fileId),
+        serviceSupabase.from("parsed_udts").delete().eq("file_id", fileId),
+        serviceSupabase.from("parsed_aois").delete().eq("file_id", fileId),
       ]);
 
       // Insert parsed tags in batches
@@ -128,6 +153,182 @@ export async function POST(request: Request) {
         }
       }
 
+      // Insert parsed rungs in batches
+      if (parsed.rungs.length > 0) {
+        const rungRecords = parsed.rungs.map((rung) => ({
+          file_id: fileId,
+          routine_name: rung.routineName,
+          program_name: rung.programName,
+          number: rung.number,
+          content: rung.content,
+          comment: rung.comment,
+        }));
+
+        const batchSize = 500;
+        for (let i = 0; i < rungRecords.length; i += batchSize) {
+          const batch = rungRecords.slice(i, i + batchSize);
+          const { error: insertError } = await serviceSupabase
+            .from("parsed_rungs")
+            .insert(batch);
+          if (insertError) {
+            console.error("Error inserting rungs batch:", insertError);
+          }
+        }
+      }
+
+      // Insert tag references in batches
+      if (parsed.tagReferences.length > 0) {
+        const tagRefRecords = parsed.tagReferences.map((ref) => ({
+          file_id: fileId,
+          tag_name: ref.tagName,
+          routine_name: ref.routineName,
+          program_name: ref.programName,
+          rung_number: ref.rungNumber,
+          usage_type: ref.usageType,
+        }));
+
+        const batchSize = 500;
+        for (let i = 0; i < tagRefRecords.length; i += batchSize) {
+          const batch = tagRefRecords.slice(i, i + batchSize);
+          const { error: insertError } = await serviceSupabase
+            .from("tag_references")
+            .insert(batch);
+          if (insertError) {
+            console.error("Error inserting tag references batch:", insertError);
+          }
+        }
+      }
+
+      // Insert parsed UDTs and their members
+      if (parsed.udts.length > 0) {
+        for (const udt of parsed.udts) {
+          const { data: udtRecord, error: udtError } = await serviceSupabase
+            .from("parsed_udts")
+            .insert({
+              file_id: fileId,
+              name: udt.name,
+              description: udt.description,
+              family_type: udt.familyType,
+            })
+            .select("id")
+            .single();
+
+          if (udtError) {
+            console.error("Error inserting UDT:", udtError);
+            continue;
+          }
+
+          if (udt.members.length > 0 && udtRecord) {
+            const memberRecords = udt.members.map((member) => ({
+              udt_id: udtRecord.id,
+              name: member.name,
+              data_type: member.dataType,
+              dimension: member.dimension,
+              radix: member.radix,
+              external_access: member.externalAccess,
+              description: member.description,
+            }));
+
+            const { error: memberError } = await serviceSupabase
+              .from("parsed_udt_members")
+              .insert(memberRecords);
+            if (memberError) {
+              console.error("Error inserting UDT members:", memberError);
+            }
+          }
+        }
+      }
+
+      // Insert parsed AOIs with their parameters, local tags, and routines
+      if (parsed.aois.length > 0) {
+        for (const aoi of parsed.aois) {
+          const { data: aoiRecord, error: aoiError } = await serviceSupabase
+            .from("parsed_aois")
+            .insert({
+              file_id: fileId,
+              name: aoi.name,
+              description: aoi.description,
+              revision: aoi.revision,
+              vendor: aoi.vendor,
+              execute_prescan: aoi.executePrescan,
+              execute_postscan: aoi.executePostscan,
+              execute_enable_in_false: aoi.executeEnableInFalse,
+              created_date: aoi.createdDate,
+              created_by: aoi.createdBy,
+              edited_date: aoi.editedDate,
+              edited_by: aoi.editedBy,
+            })
+            .select("id")
+            .single();
+
+          if (aoiError) {
+            console.error("Error inserting AOI:", aoiError);
+            continue;
+          }
+
+          if (aoiRecord) {
+            // Insert AOI parameters
+            if (aoi.parameters.length > 0) {
+              const paramRecords = aoi.parameters.map((param) => ({
+                aoi_id: aoiRecord.id,
+                name: param.name,
+                data_type: param.dataType,
+                usage: param.usage,
+                required: param.required,
+                visible: param.visible,
+                external_access: param.externalAccess,
+                description: param.description,
+                default_value: param.defaultValue,
+              }));
+
+              const { error: paramError } = await serviceSupabase
+                .from("parsed_aoi_parameters")
+                .insert(paramRecords);
+              if (paramError) {
+                console.error("Error inserting AOI parameters:", paramError);
+              }
+            }
+
+            // Insert AOI local tags
+            if (aoi.localTags.length > 0) {
+              const localTagRecords = aoi.localTags.map((tag) => ({
+                aoi_id: aoiRecord.id,
+                name: tag.name,
+                data_type: tag.dataType,
+                radix: tag.radix,
+                external_access: tag.externalAccess,
+                description: tag.description,
+              }));
+
+              const { error: localTagError } = await serviceSupabase
+                .from("parsed_aoi_local_tags")
+                .insert(localTagRecords);
+              if (localTagError) {
+                console.error("Error inserting AOI local tags:", localTagError);
+              }
+            }
+
+            // Insert AOI routines
+            if (aoi.routines.length > 0) {
+              const routineRecords = aoi.routines.map((routine) => ({
+                aoi_id: aoiRecord.id,
+                name: routine.name,
+                type: routine.type,
+                description: routine.description,
+                rung_count: routine.rungCount,
+              }));
+
+              const { error: routineError } = await serviceSupabase
+                .from("parsed_aoi_routines")
+                .insert(routineRecords);
+              if (routineError) {
+                console.error("Error inserting AOI routines:", routineError);
+              }
+            }
+          }
+        }
+      }
+
       // Update status to completed
       await supabase
         .from("project_files")
@@ -140,6 +341,10 @@ export async function POST(request: Request) {
           tags: parsed.tags.length,
           modules: parsed.modules.length,
           routines: parsed.routines.length,
+          rungs: parsed.rungs.length,
+          tagReferences: parsed.tagReferences.length,
+          udts: parsed.udts.length,
+          aois: parsed.aois.length,
         },
       });
     } catch (parseError) {

@@ -11,6 +11,10 @@ import {
   Settings,
   HardDrive,
   FileCode2,
+  Layers,
+  Package,
+  BarChart3,
+  Sparkles,
 } from "lucide-react";
 
 const navigation = [
@@ -21,6 +25,10 @@ const navigation = [
 const tools = [
   { name: "Tag Explorer", href: "/dashboard/tools/tags", icon: Tags },
   { name: "I/O Mapping", href: "/dashboard/tools/io", icon: HardDrive },
+  { name: "UDTs", href: "/dashboard/tools/udts", icon: Layers },
+  { name: "AOIs", href: "/dashboard/tools/aois", icon: Package },
+  { name: "Analysis", href: "/dashboard/tools/analysis", icon: BarChart3 },
+  { name: "AI Assistant", href: "/dashboard/tools/ai", icon: Sparkles },
   { name: "Project Compare", href: "/dashboard/tools/compare", icon: FileCode2 },
 ];
 

@@ -1,0 +1,365 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ArrowLeft, AlertCircle, AlertTriangle, Info, CheckCircle, Settings } from "lucide-react";
+
+interface NamingPageProps {
+  params: Promise<{ projectId: string }>;
+  searchParams: Promise<{
+    severity?: string;
+  }>;
+}
+
+interface NamingRule {
+  id: string;
+  name: string;
+  pattern: string;
+  applies_to: string;
+  severity: string;
+}
+
+interface Violation {
+  ruleId: string;
+  ruleName: string;
+  severity: string;
+  tagName: string;
+  tagScope: string;
+  message: string;
+}
+
+function validateTag(
+  tagName: string,
+  tagScope: string,
+  rules: NamingRule[]
+): Violation[] {
+  const violations: Violation[] = [];
+
+  for (const rule of rules) {
+    const appliesToTag =
+      rule.applies_to === "all" ||
+      (rule.applies_to === "controller" && tagScope === "Controller") ||
+      (rule.applies_to === "program" && tagScope !== "Controller");
+
+    if (!appliesToTag) continue;
+
+    try {
+      const regex = new RegExp(rule.pattern);
+      if (!regex.test(tagName)) {
+        violations.push({
+          ruleId: rule.id,
+          ruleName: rule.name,
+          severity: rule.severity,
+          tagName,
+          tagScope,
+          message: `Tag "${tagName}" does not match rule "${rule.name}"`,
+        });
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return violations;
+}
+
+export default async function NamingValidationPage({ params, searchParams }: NamingPageProps) {
+  const { projectId } = await params;
+  const { severity: severityFilter } = await searchParams;
+
+  const supabase = await createClient();
+
+  // Get project info
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("id, name, organization_id, project_files(id)")
+    .eq("id", projectId)
+    .single();
+
+  if (projectError || !project) {
+    notFound();
+  }
+
+  const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
+
+  if (fileIds.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <p className="text-muted-foreground">{project.name}</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              No files have been uploaded to this project yet.
+            </p>
+            <Button asChild>
+              <Link href={`/dashboard/projects/${projectId}/files`}>
+                Upload Files
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Get active naming rules
+  const { data: rules } = await supabase
+    .from("naming_rules")
+    .select("id, name, pattern, applies_to, severity")
+    .eq("organization_id", project.organization_id)
+    .eq("is_active", true);
+
+  if (!rules || rules.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <p className="text-muted-foreground">{project.name}</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              No naming rules have been configured for your organization.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/settings/naming-rules">
+                <Settings className="mr-2 h-4 w-4" />
+                Configure Naming Rules
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Get all tags
+  const { data: tags } = await supabase
+    .from("parsed_tags")
+    .select("name, scope")
+    .in("file_id", fileIds);
+
+  // Validate all tags
+  const allViolations: Violation[] = [];
+  for (const tag of tags || []) {
+    const violations = validateTag(tag.name, tag.scope, rules);
+    allViolations.push(...violations);
+  }
+
+  // Apply filter
+  let filteredViolations = allViolations;
+  if (severityFilter && severityFilter !== "all") {
+    filteredViolations = allViolations.filter((v) => v.severity === severityFilter);
+  }
+
+  // Calculate summary
+  const summary = {
+    errors: allViolations.filter((v) => v.severity === "error").length,
+    warnings: allViolations.filter((v) => v.severity === "warning").length,
+    info: allViolations.filter((v) => v.severity === "info").length,
+    total: allViolations.length,
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case "error":
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case "warning":
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case "info":
+        return <Info className="h-4 w-4 text-blue-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case "error":
+        return <Badge className="bg-red-500/10 text-red-500">Error</Badge>;
+      case "warning":
+        return <Badge className="bg-yellow-500/10 text-yellow-500">Warning</Badge>;
+      case "info":
+        return <Badge className="bg-blue-500/10 text-blue-500">Info</Badge>;
+      default:
+        return <Badge variant="outline">{severity}</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <p className="text-muted-foreground">{project.name}</p>
+          </div>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/dashboard/settings/naming-rules">
+            <Settings className="mr-2 h-4 w-4" />
+            Manage Rules
+          </Link>
+        </Button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className={summary.total === 0 ? "border-green-500/50 bg-green-500/5" : ""}>
+          <CardHeader className="pb-2">
+            <CardDescription>Total Violations</CardDescription>
+            <CardTitle className="text-3xl flex items-center gap-2">
+              {summary.total === 0 ? (
+                <>
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                  <span className="text-green-500">0</span>
+                </>
+              ) : (
+                summary.total.toLocaleString()
+              )}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Link href={`?severity=error`}>
+          <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${severityFilter === "error" ? "border-primary" : ""}`}>
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                Errors
+              </CardDescription>
+              <CardTitle className="text-3xl text-red-500">{summary.errors}</CardTitle>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href={`?severity=warning`}>
+          <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${severityFilter === "warning" ? "border-primary" : ""}`}>
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                Warnings
+              </CardDescription>
+              <CardTitle className="text-3xl text-yellow-500">{summary.warnings}</CardTitle>
+            </CardHeader>
+          </Card>
+        </Link>
+        <Link href={`?severity=info`}>
+          <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${severityFilter === "info" ? "border-primary" : ""}`}>
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-blue-500" />
+                Info
+              </CardDescription>
+              <CardTitle className="text-3xl text-blue-500">{summary.info}</CardTitle>
+            </CardHeader>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Info Card */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Checked {tags?.length || 0} tags against {rules.length} active rules</span>
+            {severityFilter && severityFilter !== "all" && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="?">Clear Filter</Link>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Violations Table */}
+      {filteredViolations.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Violations</CardTitle>
+            <CardDescription>
+              {filteredViolations.length} violation{filteredViolations.length === 1 ? "" : "s"}
+              {severityFilter && severityFilter !== "all" ? ` (filtered by ${severityFilter})` : ""}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-[600px] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">Severity</TableHead>
+                    <TableHead>Tag Name</TableHead>
+                    <TableHead>Scope</TableHead>
+                    <TableHead>Rule</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredViolations.map((violation, idx) => (
+                    <TableRow key={`${violation.tagName}-${violation.ruleId}-${idx}`}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getSeverityIcon(violation.severity)}
+                          {getSeverityBadge(violation.severity)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{violation.tagName}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{violation.tagScope}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {violation.ruleName}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-green-500/50 bg-green-500/5">
+          <CardContent className="py-12 text-center">
+            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+            <p className="text-lg font-medium text-green-600">
+              {severityFilter && severityFilter !== "all"
+                ? `No ${severityFilter} violations found!`
+                : "All tags pass naming validation!"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Your tags comply with the configured naming rules.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

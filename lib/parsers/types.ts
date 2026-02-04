@@ -13,6 +13,75 @@ export interface ParsedTag {
   dimensions?: string;
 }
 
+export interface ParsedRung {
+  number: number;
+  routineName: string;
+  programName: string;
+  content: string;
+  comment?: string;
+  tagReferences: string[];
+}
+
+export interface ParsedTagReference {
+  tagName: string;
+  routineName: string;
+  programName: string;
+  rungNumber: number;
+  usageType: "read" | "write" | "both";
+}
+
+export interface ParsedUDT {
+  name: string;
+  description?: string;
+  familyType?: string;
+  members: ParsedUDTMember[];
+}
+
+export interface ParsedUDTMember {
+  name: string;
+  dataType: string;
+  dimension?: string;
+  radix?: string;
+  externalAccess?: string;
+  description?: string;
+}
+
+export interface ParsedAOI {
+  name: string;
+  description?: string;
+  revision?: string;
+  vendor?: string;
+  executePrescan?: boolean;
+  executePostscan?: boolean;
+  executeEnableInFalse?: boolean;
+  createdDate?: string;
+  createdBy?: string;
+  editedDate?: string;
+  editedBy?: string;
+  parameters: ParsedAOIParameter[];
+  localTags: ParsedAOILocalTag[];
+  routines: ParsedRoutine[];
+}
+
+export interface ParsedAOIParameter {
+  name: string;
+  dataType: string;
+  usage: "Input" | "Output" | "InOut";
+  required: boolean;
+  visible: boolean;
+  externalAccess?: string;
+  description?: string;
+  defaultValue?: string;
+}
+
+export interface ParsedAOILocalTag {
+  name: string;
+  dataType: string;
+  radix?: string;
+  externalAccess?: string;
+  description?: string;
+}
+
 export interface ParsedIOModule {
   name: string;
   catalogNumber?: string;
@@ -33,12 +102,76 @@ export interface ParsedL5XData {
   tags: ParsedTag[];
   modules: ParsedIOModule[];
   routines: ParsedRoutine[];
+  rungs: ParsedRung[];
+  tagReferences: ParsedTagReference[];
+  udts: ParsedUDT[];
+  aois: ParsedAOI[];
   metadata: {
     projectName?: string;
     processorType?: string;
     softwareRevision?: string;
     targetType?: string;
     exportDate?: string;
+  };
+}
+
+export interface L5XUDTMember {
+  "@_Name"?: string;
+  "@_DataType"?: string;
+  "@_Dimension"?: string;
+  "@_Radix"?: string;
+  "@_ExternalAccess"?: string;
+  Description?: string | { "#text"?: string };
+}
+
+export interface L5XUDT {
+  "@_Name"?: string;
+  "@_Family"?: string;
+  Description?: string | { "#text"?: string };
+  Members?: {
+    Member?: L5XUDTMember | L5XUDTMember[];
+  };
+}
+
+export interface L5XAOIParameter {
+  "@_Name"?: string;
+  "@_DataType"?: string;
+  "@_Usage"?: string;
+  "@_Required"?: string;
+  "@_Visible"?: string;
+  "@_ExternalAccess"?: string;
+  DefaultValue?: string | { "#text"?: string };
+  Description?: string | { "#text"?: string };
+}
+
+export interface L5XAOILocalTag {
+  "@_Name"?: string;
+  "@_DataType"?: string;
+  "@_Radix"?: string;
+  "@_ExternalAccess"?: string;
+  Description?: string | { "#text"?: string };
+}
+
+export interface L5XAOI {
+  "@_Name"?: string;
+  "@_Revision"?: string;
+  "@_Vendor"?: string;
+  "@_ExecutePrescan"?: string;
+  "@_ExecutePostscan"?: string;
+  "@_ExecuteEnableInFalse"?: string;
+  "@_CreatedDate"?: string;
+  "@_CreatedBy"?: string;
+  "@_EditedDate"?: string;
+  "@_EditedBy"?: string;
+  Description?: string | { "#text"?: string };
+  Parameters?: {
+    Parameter?: L5XAOIParameter | L5XAOIParameter[];
+  };
+  LocalTags?: {
+    LocalTag?: L5XAOILocalTag | L5XAOILocalTag[];
+  };
+  Routines?: {
+    Routine?: L5XRoutine | L5XRoutine[];
   };
 }
 
@@ -54,6 +187,12 @@ export interface L5XController {
   };
   Modules?: {
     Module?: L5XModule | L5XModule[];
+  };
+  DataTypes?: {
+    DataType?: L5XUDT | L5XUDT[];
+  };
+  AddOnInstructionDefinitions?: {
+    AddOnInstructionDefinition?: L5XAOI | L5XAOI[];
   };
 }
 
@@ -79,12 +218,19 @@ export interface L5XProgram {
   };
 }
 
+export interface L5XRung {
+  "@_Number"?: string;
+  "@_Type"?: string;
+  Comment?: string | { "#text"?: string };
+  Text?: string | { "#text"?: string };
+}
+
 export interface L5XRoutine {
   "@_Name"?: string;
   "@_Type"?: string;
   Description?: string | { "#text"?: string };
   RLLContent?: {
-    Rung?: unknown | unknown[];
+    Rung?: L5XRung | L5XRung[];
   };
 }
 
