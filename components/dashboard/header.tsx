@@ -15,7 +15,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Scale } from "lucide-react";
 
 interface HeaderProps {
   user: {
@@ -78,6 +78,10 @@ export function Header({ user }: HeaderProps) {
             <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
               <Settings className="mr-2 h-4 w-4" />
               Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/legal")}>
+              <Scale className="mr-2 h-4 w-4" />
+              Terms & Privacy
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
