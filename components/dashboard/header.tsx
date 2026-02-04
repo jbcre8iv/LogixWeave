@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
+import { NotificationsDropdown } from "./notifications-dropdown";
 import { LogOut, User, Settings } from "lucide-react";
 
 interface HeaderProps {
@@ -49,6 +50,7 @@ export function Header({ user }: HeaderProps) {
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">
+        <NotificationsDropdown />
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
