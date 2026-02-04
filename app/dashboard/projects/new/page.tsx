@@ -22,12 +22,13 @@ export default function NewProjectPage() {
 
     const formData = new FormData(e.currentTarget);
 
-    try {
-      await createProject(formData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create project");
+    const result = await createProject(formData);
+
+    if (result?.error) {
+      setError(result.error);
       setIsLoading(false);
     }
+    // On success, createProject redirects automatically
   };
 
   return (

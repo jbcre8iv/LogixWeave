@@ -82,60 +82,51 @@ export async function getOrCreateDefaultOrganization() {
   return createOrganization(orgName, user.id);
 }
 
-export async function createProject(formData: FormData) {
-  try {
-    const supabase = await createClient();
+export async function createProject(formData: FormData): Promise<{ error?: string }> {
+  const supabase = await createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-      redirect("/login");
-    }
-
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-
-    if (!name || name.trim().length === 0) {
-      throw new Error("Project name is required");
-    }
-
-    // Get or create organization
-    let org;
-    try {
-      org = await getOrCreateDefaultOrganization();
-    } catch (orgError) {
-      console.error("Organization error:", orgError);
-      throw new Error(`Failed to get/create organization: ${orgError instanceof Error ? orgError.message : "Unknown error"}`);
-    }
-
-    const { data: project, error } = await supabase
-      .from("projects")
-      .insert({
-        organization_id: org.id,
-        name: name.trim(),
-        description: description?.trim() || null,
-        created_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Project creation error:", error);
-      throw new Error(`Failed to create project: ${error.message}`);
-    }
-
-    revalidatePath("/dashboard/projects");
-    redirect(`/dashboard/projects/${project.id}`);
-  } catch (error) {
-    // Re-throw redirect errors
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-      throw error;
-    }
-    console.error("createProject error:", error);
-    throw error;
+  if (!user) {
+    redirect("/login");
   }
+
+  const name = formData.get("name") as string;
+  const description = formData.get("description") as string;
+
+  if (!name || name.trim().length === 0) {
+    return { error: "Project name is required" };
+  }
+
+  // Get or create organization
+  let org;
+  try {
+    org = await getOrCreateDefaultOrganization();
+  } catch (orgError) {
+    console.error("Organization error:", orgError);
+    return { error: `Failed to setup workspace: ${orgError instanceof Error ? orgError.message : "Unknown error"}` };
+  }
+
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({
+      organization_id: org.id,
+      name: name.trim(),
+      description: description?.trim() || null,
+      created_by: user.id,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Project creation error:", error);
+    return { error: `Failed to create project: ${error.message}` };
+  }
+
+  revalidatePath("/dashboard/projects");
+  redirect(`/dashboard/projects/${project.id}`);
 }
 
 export async function updateProject(projectId: string, formData: FormData) {
