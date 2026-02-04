@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
+import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -22,6 +23,8 @@ interface ProjectPageProps {
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = await params;
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -43,6 +46,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   if (error || !project) {
     notFound();
   }
+
+  const isOwner = project.created_by === user?.id;
 
   // Get tag and routine counts
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
@@ -92,14 +97,19 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button asChild className="flex-1 sm:flex-none">
             <Link href={`/dashboard/projects/${projectId}/files`}>
               <Upload className="mr-2 h-4 w-4" />
               Manage Files
             </Link>
           </Button>
-          <DeleteProjectButton projectId={projectId} projectName={project.name} />
+          {isOwner && (
+            <>
+              <ShareProjectDialog projectId={projectId} projectName={project.name} />
+              <DeleteProjectButton projectId={projectId} projectName={project.name} />
+            </>
+          )}
         </div>
       </div>
 

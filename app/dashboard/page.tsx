@@ -2,21 +2,36 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, Tags, HardDrive, FileCode2, Plus, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FolderOpen, Tags, HardDrive, FileCode2, Plus, ArrowRight, Users } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // Get user's projects count
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Get user's projects count (only owned projects)
   const { count: projectCount } = await supabase
     .from("projects")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("created_by", user?.id);
 
-  // Get recent projects
+  // Get recent projects (owned by user)
   const { data: recentProjects } = await supabase
     .from("projects")
     .select("id, name, updated_at")
+    .eq("created_by", user?.id)
     .order("updated_at", { ascending: false })
+    .limit(5);
+
+  // Get shared projects
+  const { data: sharedProjects } = await supabase
+    .from("project_shares")
+    .select(`
+      permission,
+      projects:project_id(id, name, updated_at)
+    `)
+    .or(`shared_with_user_id.eq.${user?.id},shared_with_email.eq.${user?.email}`)
     .limit(5);
 
   return (
@@ -106,7 +121,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -153,6 +168,55 @@ export default async function DashboardPage() {
                     Create your first project
                   </Link>
                 </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Shared with Me</CardTitle>
+            </div>
+            <CardDescription>Projects others have shared with you</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {sharedProjects && sharedProjects.length > 0 ? (
+              <div className="space-y-4">
+                {sharedProjects.map((share) => {
+                  const project = share.projects as unknown as { id: string; name: string; updated_at: string } | null;
+                  if (!project) return null;
+                  return (
+                    <div key={project.id} className="flex items-center justify-between">
+                      <div>
+                        <Link
+                          href={`/dashboard/projects/${project.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {project.name}
+                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {share.permission === "edit" ? "Can edit" : "View only"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/dashboard/projects/${project.id}`}>
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">
+                  No projects shared with you yet
+                </p>
               </div>
             )}
           </CardContent>
