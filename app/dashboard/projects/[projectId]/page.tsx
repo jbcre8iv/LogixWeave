@@ -22,6 +22,7 @@ import { RequestPermissionDialog } from "@/components/dashboard/request-permissi
 import { PermissionRequestsList } from "@/components/dashboard/permission-requests-list";
 import { ProjectInvitePrompt } from "@/components/dashboard/project-invite-prompt";
 import { ActivityLog } from "@/components/projects/activity-log";
+import { ActivitySummaryBanner } from "@/components/projects/activity-summary-banner";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -185,6 +186,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           )}
         </div>
       </div>
+
+      {/* Activity summary banner for returning users */}
+      <ActivitySummaryBanner projectId={projectId} />
 
       {/* Permission requests for owners */}
       {isOwner && (

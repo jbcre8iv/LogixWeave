@@ -688,6 +688,26 @@ export interface Database {
           created_at?: string;
         };
       };
+      project_user_sessions: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string;
+          last_seen_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id: string;
+          last_seen_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          last_seen_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
