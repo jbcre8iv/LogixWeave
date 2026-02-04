@@ -39,7 +39,10 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1 p-4">
         <div className="space-y-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            // Dashboard should only be active when exactly on /dashboard
+            const isActive = item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.name}
