@@ -121,7 +121,7 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
           Share
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Share "{projectName}"</DialogTitle>
           <DialogDescription>
@@ -130,8 +130,8 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
         </DialogHeader>
 
         <form onSubmit={handleShare} className="space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1">
+          <div className="space-y-3">
+            <div>
               <Label htmlFor="email" className="sr-only">
                 Email
               </Label>
@@ -144,35 +144,38 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
                 disabled={isLoading}
               />
             </div>
-            <Select
-              value={permission}
-              onValueChange={(v) => setPermission(v as "view" | "edit")}
-            >
-              <SelectTrigger className="w-[110px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="view">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-3 w-3" />
-                    Can view
-                  </div>
-                </SelectItem>
-                <SelectItem value="edit">
-                  <div className="flex items-center gap-2">
-                    <Pencil className="h-3 w-3" />
-                    Can edit
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button type="submit" disabled={isLoading || !email.trim()}>
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserPlus className="h-4 w-4" />
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Select
+                value={permission}
+                onValueChange={(v) => setPermission(v as "view" | "edit")}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="view">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-3 w-3" />
+                      Can view
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="edit">
+                    <div className="flex items-center gap-2">
+                      <Pencil className="h-3 w-3" />
+                      Can edit
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" disabled={isLoading || !email.trim()} className="flex-1">
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
+                Share
+              </Button>
+            </div>
           </div>
 
           {error && (
