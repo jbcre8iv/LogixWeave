@@ -15,7 +15,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
-import { LogOut, User, Settings, Scale, HelpCircle } from "lucide-react";
+import { LogOut, User, Settings, Scale, Mail } from "lucide-react";
 
 interface HeaderProps {
   user: {
@@ -50,10 +50,9 @@ export function Header({ user }: HeaderProps) {
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <a href={`mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email)}`}>
-            <HelpCircle className="h-4 w-4 mr-1" />
-            Support
+        <Button variant="ghost" size="icon" asChild>
+          <a href={`mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email)}`} title="Contact Support">
+            <Mail className="h-5 w-5" />
           </a>
         </Button>
         <NotificationsDropdown />

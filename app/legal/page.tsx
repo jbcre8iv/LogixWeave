@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, HelpCircle } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function LegalPage() {
@@ -21,10 +21,9 @@ export default async function LegalPage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <a href={supportEmail}>
-                <HelpCircle className="h-4 w-4 mr-1" />
-                Support
+            <Button variant="ghost" size="icon" asChild>
+              <a href={supportEmail} title="Contact Support">
+                <Mail className="h-5 w-5" />
               </a>
             </Button>
             <ThemeToggle />

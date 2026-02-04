@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui/logo";
-import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2, HelpCircle } from "lucide-react";
+import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function HomePage() {
@@ -22,10 +22,9 @@ export default async function HomePage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <a href={supportEmail}>
-                <HelpCircle className="h-4 w-4 mr-1" />
-                Support
+            <Button variant="ghost" size="icon" asChild>
+              <a href={supportEmail} title="Contact Support">
+                <Mail className="h-5 w-5" />
               </a>
             </Button>
             <ThemeToggle />
