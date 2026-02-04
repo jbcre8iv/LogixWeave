@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LogOut, User, Settings } from "lucide-react";
 
 interface HeaderProps {
@@ -45,7 +46,8 @@ export function Header({ user }: HeaderProps) {
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">

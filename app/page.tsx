@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function HomePage() {
@@ -15,7 +16,8 @@ export default function HomePage() {
             </div>
             <span className="font-semibold text-lg">LogixWeave</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
