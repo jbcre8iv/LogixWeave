@@ -2,16 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, Mail } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-
-export default async function LegalPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const supportEmail = user
-    ? `mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email || "")}`
-    : "mailto:support@jbcre8iv.com";
+import { ArrowLeft } from "lucide-react";
+export default function LegalPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -21,11 +13,6 @@ export default async function LegalPage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <a href={supportEmail} title="Contact Support">
-                <Mail className="h-5 w-5" />
-              </a>
-            </Button>
             <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Sign in</Link>

@@ -50,11 +50,6 @@ export function Header({ user }: HeaderProps) {
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild>
-          <a href={`mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email)}`} title="Contact Support">
-            <Mail className="h-5 w-5" />
-          </a>
-        </Button>
         <NotificationsDropdown />
         <ThemeToggle />
         <DropdownMenu>
@@ -87,6 +82,12 @@ export function Header({ user }: HeaderProps) {
             <DropdownMenuItem onClick={() => router.push("/legal")}>
               <Scale className="mr-2 h-4 w-4" />
               Terms & Privacy
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={`mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email)}`}>
+                <Mail className="mr-2 h-4 w-4" />
+                Support
+              </a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>

@@ -3,16 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui/logo";
-import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2, Mail } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-
-export default async function HomePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const supportEmail = user
-    ? `mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email || "")}`
-    : "mailto:support@jbcre8iv.com";
+import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2 } from "lucide-react";
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -22,11 +14,6 @@ export default async function HomePage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <a href={supportEmail} title="Contact Support">
-                <Mail className="h-5 w-5" />
-              </a>
-            </Button>
             <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Sign in</Link>
