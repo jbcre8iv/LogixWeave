@@ -97,7 +97,7 @@ export function LoginForm() {
             </div>
           </div>
         </CardContent>
-        <div className="px-6 pb-2" />
+        <div className="px-6 pb-6" />
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
