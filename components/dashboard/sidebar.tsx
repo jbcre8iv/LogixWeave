@@ -109,7 +109,7 @@ export function Sidebar() {
     <div className="hidden md:flex h-full w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center">
-          <Logo size="sm" />
+          <Logo size="lg" />
         </Link>
       </div>
       <SidebarContent />

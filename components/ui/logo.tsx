@@ -11,21 +11,21 @@ interface LogoProps {
 
 export function Logo({ className, showText = true, size = "md" }: LogoProps) {
   const sizeClasses = {
-    sm: "h-6",
-    md: "h-8",
-    lg: "h-10",
+    sm: "h-8",
+    md: "h-10",
+    lg: "h-12",
   };
 
   const widthMap = {
-    sm: showText ? 150 : 45,
-    md: showText ? 200 : 60,
-    lg: showText ? 250 : 75,
+    sm: showText ? 180 : 55,
+    md: showText ? 220 : 70,
+    lg: showText ? 280 : 85,
   };
 
   const heightMap = {
-    sm: 24,
-    md: 32,
-    lg: 40,
+    sm: 32,
+    md: 40,
+    lg: 48,
   };
 
   return (

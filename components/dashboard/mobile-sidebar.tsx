@@ -31,7 +31,7 @@ export function MobileSidebar() {
               className="flex items-center"
               onClick={() => setOpen(false)}
             >
-              <Logo size="sm" />
+              <Logo size="lg" />
             </Link>
           </div>
           <SidebarContent onNavClick={() => setOpen(false)} />
