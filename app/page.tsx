@@ -33,13 +33,13 @@ export default function HomePage() {
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
           Analyze, document, and collaborate on your PLC projects.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button size="lg" asChild>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md mx-auto sm:max-w-none sm:w-auto">
+          <Button size="lg" asChild className="w-full sm:w-auto">
             <Link href="/signup">
               Start Free <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
-          <Button size="lg" variant="outline" asChild>
+          <Button size="lg" variant="outline" asChild className="w-full sm:w-auto">
             <Link href="/login">Sign in to Dashboard</Link>
           </Button>
         </div>
