@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { ProfileForm } from "@/components/settings/profile-form";
+import { SignOutButton } from "@/components/settings/sign-out-button";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -21,8 +24,8 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
+        <p className="text-muted-foreground text-sm md:text-base">
           Manage your account and preferences
         </p>
       </div>
@@ -30,23 +33,17 @@ export default async function SettingsPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>Your account details</CardDescription>
+            <CardTitle>Profile</CardTitle>
+            <CardDescription>Your personal information</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Email</label>
-              <p className="text-sm">{user?.email}</p>
-            </div>
-            {profile?.full_name && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Name</label>
-                <p className="text-sm">{profile.full_name}</p>
-              </div>
-            )}
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Member since</label>
-              <p className="text-sm">
+          <CardContent>
+            <ProfileForm
+              fullName={profile?.full_name || null}
+              email={user?.email || ""}
+            />
+            <div className="mt-4 pt-4 border-t">
+              <Label className="text-muted-foreground">Member since</Label>
+              <p className="text-sm mt-1">
                 {profile?.created_at
                   ? new Date(profile.created_at).toLocaleDateString()
                   : "Unknown"}
@@ -63,20 +60,28 @@ export default async function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Organization Name
-                </label>
-                <p className="text-sm">
+                <Label className="text-muted-foreground">Organization Name</Label>
+                <p className="text-sm mt-1">
                   {(membership.organizations as unknown as { name: string })?.name || "Unknown"}
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Role</label>
-                <p className="text-sm capitalize">{membership.role}</p>
+                <Label className="text-muted-foreground">Role</Label>
+                <p className="text-sm mt-1 capitalize">{membership.role}</p>
               </div>
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Account</CardTitle>
+            <CardDescription>Manage your account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SignOutButton />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
