@@ -56,7 +56,7 @@ export async function getOrCreateDefaultOrganization() {
     .single();
 
   if (membership?.organizations) {
-    return membership.organizations as { id: string; name: string };
+    return membership.organizations as unknown as { id: string; name: string };
   }
 
   // Check/create user profile first
