@@ -12,7 +12,7 @@ export default function HomePage() {
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center">
-            <Logo size="md" />
+            <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
