@@ -6,7 +6,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function createOrganization(name: string, userId: string) {
   // Use service client to bypass RLS for initial organization setup
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
 
   // Create the organization
   const { data: org, error: orgError } = await supabase
@@ -45,7 +45,7 @@ export async function getOrCreateDefaultOrganization() {
   }
 
   // Use service client to check membership (bypass RLS)
-  const serviceSupabase = await createServiceClient();
+  const serviceSupabase = createServiceClient();
 
   // Check if user already has an organization
   const { data: membership } = await serviceSupabase
