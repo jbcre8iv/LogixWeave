@@ -15,15 +15,9 @@ export async function GET() {
     }
 
     // Get pending invites (shares where accepted_at is null)
-    const { data: invites, error } = await supabase
+    const { data: shares, error } = await supabase
       .from("project_shares")
-      .select(`
-        id,
-        permission,
-        created_at,
-        project:project_id(id, name),
-        inviter:invited_by(full_name, email)
-      `)
+      .select("id, permission, created_at, project_id, invited_by")
       .or(`shared_with_user_id.eq.${user.id},shared_with_email.eq.${user.email}`)
       .is("accepted_at", null)
       .order("created_at", { ascending: false });
@@ -32,7 +26,25 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(invites || []);
+    // Fetch project and inviter info using security definer functions
+    const invites = await Promise.all(
+      (shares || []).map(async (share) => {
+        const [projectResult, inviterResult] = await Promise.all([
+          supabase.rpc("get_project_info_for_invite", { project_uuid: share.project_id }),
+          supabase.rpc("get_inviter_info", { inviter_uuid: share.invited_by }),
+        ]);
+
+        return {
+          id: share.id,
+          permission: share.permission,
+          created_at: share.created_at,
+          project: projectResult.data?.[0] || null,
+          inviter: inviterResult.data?.[0] || null,
+        };
+      })
+    );
+
+    return NextResponse.json(invites);
   } catch (error) {
     console.error("Get invites error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
