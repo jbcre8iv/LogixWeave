@@ -116,44 +116,83 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Card>
         </Link>
 
-        <Link href={`/dashboard/projects/${projectId}/tags`}>
-          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+        {tagCount > 0 ? (
+          <Link href={`/dashboard/projects/${projectId}/tags`}>
+            <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tags</CardTitle>
+                <Tags className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{tagCount}</div>
+                <p className="text-xs text-muted-foreground">Total tags parsed</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card className="opacity-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Tags</CardTitle>
               <Tags className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{tagCount}</div>
-              <p className="text-xs text-muted-foreground">Total tags parsed</p>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Upload files to parse tags</p>
             </CardContent>
           </Card>
-        </Link>
+        )}
 
-        <Link href={`/dashboard/projects/${projectId}/routines`}>
-          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+        {routineCount > 0 ? (
+          <Link href={`/dashboard/projects/${projectId}/routines`}>
+            <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Routines</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{routineCount}</div>
+                <p className="text-xs text-muted-foreground">Programs/routines found</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card className="opacity-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Routines</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{routineCount}</div>
-              <p className="text-xs text-muted-foreground">Programs/routines found</p>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Upload files to parse routines</p>
             </CardContent>
           </Card>
-        </Link>
+        )}
 
-        <Link href={`/dashboard/projects/${projectId}/io-mapping`}>
-          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+        {moduleCount > 0 ? (
+          <Link href={`/dashboard/projects/${projectId}/io-mapping`}>
+            <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">I/O Modules</CardTitle>
+                <HardDrive className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{moduleCount}</div>
+                <p className="text-xs text-muted-foreground">Hardware modules</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card className="opacity-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">I/O Modules</CardTitle>
               <HardDrive className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{moduleCount}</div>
-              <p className="text-xs text-muted-foreground">Hardware modules</p>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Upload files to parse I/O</p>
             </CardContent>
           </Card>
-        </Link>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
