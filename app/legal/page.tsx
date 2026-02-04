@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LifeBuoy } from "lucide-react";
 
 export default function LegalPage() {
   return (
@@ -14,6 +14,11 @@ export default function LegalPage() {
             <Logo size="lg" />
           </Link>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" asChild>
+              <a href="mailto:support@jbcre8iv.com" title="Contact Support">
+                <LifeBuoy className="h-5 w-5" />
+              </a>
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" asChild>
               <Link href="/login">Sign in</Link>
@@ -36,7 +41,7 @@ export default function LegalPage() {
         <section className="mb-12 p-6 bg-muted/50 rounded-lg border">
           <h2 className="text-xl font-bold mb-3">Disclaimer</h2>
           <p className="text-muted-foreground">
-            LogixWeave is an independent software tool developed by Justin Bush. <strong>LogixWeave is not
+            LogixWeave is an independent software tool developed by Justin Bush | JB CRE8IV. <strong>LogixWeave is not
             affiliated with, endorsed by, sponsored by, or in any way officially connected with Rockwell
             Automation, Inc., or any of its subsidiaries or affiliates.</strong>
           </p>
@@ -288,8 +293,10 @@ export default function LegalPage() {
 
             <h3 className="text-lg font-semibold mt-6">9. Contact Us</h3>
             <p className="text-muted-foreground">
-              If you have any questions about this Privacy Policy, please contact us at the email address
-              associated with your account.
+              If you have any questions about this Privacy Policy, please contact us at{" "}
+              <a href="mailto:support@jbcre8iv.com" className="text-primary hover:underline">
+                support@jbcre8iv.com
+              </a>.
             </p>
           </div>
         </section>
@@ -298,10 +305,13 @@ export default function LegalPage() {
         <section className="border-t pt-8">
           <h2 className="text-xl font-semibold mb-4">Contact</h2>
           <p className="text-muted-foreground">
-            LogixWeave is operated by Justin Bush as an individual.
+            LogixWeave is operated by Justin Bush | JB CRE8IV as an individual.
           </p>
           <p className="text-muted-foreground mt-2">
-            For legal inquiries, please contact through the application.
+            For support or legal inquiries, please contact us at{" "}
+            <a href="mailto:support@jbcre8iv.com" className="text-primary hover:underline">
+              support@jbcre8iv.com
+            </a>.
           </p>
         </section>
       </main>

@@ -15,7 +15,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
-import { LogOut, User, Settings, Scale } from "lucide-react";
+import { LogOut, User, Settings, Scale, LifeBuoy } from "lucide-react";
 
 interface HeaderProps {
   user: {
@@ -50,6 +50,11 @@ export function Header({ user }: HeaderProps) {
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" asChild>
+          <a href="mailto:support@jbcre8iv.com" title="Contact Support">
+            <LifeBuoy className="h-5 w-5" />
+          </a>
+        </Button>
         <NotificationsDropdown />
         <ThemeToggle />
         <DropdownMenu>
