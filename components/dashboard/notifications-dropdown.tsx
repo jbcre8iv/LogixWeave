@@ -11,12 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Share2, FolderOpen, Check, Loader2 } from "lucide-react";
+import { Bell, Share2, FolderOpen, Check, Loader2, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Notification {
   id: string;
-  type: "project_shared" | "project_updated" | "share_accepted" | "general";
+  type: "project_shared" | "project_updated" | "share_accepted" | "general" | "project_activity";
   title: string;
   message: string | null;
   link: string | null;
@@ -88,6 +88,10 @@ export function NotificationsDropdown() {
         return <Share2 className="h-4 w-4 text-blue-500" />;
       case "project_updated":
         return <FolderOpen className="h-4 w-4 text-green-500" />;
+      case "project_activity":
+        return <Activity className="h-4 w-4 text-purple-500" />;
+      case "share_accepted":
+        return <Share2 className="h-4 w-4 text-green-500" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
