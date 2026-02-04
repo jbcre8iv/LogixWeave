@@ -109,6 +109,9 @@ export function LoginForm() {
               Sign up
             </Link>
           </p>
+          <Link href="/legal" className="text-xs text-muted-foreground hover:text-primary hover:underline">
+            Terms & Privacy
+          </Link>
         </CardFooter>
       </form>
     </Card>
