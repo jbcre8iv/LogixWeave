@@ -244,7 +244,7 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
                       value={share.permission}
                       onValueChange={(v) => handleUpdatePermission(share.id, v as "view" | "edit" | "owner")}
                     >
-                      <SelectTrigger className="h-8 w-[120px] text-xs">
+                      <SelectTrigger className="h-8 w-auto min-w-fit text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
