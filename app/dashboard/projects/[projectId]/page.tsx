@@ -103,27 +103,31 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Files</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{project.project_files?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">L5X/L5K files uploaded</p>
-          </CardContent>
-        </Card>
+        <Link href={`/dashboard/projects/${projectId}/files`}>
+          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Files</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{project.project_files?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">L5X/L5K files uploaded</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tags</CardTitle>
-            <Tags className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{tagCount}</div>
-            <p className="text-xs text-muted-foreground">Total tags parsed</p>
-          </CardContent>
-        </Card>
+        <Link href={`/dashboard/projects/${projectId}/tags`}>
+          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tags</CardTitle>
+              <Tags className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{tagCount}</div>
+              <p className="text-xs text-muted-foreground">Total tags parsed</p>
+            </CardContent>
+          </Card>
+        </Link>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -136,16 +140,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">I/O Modules</CardTitle>
-            <HardDrive className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{moduleCount}</div>
-            <p className="text-xs text-muted-foreground">Hardware modules</p>
-          </CardContent>
-        </Card>
+        <Link href={`/dashboard/projects/${projectId}/io`}>
+          <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">I/O Modules</CardTitle>
+              <HardDrive className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{moduleCount}</div>
+              <p className="text-xs text-muted-foreground">Hardware modules</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -235,14 +241,24 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </p>
               </div>
             </div>
-            {tagCount > 0 && (
-              <div className="pt-4">
-                <Button asChild variant="outline" className="w-full">
-                  <Link href={`/dashboard/projects/${projectId}/tags`}>
-                    <Tags className="mr-2 h-4 w-4" />
-                    Browse Tags
-                  </Link>
-                </Button>
+            {(tagCount > 0 || moduleCount > 0) && (
+              <div className="pt-4 space-y-2">
+                {tagCount > 0 && (
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href={`/dashboard/projects/${projectId}/tags`}>
+                      <Tags className="mr-2 h-4 w-4" />
+                      Browse Tags
+                    </Link>
+                  </Button>
+                )}
+                {moduleCount > 0 && (
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href={`/dashboard/projects/${projectId}/io`}>
+                      <HardDrive className="mr-2 h-4 w-4" />
+                      Explore I/O
+                    </Link>
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
