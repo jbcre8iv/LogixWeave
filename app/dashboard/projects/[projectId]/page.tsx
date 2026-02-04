@@ -12,6 +12,9 @@ import {
   HardDrive,
   Calendar,
   User,
+  Eye,
+  Pencil,
+  Crown,
 } from "lucide-react";
 import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
@@ -48,6 +51,24 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   const isOwner = project.created_by === user?.id;
+
+  // Check user's permission level
+  let userPermission: "owner" | "edit" | "view" | null = isOwner ? "owner" : null;
+  let canEdit = isOwner;
+
+  if (!isOwner && user) {
+    const { data: share } = await supabase
+      .from("project_shares")
+      .select("permission")
+      .eq("project_id", projectId)
+      .or(`shared_with_user_id.eq.${user.id},shared_with_email.eq.${user.email}`)
+      .single();
+
+    if (share) {
+      userPermission = share.permission as "owner" | "edit" | "view";
+      canEdit = share.permission === "edit" || share.permission === "owner";
+    }
+  }
 
   // Get tag and routine counts
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
@@ -98,13 +119,30 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild className="flex-1 sm:flex-none">
-            <Link href={`/dashboard/projects/${projectId}/files`}>
-              <Upload className="mr-2 h-4 w-4" />
-              Manage Files
-            </Link>
-          </Button>
-          {isOwner && (
+          {/* Show permission badge for non-owners */}
+          {!isOwner && userPermission && (
+            <Badge
+              variant={userPermission === "owner" ? "default" : userPermission === "edit" ? "secondary" : "outline"}
+              className="text-sm py-1.5 px-3"
+            >
+              {userPermission === "owner" ? (
+                <><Crown className="h-3 w-3 mr-1" /> Co-Owner</>
+              ) : userPermission === "edit" ? (
+                <><Pencil className="h-3 w-3 mr-1" /> Can Edit</>
+              ) : (
+                <><Eye className="h-3 w-3 mr-1" /> View Only</>
+              )}
+            </Badge>
+          )}
+          {canEdit && (
+            <Button asChild className="flex-1 sm:flex-none">
+              <Link href={`/dashboard/projects/${projectId}/files`}>
+                <Upload className="mr-2 h-4 w-4" />
+                Manage Files
+              </Link>
+            </Button>
+          )}
+          {(isOwner || userPermission === "owner") && (
             <>
               <ShareProjectDialog projectId={projectId} projectName={project.name} />
               <DeleteProjectButton projectId={projectId} projectName={project.name} />

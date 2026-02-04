@@ -20,12 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Share2, Loader2, X, UserPlus, Eye, Pencil } from "lucide-react";
+import { Share2, Loader2, X, UserPlus, Eye, Pencil, Crown } from "lucide-react";
 
 interface Share {
   id: string;
   shared_with_email: string;
-  permission: "view" | "edit";
+  permission: "view" | "edit" | "owner";
   created_at: string;
   accepted_at: string | null;
 }
@@ -39,7 +39,7 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [permission, setPermission] = useState<"view" | "edit">("view");
+  const [permission, setPermission] = useState<"view" | "edit" | "owner">("view");
   const [shares, setShares] = useState<Share[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingShares, setIsLoadingShares] = useState(false);
@@ -147,7 +147,7 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
             <div className="flex gap-2">
               <Select
                 value={permission}
-                onValueChange={(v) => setPermission(v as "view" | "edit")}
+                onValueChange={(v) => setPermission(v as "view" | "edit" | "owner")}
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
@@ -163,6 +163,12 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
                     <div className="flex items-center gap-2">
                       <Pencil className="h-3 w-3" />
                       Can edit
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="owner">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-3 w-3" />
+                      Owner
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -210,13 +216,17 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
                         {share.shared_with_email}
                       </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        {share.permission === "view" ? (
+                        {share.permission === "owner" ? (
                           <>
-                            <Eye className="h-3 w-3" /> Can view
+                            <Crown className="h-3 w-3 text-yellow-500" /> Owner
+                          </>
+                        ) : share.permission === "edit" ? (
+                          <>
+                            <Pencil className="h-3 w-3" /> Can edit
                           </>
                         ) : (
                           <>
-                            <Pencil className="h-3 w-3" /> Can edit
+                            <Eye className="h-3 w-3" /> Can view
                           </>
                         )}
                         {!share.accepted_at && (
