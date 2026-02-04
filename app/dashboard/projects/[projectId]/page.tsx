@@ -77,22 +77,23 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
+      {/* Header - stacks on mobile */}
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" asChild className="shrink-0 mt-1">
             <Link href="/dashboard/projects">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{project.name}</h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold break-words">{project.name}</h1>
             {project.description && (
-              <p className="text-muted-foreground">{project.description}</p>
+              <p className="text-muted-foreground text-sm md:text-base">{project.description}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild>
+          <Button asChild className="flex-1 sm:flex-none">
             <Link href={`/dashboard/projects/${projectId}/files`}>
               <Upload className="mr-2 h-4 w-4" />
               Manage Files
