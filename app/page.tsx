@@ -4,8 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui/logo";
 import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2, HelpCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const supportEmail = user
+    ? `mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email || "")}`
+    : "mailto:support@jbcre8iv.com";
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -16,7 +23,7 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <a href="mailto:support@jbcre8iv.com">
+              <a href={supportEmail}>
                 <HelpCircle className="h-4 w-4 mr-1" />
                 Support
               </a>

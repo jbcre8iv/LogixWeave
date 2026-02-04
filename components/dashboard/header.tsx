@@ -51,7 +51,7 @@ export function Header({ user }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <a href="mailto:support@jbcre8iv.com">
+          <a href={`mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email)}`}>
             <HelpCircle className="h-4 w-4 mr-1" />
             Support
           </a>
