@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FolderOpen, Tags, HardDrive, FileCode2, Plus, ArrowRight, Users } from "lucide-react";
+import { PendingInvites } from "@/components/dashboard/pending-invites";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,7 +25,7 @@ export default async function DashboardPage() {
     .order("updated_at", { ascending: false })
     .limit(5);
 
-  // Get shared projects
+  // Get shared projects (only accepted invites)
   const { data: sharedProjects } = await supabase
     .from("project_shares")
     .select(`
@@ -32,7 +33,15 @@ export default async function DashboardPage() {
       projects:project_id(id, name, updated_at)
     `)
     .or(`shared_with_user_id.eq.${user?.id},shared_with_email.eq.${user?.email}`)
+    .not("accepted_at", "is", null)
     .limit(5);
+
+  // Get pending invites count
+  const { count: pendingInvitesCount } = await supabase
+    .from("project_shares")
+    .select("*", { count: "exact", head: true })
+    .or(`shared_with_user_id.eq.${user?.id},shared_with_email.eq.${user?.email}`)
+    .is("accepted_at", null);
 
   return (
     <div className="space-y-8">
@@ -120,6 +129,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Invites - shows if user has any */}
+      <PendingInvites />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>

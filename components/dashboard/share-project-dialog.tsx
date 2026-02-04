@@ -113,6 +113,25 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
     }
   };
 
+  const handleUpdatePermission = async (shareId: string, newPermission: "view" | "edit" | "owner") => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/shares`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shareId, permission: newPermission }),
+      });
+
+      if (response.ok) {
+        setShares(shares.map((s) =>
+          s.id === shareId ? { ...s, permission: newPermission } : s
+        ));
+        router.refresh();
+      }
+    } catch {
+      console.error("Failed to update permission");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -201,48 +220,63 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
               This project isn't shared with anyone yet
             </p>
           ) : (
-            <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+            <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
               {shares.map((share) => (
                 <div
                   key={share.id}
-                  className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                  className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/50"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
                       {share.shared_with_email[0].toUpperCase()}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">
                         {share.shared_with_email}
                       </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        {share.permission === "owner" ? (
-                          <>
-                            <Crown className="h-3 w-3 text-yellow-500" /> Owner
-                          </>
-                        ) : share.permission === "edit" ? (
-                          <>
-                            <Pencil className="h-3 w-3" /> Can edit
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="h-3 w-3" /> Can view
-                          </>
-                        )}
-                        {!share.accepted_at && (
-                          <span className="ml-2 text-yellow-600">(pending)</span>
-                        )}
-                      </p>
+                      {!share.accepted_at && (
+                        <p className="text-xs text-yellow-600">Pending invite</p>
+                      )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    onClick={() => handleRemoveShare(share.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Select
+                      value={share.permission}
+                      onValueChange={(v) => handleUpdatePermission(share.id, v as "view" | "edit" | "owner")}
+                    >
+                      <SelectTrigger className="h-8 w-[110px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="view">
+                          <div className="flex items-center gap-2">
+                            <Eye className="h-3 w-3" />
+                            Can view
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="edit">
+                          <div className="flex items-center gap-2">
+                            <Pencil className="h-3 w-3" />
+                            Can edit
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="owner">
+                          <div className="flex items-center gap-2">
+                            <Crown className="h-3 w-3" />
+                            Owner
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRemoveShare(share.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

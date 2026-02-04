@@ -20,6 +20,7 @@ import { DeleteProjectButton } from "@/components/dashboard/delete-project-butto
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
 import { RequestPermissionDialog } from "@/components/dashboard/request-permission-dialog";
 import { PermissionRequestsList } from "@/components/dashboard/permission-requests-list";
+import { ProjectInvitePrompt } from "@/components/dashboard/project-invite-prompt";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -57,19 +58,42 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   // Check user's permission level
   let userPermission: "owner" | "edit" | "view" | null = isOwner ? "owner" : null;
   let canEdit = isOwner;
+  let pendingShareId: string | null = null;
 
   if (!isOwner && user) {
     const { data: share } = await supabase
       .from("project_shares")
-      .select("permission")
+      .select("id, permission, accepted_at")
       .eq("project_id", projectId)
       .or(`shared_with_user_id.eq.${user.id},shared_with_email.eq.${user.email}`)
       .single();
 
     if (share) {
-      userPermission = share.permission as "owner" | "edit" | "view";
-      canEdit = share.permission === "edit" || share.permission === "owner";
+      if (share.accepted_at) {
+        // User has accepted the invite
+        userPermission = share.permission as "owner" | "edit" | "view";
+        canEdit = share.permission === "edit" || share.permission === "owner";
+      } else {
+        // User has a pending invite
+        pendingShareId = share.id;
+      }
     }
+  }
+
+  // If user has no access and no pending invite, show not found
+  if (!isOwner && !userPermission && !pendingShareId) {
+    notFound();
+  }
+
+  // Show invite prompt if user has pending invite
+  if (pendingShareId) {
+    return (
+      <ProjectInvitePrompt
+        projectId={projectId}
+        projectName={project.name}
+        shareId={pendingShareId}
+      />
+    );
   }
 
   // Get tag and routine counts

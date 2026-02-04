@@ -95,7 +95,7 @@ export async function POST(request: Request, context: RouteContext) {
       .eq("email", normalizedEmail)
       .single();
 
-    // Create the share
+    // Create the share (accepted_at is null until user accepts)
     const { data: share, error } = await supabase
       .from("project_shares")
       .insert({
@@ -104,7 +104,7 @@ export async function POST(request: Request, context: RouteContext) {
         shared_with_user_id: existingUser?.id || null,
         permission,
         invited_by: user.id,
-        accepted_at: existingUser ? new Date().toISOString() : null,
+        accepted_at: null, // User must accept the invite
       })
       .select()
       .single();
@@ -122,6 +122,60 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json(share);
   } catch (error) {
     console.error("Create share error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// Update a share's permission
+export async function PATCH(request: Request, context: RouteContext) {
+  try {
+    const { projectId } = await context.params;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify user owns the project
+    const { data: project } = await supabase
+      .from("projects")
+      .select("created_by")
+      .eq("id", projectId)
+      .single();
+
+    if (!project || project.created_by !== user.id) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
+    const { shareId, permission } = await request.json();
+
+    if (!shareId) {
+      return NextResponse.json({ error: "Share ID is required" }, { status: 400 });
+    }
+
+    if (!permission || !["view", "edit", "owner"].includes(permission)) {
+      return NextResponse.json({ error: "Invalid permission" }, { status: 400 });
+    }
+
+    const { data: updatedShare, error } = await supabase
+      .from("project_shares")
+      .update({ permission })
+      .eq("id", shareId)
+      .eq("project_id", projectId)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(updatedShare);
+  } catch (error) {
+    console.error("Update share error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

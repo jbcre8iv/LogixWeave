@@ -32,10 +32,7 @@ export async function GET(request: Request, context: RouteContext) {
       // Get all pending requests for the project
       const { data: requests, error } = await supabase
         .from("permission_requests")
-        .select(`
-          *,
-          requester:requester_id(full_name, email)
-        `)
+        .select("*")
         .eq("project_id", projectId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -44,7 +41,23 @@ export async function GET(request: Request, context: RouteContext) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ requests: requests || [], isOwner: true });
+      // Fetch requester profiles separately
+      const requestsWithProfiles = await Promise.all(
+        (requests || []).map(async (req) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("id", req.requester_id)
+            .single();
+
+          return {
+            ...req,
+            requester: profile || { full_name: null, email: "Unknown" },
+          };
+        })
+      );
+
+      return NextResponse.json({ requests: requestsWithProfiles, isOwner: true });
     } else {
       // Get user's own request for this project
       const { data: request, error } = await supabase
