@@ -30,7 +30,7 @@ export default async function IOPage({ params, searchParams }: IOPageProps) {
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, project_files(id, original_name)")
+    .select("id, name, project_files(id, file_name)")
     .eq("id", projectId)
     .single();
 
@@ -91,7 +91,7 @@ export default async function IOPage({ params, searchParams }: IOPageProps) {
 
   // Create file ID to name mapping
   const fileMap = new Map(
-    project.project_files?.map((f: { id: string; original_name: string }) => [f.id, f.original_name]) || []
+    project.project_files?.map((f: { id: string; file_name: string }) => [f.id, f.file_name]) || []
   );
 
   // Build query for modules

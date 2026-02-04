@@ -40,12 +40,12 @@ export async function GET(request: Request) {
     // Get project files
     const { data: files } = await supabase
       .from("project_files")
-      .select("id, original_name")
+      .select("id, file_name")
       .eq("project_id", projectId);
 
     const fileIds = (files || []).map((f: { id: string }) => f.id);
     const fileMap = new Map(
-      (files || []).map((f: { id: string; original_name: string }) => [f.id, f.original_name])
+      (files || []).map((f: { id: string; file_name: string }) => [f.id, f.file_name])
     );
 
     if (fileIds.length === 0) {
