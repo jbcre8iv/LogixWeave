@@ -29,12 +29,9 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-24 text-center">
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
           Studio 5000 Toolkit
-          <br />
-          <span className="text-muted-foreground">for Modern Engineers</span>
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Parse L5X/L5K files, explore tags, analyze I/O configurations, and
-          generate documentation for your Rockwell PLC projects.
+          Analyze, document, and collaborate on your PLC projects.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button size="lg" asChild>
@@ -51,7 +48,7 @@ export default function HomePage() {
       {/* Features */}
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-center mb-12">
-          Everything you need to work with Studio 5000 projects
+          LogixWeave will streamline your Studio 5000 productivity and efficiency
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link href="/dashboard/projects">
