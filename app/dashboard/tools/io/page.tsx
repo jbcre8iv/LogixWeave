@@ -1,37 +1,100 @@
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { HardDrive, Construction } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FolderOpen, HardDrive, ArrowRight } from "lucide-react";
 
-export default function IOMapperPage() {
+export default async function GlobalIOPage() {
+  const supabase = await createClient();
+
+  // Get all projects with their file counts
+  const { data: projects } = await supabase
+    .from("projects")
+    .select(`
+      id,
+      name,
+      project_files(id)
+    `)
+    .order("name");
+
+  // Get I/O module counts for each project
+  const projectsWithStats = await Promise.all(
+    (projects || []).map(async (project) => {
+      const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
+      let moduleCount = 0;
+
+      if (fileIds.length > 0) {
+        const { count } = await supabase
+          .from("parsed_io_modules")
+          .select("*", { count: "exact", head: true })
+          .in("file_id", fileIds);
+        moduleCount = count || 0;
+      }
+
+      return {
+        ...project,
+        fileCount: project.project_files?.length || 0,
+        moduleCount,
+      };
+    })
+  );
+
+  const projectsWithModules = projectsWithStats.filter((p) => p.moduleCount > 0);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">I/O Mapping</h1>
         <p className="text-muted-foreground">
-          View and analyze hardware I/O configuration
+          View and analyze hardware I/O configuration across your projects
         </p>
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <div className="relative">
-            <HardDrive className="h-12 w-12 text-muted-foreground mb-4" />
-            <Construction className="h-6 w-6 text-amber-500 absolute -bottom-1 -right-1" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-          <p className="text-muted-foreground mb-4 text-center max-w-md">
-            The I/O Mapping tool is currently under development. It will provide
-            a visual tree view of modules, detailed module-to-tag mapping, and
-            export capabilities.
-          </p>
-          <Button asChild variant="outline">
-            <Link href="/dashboard">
-              Back to Dashboard
+      {projectsWithModules.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {projectsWithModules.map((project) => (
+            <Link key={project.id} href={`/dashboard/projects/${project.id}/io`}>
+              <Card className="h-full transition-colors hover:bg-accent/50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <HardDrive className="h-4 w-4" />
+                        {project.moduleCount} modules
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      Explore <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </Link>
-          </Button>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <HardDrive className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No I/O modules found</h3>
+            <p className="text-muted-foreground mb-4 text-center max-w-md">
+              Upload L5X/L5K files to your projects to start exploring I/O modules.
+              Files are automatically parsed after upload.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/projects">
+                Go to Projects
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
