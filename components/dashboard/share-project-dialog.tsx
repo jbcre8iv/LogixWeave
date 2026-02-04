@@ -140,7 +140,7 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
           Share
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Share "{projectName}"</DialogTitle>
           <DialogDescription>
