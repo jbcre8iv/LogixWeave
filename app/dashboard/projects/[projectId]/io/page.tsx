@@ -17,7 +17,7 @@ interface IOPageProps {
   }>;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 50; // Items per page
 
 export default async function IOPage({ params, searchParams }: IOPageProps) {
   const { projectId } = await params;
