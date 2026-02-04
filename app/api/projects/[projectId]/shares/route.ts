@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
@@ -119,6 +120,18 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Log activity
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "project_shared",
+      targetType: "share",
+      targetId: share.id,
+      targetName: normalizedEmail,
+      metadata: { permission },
+    });
+
     return NextResponse.json(share);
   } catch (error) {
     console.error("Create share error:", error);
@@ -212,6 +225,13 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
+    // Get share details before deleting for logging
+    const { data: shareToDelete } = await supabase
+      .from("project_shares")
+      .select("shared_with_email")
+      .eq("id", shareId)
+      .single();
+
     const { error } = await supabase
       .from("project_shares")
       .delete()
@@ -221,6 +241,17 @@ export async function DELETE(request: Request, context: RouteContext) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Log activity
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "share_revoked",
+      targetType: "share",
+      targetId: shareId,
+      targetName: shareToDelete?.shared_with_email,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

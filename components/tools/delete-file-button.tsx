@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,25 +23,17 @@ export function DeleteFileButton({ fileId, fileName }: DeleteFileButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      // Get file details to find storage path
-      const { data: file } = await supabase
-        .from("project_files")
-        .select("storage_path")
-        .eq("id", fileId)
-        .single();
+      const response = await fetch(`/api/files/${fileId}`, {
+        method: "DELETE",
+      });
 
-      if (file) {
-        // Delete from storage
-        await supabase.storage.from("project-files").remove([file.storage_path]);
+      if (!response.ok) {
+        throw new Error("Failed to delete file");
       }
-
-      // Delete from database (cascades to parsed data)
-      await supabase.from("project_files").delete().eq("id", fileId);
 
       setIsOpen(false);
       router.refresh();

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { parseL5X } from "@/lib/parsers/l5x-parser";
+import { logActivity } from "@/lib/activity-log";
 
 export async function POST(request: Request) {
   try {
@@ -335,6 +336,25 @@ export async function POST(request: Request) {
         .update({ parsing_status: "completed", parsing_error: null })
         .eq("id", fileId);
 
+      // Log activity
+      await logActivity({
+        projectId: file.project_id,
+        userId: user.id,
+        userEmail: user.email,
+        action: "file_parsed",
+        targetType: "file",
+        targetId: fileId,
+        targetName: file.file_name,
+        metadata: {
+          tags: parsed.tags.length,
+          modules: parsed.modules.length,
+          routines: parsed.routines.length,
+          rungs: parsed.rungs.length,
+          udts: parsed.udts.length,
+          aois: parsed.aois.length,
+        },
+      });
+
       return NextResponse.json({
         success: true,
         stats: {
@@ -359,6 +379,18 @@ export async function POST(request: Request) {
           parsing_error: errorMessage,
         })
         .eq("id", fileId);
+
+      // Log activity
+      await logActivity({
+        projectId: file.project_id,
+        userId: user.id,
+        userEmail: user.email,
+        action: "file_parse_failed",
+        targetType: "file",
+        targetId: fileId,
+        targetName: file.file_name,
+        metadata: { error: errorMessage },
+      });
 
       return NextResponse.json(
         { error: errorMessage },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 export async function POST(request: Request) {
   try {
@@ -74,6 +75,18 @@ export async function POST(request: Request) {
       await supabase.storage.from("project-files").remove([storagePath]);
       return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
+
+    // Log activity
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "file_uploaded",
+      targetType: "file",
+      targetId: fileRecord.id,
+      targetName: file.name,
+      metadata: { fileSize: file.size, fileType: extension },
+    });
 
     return NextResponse.json({ file: fileRecord });
   } catch (error) {

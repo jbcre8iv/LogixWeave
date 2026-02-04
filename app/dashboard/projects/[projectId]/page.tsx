@@ -21,6 +21,7 @@ import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog"
 import { RequestPermissionDialog } from "@/components/dashboard/request-permission-dialog";
 import { PermissionRequestsList } from "@/components/dashboard/permission-requests-list";
 import { ProjectInvitePrompt } from "@/components/dashboard/project-invite-prompt";
+import { ActivityLog } from "@/components/projects/activity-log";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -401,6 +402,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Activity Log */}
+      <ActivityLog projectId={projectId} />
     </div>
   );
 }

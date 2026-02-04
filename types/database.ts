@@ -650,6 +650,44 @@ export interface Database {
           created_at?: string;
         };
       };
+      project_activity_log: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string | null;
+          user_email: string | null;
+          action: string;
+          target_type: string | null;
+          target_id: string | null;
+          target_name: string | null;
+          metadata: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id?: string | null;
+          user_email?: string | null;
+          action: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          target_name?: string | null;
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string | null;
+          user_email?: string | null;
+          action?: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          target_name?: string | null;
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

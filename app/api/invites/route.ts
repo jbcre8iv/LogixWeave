@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 // Get pending invites for the current user
 export async function GET() {
@@ -102,6 +103,16 @@ export async function PATCH(request: Request) {
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+
+      // Log activity
+      await logActivity({
+        projectId: share.project_id,
+        userId: user.id,
+        userEmail: user.email,
+        action: "share_accepted",
+        targetType: "share",
+        targetId: shareId,
+      });
 
       return NextResponse.json({ success: true, action: "accepted" });
     } else {
