@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileForm } from "@/components/settings/profile-form";
+import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { Badge } from "@/components/ui/badge";
 import { FolderOpen, FileText, Calendar, Building2 } from "lucide-react";
 
@@ -35,14 +34,6 @@ export default async function ProfilePage() {
     .eq("shared_with_user_id", user?.id)
     .not("accepted_at", "is", null);
 
-  const initials = profile?.full_name
-    ? profile.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-    : user?.email?.[0].toUpperCase() || "?";
-
   return (
     <div className="space-y-6">
       <div>
@@ -61,10 +52,11 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-start gap-6 mb-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || user?.email || ""} />
-                <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-              </Avatar>
+              <AvatarUpload
+                avatarUrl={profile?.avatar_url || null}
+                fullName={profile?.full_name || null}
+                email={user?.email || ""}
+              />
               <div className="space-y-1">
                 <h3 className="text-xl font-semibold">{profile?.full_name || "No name set"}</h3>
                 <p className="text-muted-foreground">{user?.email}</p>
