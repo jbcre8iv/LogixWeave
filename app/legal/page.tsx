@@ -299,7 +299,7 @@ export default function LegalPage() {
         <section className="border-t pt-8">
           <h2 className="text-xl font-semibold mb-4">Contact</h2>
           <p className="text-muted-foreground">
-            LogixWeave is operated by Justin Bush | JB CRE8IV as an individual.
+            LogixWeave is developed and operated by Justin Bush | JB CRE8IV as an individual.
           </p>
           <p className="text-muted-foreground mt-2">
             For support or legal inquiries, please contact us at{" "}
