@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
+import { RequestPermissionDialog } from "@/components/dashboard/request-permission-dialog";
+import { PermissionRequestsList } from "@/components/dashboard/permission-requests-list";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -134,6 +136,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               )}
             </Badge>
           )}
+          {/* Request higher permissions for shared users (not owners) */}
+          {!isOwner && userPermission && userPermission !== "owner" && (
+            <RequestPermissionDialog
+              projectId={projectId}
+              projectName={project.name}
+              currentPermission={userPermission as "view" | "edit"}
+            />
+          )}
           {canEdit && (
             <Button asChild className="flex-1 sm:flex-none">
               <Link href={`/dashboard/projects/${projectId}/files`}>
@@ -150,6 +160,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           )}
         </div>
       </div>
+
+      {/* Permission requests for owners */}
+      {isOwner && (
+        <PermissionRequestsList projectId={projectId} />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link href={`/dashboard/projects/${projectId}/files`}>
