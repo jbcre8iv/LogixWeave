@@ -29,10 +29,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        {/* Blue - Projects */}
+        <Card className="border-l-4 border-l-[#3B82F6] bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2">
+              <FolderOpen className="h-4 w-4 text-[#3B82F6]" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{projectCount || 0}</div>
@@ -42,16 +45,19 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Indigo - Tags */}
+        <Card className="border-l-4 border-l-[#6366F1] bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tag Explorer</CardTitle>
-            <Tags className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-full bg-indigo-100 dark:bg-indigo-900/30 p-2">
+              <Tags className="h-4 w-4 text-[#6366F1]" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-2">
               Search and analyze PLC tags
             </p>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="border-[#6366F1]/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/30">
               <Link href="/dashboard/tools/tags">
                 Open Tool <ArrowRight className="ml-2 h-3 w-3" />
               </Link>
@@ -59,16 +65,19 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Violet - I/O */}
+        <Card className="border-l-4 border-l-[#8B5CF6] bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">I/O Mapping</CardTitle>
-            <HardDrive className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-full bg-violet-100 dark:bg-violet-900/30 p-2">
+              <HardDrive className="h-4 w-4 text-[#8B5CF6]" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-2">
               View hardware configuration
             </p>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="border-[#8B5CF6]/30 hover:bg-violet-50 dark:hover:bg-violet-950/30">
               <Link href="/dashboard/tools/io">
                 Open Tool <ArrowRight className="ml-2 h-3 w-3" />
               </Link>
@@ -76,16 +85,19 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Emerald - Compare */}
+        <Card className="border-l-4 border-l-[#10B981] bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Compare</CardTitle>
-            <FileCode2 className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-2">
+              <FileCode2 className="h-4 w-4 text-[#10B981]" />
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-2">
               Compare two L5X projects
             </p>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="border-[#10B981]/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
               <Link href="/dashboard/tools/compare">
                 Open Tool <ArrowRight className="ml-2 h-3 w-3" />
               </Link>
