@@ -140,7 +140,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </CardContent>
         </Card>
 
-        <Link href={`/dashboard/projects/${projectId}/io`}>
+        <Link href={`/dashboard/projects/${projectId}/io-mapping`}>
           <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">I/O Modules</CardTitle>
@@ -253,7 +253,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 )}
                 {moduleCount > 0 && (
                   <Button asChild variant="outline" className="w-full">
-                    <Link href={`/dashboard/projects/${projectId}/io`}>
+                    <Link href={`/dashboard/projects/${projectId}/io-mapping`}>
                       <HardDrive className="mr-2 h-4 w-4" />
                       Explore I/O
                     </Link>
