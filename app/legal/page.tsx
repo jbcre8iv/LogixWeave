@@ -3,7 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ArrowLeft } from "lucide-react";
-export default function LegalPage() {
+import { createClient } from "@/lib/supabase/server";
+
+export default async function LegalPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isLoggedIn = !!user;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -14,18 +20,24 @@ export default function LegalPage() {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button variant="ghost" asChild>
+                <Link href="/dashboard">Back to Dashboard</Link>
+              </Button>
+            ) : (
+              <Button variant="ghost" asChild>
+                <Link href="/login">Sign in</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <Button variant="ghost" size="sm" asChild className="mb-6">
-          <Link href="/">
+          <Link href={isLoggedIn ? "/dashboard" : "/"}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {isLoggedIn ? "Back to Dashboard" : "Back to Home"}
           </Link>
         </Button>
 
