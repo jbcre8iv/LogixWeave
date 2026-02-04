@@ -57,49 +57,57 @@ export default function HomePage() {
           Everything you need to work with Studio 5000 projects
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader>
-              <Upload className="h-10 w-10 text-primary mb-2" />
-              <CardTitle>File Import</CardTitle>
-              <CardDescription>
-                Upload L5X or L5K files exported from Studio 5000. Files are
-                automatically parsed and indexed.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <Link href="/dashboard/projects">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
+              <CardHeader>
+                <Upload className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>File Import</CardTitle>
+                <CardDescription>
+                  Upload L5X or L5K files exported from Studio 5000. Files are
+                  automatically parsed and indexed.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader>
-              <Tags className="h-10 w-10 text-primary mb-2" />
-              <CardTitle>Tag Explorer</CardTitle>
-              <CardDescription>
-                Search, filter, and export all tags. View data types, scopes,
-                descriptions, and usage across programs.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <Link href="/dashboard/tools/tags">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
+              <CardHeader>
+                <Tags className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>Tag Explorer</CardTitle>
+                <CardDescription>
+                  Search, filter, and export all tags. View data types, scopes,
+                  descriptions, and usage across programs.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader>
-              <HardDrive className="h-10 w-10 text-primary mb-2" />
-              <CardTitle>I/O Mapping</CardTitle>
-              <CardDescription>
-                Visualize hardware configuration with module trees, slot mappings,
-                and channel assignments.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <Link href="/dashboard/tools/io">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
+              <CardHeader>
+                <HardDrive className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>I/O Mapping</CardTitle>
+                <CardDescription>
+                  Visualize hardware configuration with module trees, slot mappings,
+                  and channel assignments.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader>
-              <FileCode2 className="h-10 w-10 text-primary mb-2" />
-              <CardTitle>Project Compare</CardTitle>
-              <CardDescription>
-                Compare two L5X files side by side. See differences in tags,
-                routines, and modules at a glance.
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          <Link href="/dashboard/tools/compare">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
+              <CardHeader>
+                <FileCode2 className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>Project Compare</CardTitle>
+                <CardDescription>
+                  Compare two L5X files side by side. See differences in tags,
+                  routines, and modules at a glance.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
         </div>
       </section>
 
