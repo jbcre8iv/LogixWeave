@@ -11,7 +11,6 @@ import {
   Tags,
   HardDrive,
   Calendar,
-  User,
   Eye,
   Pencil,
   Crown,
@@ -23,6 +22,7 @@ import { PermissionRequestsList } from "@/components/dashboard/permission-reques
 import { ProjectInvitePrompt } from "@/components/dashboard/project-invite-prompt";
 import { ActivityLog } from "@/components/projects/activity-log";
 import { ActivitySummaryBanner } from "@/components/projects/activity-summary-banner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -38,7 +38,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     .from("projects")
     .select(`
       *,
-      profiles:created_by(full_name, email),
+      profiles:created_by(full_name, email, avatar_url),
       project_files(
         id,
         file_name,
@@ -125,9 +125,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     moduleCount = modulesResult.count || 0;
   }
 
-  const creatorName = (project.profiles as { full_name?: string; email?: string })?.full_name ||
-                      (project.profiles as { full_name?: string; email?: string })?.email ||
-                      "Unknown";
+  const creatorProfile = project.profiles as { full_name?: string; email?: string; avatar_url?: string } | null;
+  const creatorName = creatorProfile?.full_name || creatorProfile?.email || "Unknown";
+  const creatorAvatar = creatorProfile?.avatar_url || null;
+  const creatorInitials = creatorProfile?.full_name
+    ? creatorProfile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase()
+    : creatorProfile?.email?.[0].toUpperCase() || "?";
 
   return (
     <div className="space-y-6">
@@ -351,7 +354,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
-              <User className="h-4 w-4 text-muted-foreground" />
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={creatorAvatar || undefined} alt={creatorName} />
+                <AvatarFallback className="text-sm">{creatorInitials}</AvatarFallback>
+              </Avatar>
               <div>
                 <p className="text-sm text-muted-foreground">Created by</p>
                 <p className="font-medium">{creatorName}</p>
