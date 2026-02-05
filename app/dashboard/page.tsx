@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FolderOpen, Tags, HardDrive, Sparkles, Plus, ArrowRight, Users } from "lucide-react";
 import { PendingInvites } from "@/components/dashboard/pending-invites";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -132,6 +133,9 @@ export default async function DashboardPage() {
 
       {/* Pending Invites - shows if user has any */}
       <PendingInvites />
+
+      {/* Recent Activity - shows if there's any activity */}
+      <RecentActivity />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
