@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui/logo";
-import { Tags, HardDrive, FileCode2, Upload, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Tags, HardDrive, Sparkles, Upload, ArrowRight, CheckCircle2 } from "lucide-react";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
@@ -90,14 +90,14 @@ export default function HomePage() {
             </Card>
           </Link>
 
-          <Link href="/dashboard/tools/compare">
+          <Link href="/dashboard/tools/ai">
             <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
               <CardHeader>
-                <FileCode2 className="h-10 w-10 text-primary mb-2" />
-                <CardTitle>Project Compare</CardTitle>
+                <Sparkles className="h-10 w-10 text-primary mb-2" />
+                <CardTitle>AI Assistant</CardTitle>
                 <CardDescription>
-                  Compare two L5X files side by side. See differences in tags,
-                  routines, and modules at a glance.
+                  Get plain-English explanations of ladder logic, find potential
+                  issues, and search your project using natural language.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -115,12 +115,12 @@ export default function HomePage() {
               </h2>
               <ul className="space-y-4">
                 {[
+                  "AI-powered logic explanations in plain English",
+                  "Find unused tags and potential issues automatically",
+                  "Natural language search across your projects",
+                  "Export documentation to CSV, PDF, or Markdown",
+                  "Secure cloud storage with team collaboration",
                   "No installation required - works in your browser",
-                  "Secure cloud storage for your project files",
-                  "Export to CSV, PDF, or Markdown",
-                  "Team collaboration with organizations",
-                  "Fast search across thousands of tags",
-                  "Cross-reference tags with routines",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5" />

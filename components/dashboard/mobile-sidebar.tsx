@@ -27,7 +27,7 @@ export function MobileSidebar() {
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center border-b px-4">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center"
               onClick={() => setOpen(false)}
             >
