@@ -30,8 +30,8 @@ const tools = [
   { name: "UDTs", globalHref: "/dashboard/tools/udts", projectHref: "/udts", icon: Layers },
   { name: "AOIs", globalHref: "/dashboard/tools/aois", projectHref: "/aois", icon: Package },
   { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3 },
-  { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
   { name: "Project Compare", globalHref: "/dashboard/tools/compare", projectHref: null, icon: FileCode2 }, // Always global
+  { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
 ];
 
 // Extract project ID from pathname if on a project page
