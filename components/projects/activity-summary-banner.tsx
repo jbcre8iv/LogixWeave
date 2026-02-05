@@ -3,29 +3,76 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Bell, Loader2 } from "lucide-react";
+import { X, Bell, ChevronDown, ChevronUp, Upload, Share2, UserPlus, FileText, Trash2, Settings } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface ActivitySummaryBannerProps {
   projectId: string;
 }
 
+interface Activity {
+  id: string;
+  action: string;
+  user_email: string | null;
+  target_name: string | null;
+  created_at: string;
+}
+
 interface SummaryResponse {
   summary: string | null;
-  activities: Array<{
-    id: string;
-    action: string;
-    user_email: string | null;
-    target_name: string | null;
-    created_at: string;
-  }>;
+  activities: Activity[];
   since?: string;
+}
+
+// Get icon for activity type
+function getActivityIcon(action: string) {
+  switch (action) {
+    case "file_uploaded":
+    case "file_parsed":
+      return Upload;
+    case "shared":
+      return Share2;
+    case "share_accepted":
+      return UserPlus;
+    case "file_deleted":
+      return Trash2;
+    case "project_updated":
+      return Settings;
+    default:
+      return FileText;
+  }
+}
+
+// Format activity description with user name
+function formatActivityDescription(activity: Activity): string {
+  const userName = activity.user_email?.split("@")[0] || "Someone";
+
+  switch (activity.action) {
+    case "file_uploaded":
+      return `${userName} uploaded ${activity.target_name || "a file"}`;
+    case "file_parsed":
+      return `${userName} parsed ${activity.target_name || "a file"}`;
+    case "shared":
+      return `${userName} shared the project with ${activity.target_name || "a team member"}`;
+    case "share_accepted":
+      return `${userName} accepted the share invitation`;
+    case "file_deleted":
+      return `${userName} deleted ${activity.target_name || "a file"}`;
+    case "project_updated":
+      return `${userName} updated project settings`;
+    case "permission_changed":
+      return `${userName} changed permissions for ${activity.target_name || "a member"}`;
+    default:
+      return `${userName} ${activity.action.replace(/_/g, " ")}`;
+  }
 }
 
 export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps) {
   const [summary, setSummary] = useState<string | null>(null);
-  const [activityCount, setActivityCount] = useState(0);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -34,7 +81,7 @@ export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps)
         if (response.ok) {
           const data: SummaryResponse = await response.json();
           setSummary(data.summary);
-          setActivityCount(data.activities?.length || 0);
+          setActivities(data.activities || []);
         }
       } catch (error) {
         console.error("Failed to fetch activity summary:", error);
@@ -47,7 +94,7 @@ export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps)
   }, [projectId]);
 
   // Don't show if loading, dismissed, or no summary
-  if (loading || dismissed || !summary) {
+  if (loading || dismissed || !summary || activities.length === 0) {
     return null;
   }
 
@@ -59,12 +106,54 @@ export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps)
             <Bell className="h-4 w-4 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium mb-1">
-              {activityCount} update{activityCount !== 1 ? "s" : ""} since your last visit
-            </p>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-medium">
+                {activities.length} update{activities.length !== 1 ? "s" : ""} since your last visit
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="h-3 w-3 mr-1" />
+                    Hide details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3 mr-1" />
+                    View details
+                  </>
+                )}
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground">
               {summary}
             </p>
+
+            {/* Expanded activity list */}
+            {expanded && (
+              <div className="mt-4 space-y-2 border-t pt-3">
+                {activities.map((activity) => {
+                  const Icon = getActivityIcon(activity.action);
+                  return (
+                    <div key={activity.id} className="flex items-start gap-2 text-sm">
+                      <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-foreground">
+                          {formatActivityDescription(activity)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"

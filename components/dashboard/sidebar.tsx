@@ -22,15 +22,22 @@ const navigation = [
   { name: "Projects", href: "/dashboard/projects", icon: FolderOpen },
 ];
 
+// Tools with both global and project-specific paths
 const tools = [
-  { name: "Tag Explorer", href: "/dashboard/tools/tags", icon: Tags },
-  { name: "I/O Mapping", href: "/dashboard/tools/io", icon: HardDrive },
-  { name: "UDTs", href: "/dashboard/tools/udts", icon: Layers },
-  { name: "AOIs", href: "/dashboard/tools/aois", icon: Package },
-  { name: "Analysis", href: "/dashboard/tools/analysis", icon: BarChart3 },
-  { name: "AI Assistant", href: "/dashboard/tools/ai", icon: Sparkles, isAI: true },
-  { name: "Project Compare", href: "/dashboard/tools/compare", icon: FileCode2 },
+  { name: "Tag Explorer", globalHref: "/dashboard/tools/tags", projectHref: "/tags", icon: Tags },
+  { name: "I/O Mapping", globalHref: "/dashboard/tools/io", projectHref: "/io-mapping", icon: HardDrive },
+  { name: "UDTs", globalHref: "/dashboard/tools/udts", projectHref: "/udts", icon: Layers },
+  { name: "AOIs", globalHref: "/dashboard/tools/aois", projectHref: "/aois", icon: Package },
+  { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3 },
+  { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
+  { name: "Project Compare", globalHref: "/dashboard/tools/compare", projectHref: null, icon: FileCode2 }, // Always global
 ];
+
+// Extract project ID from pathname if on a project page
+function getProjectIdFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/dashboard\/projects\/([^/]+)/);
+  return match ? match[1] : null;
+}
 
 interface SidebarContentProps {
   onNavClick?: () => void;
@@ -38,6 +45,7 @@ interface SidebarContentProps {
 
 export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const pathname = usePathname();
+  const projectId = getProjectIdFromPath(pathname);
 
   return (
     <>
@@ -72,12 +80,23 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           </p>
           <div className="mt-2 space-y-1">
             {tools.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              // Use project-specific href if on a project page and tool supports it
+              const href = projectId && item.projectHref
+                ? `/dashboard/projects/${projectId}${item.projectHref}`
+                : item.globalHref;
+
+              // Check if active (either global or project-specific path)
+              const isActive = pathname === href ||
+                pathname.startsWith(href + "/") ||
+                pathname === item.globalHref ||
+                pathname.startsWith(item.globalHref + "/") ||
+                (projectId && item.projectHref && pathname.startsWith(`/dashboard/projects/${projectId}${item.projectHref}`));
+
               const isAI = "isAI" in item && item.isAI;
               return (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={href}
                   onClick={onNavClick}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
