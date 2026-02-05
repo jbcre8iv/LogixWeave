@@ -63,6 +63,188 @@ interface ProjectListProps {
 
 type SortOption = "updated" | "created" | "name" | "files";
 
+interface ProjectGridCardProps {
+  project: Project;
+  isSelected: boolean;
+  onToggleSelect: (id: string, e?: React.MouseEvent) => void;
+  onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
+  getFileCount: (project: Project) => number;
+}
+
+function ProjectGridCard({
+  project,
+  isSelected,
+  onToggleSelect,
+  onToggleFavorite,
+  getFileCount,
+}: ProjectGridCardProps) {
+  const fileCount = getFileCount(project);
+
+  return (
+    <div className="relative group">
+      <Link href={`/dashboard/projects/${project.id}`}>
+        <Card
+          className={cn(
+            "h-full transition-all hover:bg-accent/50",
+            isSelected && "ring-2 ring-primary bg-accent/30"
+          )}
+        >
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2 pl-6">
+                <FolderOpen className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">{project.name}</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={(e) => onToggleFavorite(project.id, project.is_favorite, e)}
+              >
+                <Star
+                  className={cn(
+                    "h-4 w-4",
+                    project.is_favorite
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground"
+                  )}
+                />
+              </Button>
+            </div>
+            {project.description && (
+              <CardDescription className="line-clamp-2 pl-6">
+                {project.description}
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground pl-6">
+              <div className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                {fileCount} {fileCount === 1 ? "file" : "files"}
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                {new Date(project.updated_at).toLocaleDateString()}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+
+      {/* Checkbox overlay */}
+      <div
+        className={cn(
+          "absolute top-4 left-4 transition-opacity z-10",
+          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
+        onClick={(e) => onToggleSelect(project.id, e)}
+      >
+        <Checkbox
+          checked={isSelected}
+          className="bg-background"
+          aria-label={`Select ${project.name}`}
+        />
+      </div>
+    </div>
+  );
+}
+
+interface ProjectListTableProps {
+  projects: Project[];
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string, e?: React.MouseEvent) => void;
+  onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
+  getFileCount: (project: Project) => number;
+  router: ReturnType<typeof useRouter>;
+}
+
+function ProjectListTable({
+  projects,
+  selectedIds,
+  onToggleSelect,
+  onToggleFavorite,
+  getFileCount,
+  router,
+}: ProjectListTableProps) {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[40px]"></TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="hidden md:table-cell">Description</TableHead>
+            <TableHead className="w-[100px]">Files</TableHead>
+            <TableHead className="w-[120px]">Updated</TableHead>
+            <TableHead className="w-[50px] pr-4"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {projects.map((project) => {
+            const fileCount = getFileCount(project);
+            const isSelected = selectedIds.has(project.id);
+
+            return (
+              <TableRow
+                key={project.id}
+                className={cn(
+                  "cursor-pointer",
+                  isSelected && "bg-accent/50"
+                )}
+                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+              >
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => onToggleSelect(project.id)}
+                    aria-label={`Select ${project.name}`}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {project.is_favorite && (
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 shrink-0" />
+                    )}
+                    <FolderOpen className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-medium">{project.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <span className="text-muted-foreground line-clamp-1">
+                    {project.description || "-"}
+                  </span>
+                </TableCell>
+                <TableCell>{fileCount}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {new Date(project.updated_at).toLocaleDateString()}
+                </TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()} className="pr-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => onToggleFavorite(project.id, project.is_favorite, e)}
+                  >
+                    <Star
+                      className={cn(
+                        "h-4 w-4",
+                        project.is_favorite
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted-foreground"
+                      )}
+                    />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 export function ProjectList({ projects }: ProjectListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -81,7 +263,7 @@ export function ProjectList({ projects }: ProjectListProps) {
   };
 
   // Filter and sort projects
-  const filteredAndSortedProjects = useMemo(() => {
+  const { favoriteProjects, regularProjects, filteredAndSortedProjects } = useMemo(() => {
     let result = [...projects];
 
     // Filter by search query
@@ -94,13 +276,8 @@ export function ProjectList({ projects }: ProjectListProps) {
       );
     }
 
-    // Sort - favorites always first, then by selected criteria
-    result.sort((a, b) => {
-      // Favorites first
-      if (a.is_favorite && !b.is_favorite) return -1;
-      if (!a.is_favorite && b.is_favorite) return 1;
-
-      // Then by selected sort option
+    // Sort by selected criteria
+    const sortFn = (a: Project, b: Project) => {
       let comparison = 0;
       switch (sortBy) {
         case "name":
@@ -116,11 +293,18 @@ export function ProjectList({ projects }: ProjectListProps) {
           comparison = getFileCount(a) - getFileCount(b);
           break;
       }
-
       return sortDesc ? -comparison : comparison;
-    });
+    };
 
-    return result;
+    // Separate favorites and regular projects
+    const favorites = result.filter((p) => p.is_favorite).sort(sortFn);
+    const regular = result.filter((p) => !p.is_favorite).sort(sortFn);
+
+    return {
+      favoriteProjects: favorites,
+      regularProjects: regular,
+      filteredAndSortedProjects: [...favorites, ...regular],
+    };
   }, [projects, searchQuery, sortBy, sortDesc]);
 
   const toggleSelect = (id: string, e?: React.MouseEvent) => {
@@ -361,158 +545,97 @@ export function ProjectList({ projects }: ProjectListProps) {
 
       {/* Grid view */}
       {viewMode === "grid" && filteredAndSortedProjects.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAndSortedProjects.map((project) => {
-            const fileCount = getFileCount(project);
-            const isSelected = selectedIds.has(project.id);
-
-            return (
-              <div key={project.id} className="relative group">
-                <Link href={`/dashboard/projects/${project.id}`}>
-                  <Card
-                    className={cn(
-                      "h-full transition-all hover:bg-accent/50",
-                      isSelected && "ring-2 ring-primary bg-accent/30"
-                    )}
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2 pl-6">
-                          <FolderOpen className="h-5 w-5 text-primary" />
-                          <CardTitle className="text-lg">{project.name}</CardTitle>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={(e) => toggleSingleFavorite(project.id, project.is_favorite, e)}
-                        >
-                          <Star
-                            className={cn(
-                              "h-4 w-4",
-                              project.is_favorite
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                        </Button>
-                      </div>
-                      {project.description && (
-                        <CardDescription className="line-clamp-2 pl-6">
-                          {project.description}
-                        </CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground pl-6">
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          {fileCount} {fileCount === 1 ? "file" : "files"}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(project.updated_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Checkbox overlay */}
-                <div
-                  className={cn(
-                    "absolute top-4 left-4 transition-opacity z-10",
-                    isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  )}
-                  onClick={(e) => toggleSelect(project.id, e)}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    className="bg-background"
-                    aria-label={`Select ${project.name}`}
-                  />
-                </div>
+        <div className="space-y-6">
+          {/* Favorites section */}
+          {favoriteProjects.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Favorites
+                </h2>
               </div>
-            );
-          })}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {favoriteProjects.map((project) => (
+                  <ProjectGridCard
+                    key={project.id}
+                    project={project}
+                    isSelected={selectedIds.has(project.id)}
+                    onToggleSelect={toggleSelect}
+                    onToggleFavorite={toggleSingleFavorite}
+                    getFileCount={getFileCount}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Projects section */}
+          {regularProjects.length > 0 && (
+            <div className="space-y-3">
+              {favoriteProjects.length > 0 && (
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  All Projects
+                </h2>
+              )}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {regularProjects.map((project) => (
+                  <ProjectGridCard
+                    key={project.id}
+                    project={project}
+                    isSelected={selectedIds.has(project.id)}
+                    onToggleSelect={toggleSelect}
+                    onToggleFavorite={toggleSingleFavorite}
+                    getFileCount={getFileCount}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* List view */}
       {viewMode === "list" && filteredAndSortedProjects.length > 0 && (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40px]"></TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Description</TableHead>
-                <TableHead className="w-[100px]">Files</TableHead>
-                <TableHead className="w-[120px]">Updated</TableHead>
-                <TableHead className="w-[50px] pr-4"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAndSortedProjects.map((project) => {
-                const fileCount = getFileCount(project);
-                const isSelected = selectedIds.has(project.id);
+        <div className="space-y-6">
+          {/* Favorites section */}
+          {favoriteProjects.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Favorites
+                </h2>
+              </div>
+              <ProjectListTable
+                projects={favoriteProjects}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleFavorite={toggleSingleFavorite}
+                getFileCount={getFileCount}
+                router={router}
+              />
+            </div>
+          )}
 
-                return (
-                  <TableRow
-                    key={project.id}
-                    className={cn(
-                      "cursor-pointer",
-                      isSelected && "bg-accent/50"
-                    )}
-                    onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                  >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleSelect(project.id)}
-                        aria-label={`Select ${project.name}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {project.is_favorite && (
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 shrink-0" />
-                        )}
-                        <FolderOpen className="h-4 w-4 text-primary shrink-0" />
-                        <span className="font-medium">{project.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <span className="text-muted-foreground line-clamp-1">
-                        {project.description || "-"}
-                      </span>
-                    </TableCell>
-                    <TableCell>{fileCount}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(project.updated_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()} className="pr-4">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => toggleSingleFavorite(project.id, project.is_favorite, e)}
-                      >
-                        <Star
-                          className={cn(
-                            "h-4 w-4",
-                            project.is_favorite
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-muted-foreground"
-                          )}
-                        />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          {/* All Projects section */}
+          {regularProjects.length > 0 && (
+            <div className="space-y-3">
+              {favoriteProjects.length > 0 && (
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  All Projects
+                </h2>
+              )}
+              <ProjectListTable
+                projects={regularProjects}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleFavorite={toggleSingleFavorite}
+                getFileCount={getFileCount}
+                router={router}
+              />
+            </div>
+          )}
         </div>
       )}
 

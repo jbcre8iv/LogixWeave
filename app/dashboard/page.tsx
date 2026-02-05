@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FolderOpen, Tags, HardDrive, FileCode2, Plus, ArrowRight, Users } from "lucide-react";
+import { FolderOpen, Tags, HardDrive, Sparkles, Plus, ArrowRight, Users } from "lucide-react";
 import { PendingInvites } from "@/components/dashboard/pending-invites";
 
 export default async function DashboardPage() {
@@ -109,20 +109,20 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Emerald - Compare */}
-        <Card className="border-l-4 border-l-[#10B981] bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-950/20">
+        {/* Amber - AI Assistant */}
+        <Card className="border-l-4 border-l-[#F59E0B] bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compare</CardTitle>
-            <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-2">
-              <FileCode2 className="h-4 w-4 text-[#10B981]" />
+            <CardTitle className="text-sm font-medium">AI Assistant</CardTitle>
+            <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-2">
+              <Sparkles className="h-4 w-4 text-[#F59E0B]" />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground mb-2">
-              Compare two L5X projects
+              Explain logic in plain English
             </p>
-            <Button variant="outline" size="sm" asChild className="border-[#10B981]/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-              <Link href="/dashboard/tools/compare">
+            <Button variant="outline" size="sm" asChild className="border-[#F59E0B]/30 hover:bg-amber-50 dark:hover:bg-amber-950/30">
+              <Link href="/dashboard/tools/ai">
                 Open Tool <ArrowRight className="ml-2 h-3 w-3" />
               </Link>
             </Button>
@@ -256,7 +256,7 @@ export default async function DashboardPage() {
               <li>
                 <span className="font-medium">Explore and analyze</span>
                 <p className="text-muted-foreground ml-5">
-                  Use tools to search tags, view I/O, compare projects
+                  Search tags, view I/O, get AI explanations
                 </p>
               </li>
               <li>

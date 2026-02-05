@@ -161,9 +161,9 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("AI explain error:", error);
 
-    if (error instanceof Error && error.message.includes("ANTHROPIC_API_KEY")) {
+    if (error instanceof Error && error.message.includes("API_KEY")) {
       return NextResponse.json(
-        { error: "AI features are not configured. Please set up the Anthropic API key." },
+        { error: "AI features are not configured. Please contact support." },
         { status: 503 }
       );
     }

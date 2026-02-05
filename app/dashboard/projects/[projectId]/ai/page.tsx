@@ -90,9 +90,9 @@ export default async function AIPage({ params }: AIPageProps) {
                 <div>
                   <h3 className="font-semibold mb-1">AI-Powered Analysis</h3>
                   <p className="text-sm text-muted-foreground">
-                    Use Claude AI to analyze your PLC code, get explanations of complex logic,
+                    Use AI to analyze your PLC code, get explanations of complex logic,
                     find potential issues, and search your project using natural language.
-                    Results are cached to minimize API usage.
+                    Results are cached for faster repeat queries.
                   </p>
                 </div>
               </div>
