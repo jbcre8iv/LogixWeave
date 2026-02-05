@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Share2, FolderOpen, Check, Loader2, Activity } from "lucide-react";
+import { Bell, Share2, FolderOpen, Check, Loader2, Activity, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Notification {
@@ -82,6 +82,18 @@ export function NotificationsDropdown() {
     }
   };
 
+  const clearAll = async () => {
+    try {
+      await fetch("/api/notifications", {
+        method: "DELETE",
+      });
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to clear notifications:", error);
+    }
+  };
+
   const getIcon = (type: Notification["type"]) => {
     switch (type) {
       case "project_shared":
@@ -128,19 +140,35 @@ export function NotificationsDropdown() {
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.preventDefault();
-                markAllAsRead();
-              }}
-            >
-              <Check className="h-3 w-3 mr-1" />
-              Mark all read
-            </Button>
+          {notifications.length > 0 && (
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    markAllAsRead();
+                  }}
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Mark all read
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  clearAll();
+                }}
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Clear all
+              </Button>
+            </div>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
