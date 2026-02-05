@@ -67,6 +67,7 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Organization section hidden for now - uncomment when team features are needed
         {membership && (
           <Card>
             <CardHeader>
@@ -87,6 +88,7 @@ export default async function SettingsPage() {
             </CardContent>
           </Card>
         )}
+        */}
 
         <Card>
           <CardHeader>
