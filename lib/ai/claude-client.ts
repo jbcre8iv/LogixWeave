@@ -50,6 +50,24 @@ export function generateHash(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex").substring(0, 16);
 }
 
+// Language codes and their display names
+export const AI_LANGUAGES = {
+  en: "English",
+  it: "Italian",
+  es: "Spanish",
+} as const;
+
+export type AILanguage = keyof typeof AI_LANGUAGES;
+
+// Get language instruction to append to prompts
+function getLanguageInstruction(language: AILanguage): string {
+  if (language === "en") {
+    return ""; // No instruction needed for English (default)
+  }
+  const languageName = AI_LANGUAGES[language];
+  return `\n\nIMPORTANT: Respond in ${languageName}. All text content in your response (summaries, descriptions, explanations, suggestions) must be written in ${languageName}.`;
+}
+
 const SYSTEM_PROMPT = `You are an expert PLC programmer and industrial automation specialist. You analyze Studio 5000 / RSLogix 5000 ladder logic code and provide clear, accurate explanations and insights.
 
 When analyzing ladder logic:
@@ -65,13 +83,16 @@ export async function explainLogic(
   routineName: string,
   rungContent: string,
   rungComment?: string,
-  tagInfo?: Array<{ name: string; dataType: string; description?: string }>
+  tagInfo?: Array<{ name: string; dataType: string; description?: string }>,
+  language: AILanguage = "en"
 ): Promise<ExplanationResult> {
   const client = getClient();
 
   const tagContext = tagInfo
     ? tagInfo.map((t) => `- ${t.name} (${t.dataType})${t.description ? `: ${t.description}` : ""}`).join("\n")
     : "";
+
+  const languageInstruction = getLanguageInstruction(language);
 
   const prompt = `Analyze this ladder logic rung from routine "${routineName}":
 
@@ -89,7 +110,7 @@ Provide your analysis as JSON with this structure:
   "stepByStep": ["Step 1...", "Step 2...", ...],
   "tagsPurpose": {"TagName": "What this tag represents", ...},
   "potentialIssues": ["Any issues or concerns (optional)"]
-}`;
+}${languageInstruction}`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -139,13 +160,16 @@ export async function findIssues(
     number: number;
     content: string;
     comment?: string;
-  }>
+  }>,
+  language: AILanguage = "en"
 ): Promise<IssueResult> {
   const client = getClient();
 
   // Limit content to avoid token limits
   const limitedRungs = rungs?.slice(0, 50) || [];
   const limitedTags = tags.slice(0, 200);
+
+  const languageInstruction = getLanguageInstruction(language);
 
   const rungSummary = limitedRungs.length > 0
     ? limitedRungs.map((r) => `${r.routineName}:${r.number} - ${r.content.substring(0, 100)}...`).join("\n")
@@ -182,7 +206,7 @@ Respond with JSON:
     }
   ],
   "summary": "Overall assessment of the project"
-}`;
+}${languageInstruction}`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -231,13 +255,16 @@ export async function naturalLanguageSearch(
   aois?: Array<{
     name: string;
     description?: string;
-  }>
+  }>,
+  language: AILanguage = "en"
 ): Promise<SearchResult> {
   const client = getClient();
 
   // Limit content to avoid token limits
   const limitedTags = tags.slice(0, 300);
   const limitedRoutines = routines.slice(0, 50);
+
+  const languageInstruction = getLanguageInstruction(language);
 
   const prompt = `A user is searching for: "${query}"
 
@@ -272,7 +299,7 @@ Respond with JSON:
   "summary": "Brief explanation of search results"
 }
 
-Return up to 20 most relevant matches, sorted by relevance.`;
+Return up to 20 most relevant matches, sorted by relevance.${languageInstruction}`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",

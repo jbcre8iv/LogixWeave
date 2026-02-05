@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { findIssues, generateHash } from "@/lib/ai/claude-client";
+import { findIssues, generateHash, AILanguage } from "@/lib/ai/claude-client";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +13,15 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Get user's language preference
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("ai_language")
+      .eq("id", user.id)
+      .single();
+
+    const language = (profile?.ai_language || "en") as AILanguage;
 
     const { projectId } = await request.json();
 
@@ -63,13 +72,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No data found for analysis" }, { status: 400 });
     }
 
-    // Check cache
+    // Check cache (include language in hash for language-specific caching)
     const fileId = fileIds[0];
     const target = "project-issues";
     const inputHash = generateHash(
       JSON.stringify(routines.slice(0, 20)) +
       JSON.stringify(tags.slice(0, 100)) +
-      JSON.stringify(rungs?.slice(0, 50) || [])
+      JSON.stringify(rungs?.slice(0, 50) || []) +
+      language
     );
 
     const serviceSupabase = await createServiceClient();
@@ -120,7 +130,8 @@ export async function POST(request: Request) {
         number: r.number,
         content: r.content || "",
         comment: r.comment || undefined,
-      }))
+      })),
+      language
     );
 
     // Cache result

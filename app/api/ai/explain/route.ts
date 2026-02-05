@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { explainLogic, generateHash } from "@/lib/ai/claude-client";
+import { explainLogic, generateHash, AILanguage } from "@/lib/ai/claude-client";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +13,15 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Get user's language preference
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("ai_language")
+      .eq("id", user.id)
+      .single();
+
+    const language = (profile?.ai_language || "en") as AILanguage;
 
     const { projectId, routineName, rungNumber } = await request.json();
 
@@ -90,10 +99,10 @@ export async function POST(request: Request) {
     const rungContent = rungs.map((r) => r.content).join("\n");
     const rungComment = rungs.map((r) => r.comment).filter(Boolean).join(" | ");
 
-    // Check cache
+    // Check cache (include language in hash for language-specific caching)
     const fileId = fileIds[0];
     const target = rungNumber !== undefined ? `${routineName}:${rungNumber}` : routineName;
-    const inputHash = generateHash(rungContent + JSON.stringify(tagInfo));
+    const inputHash = generateHash(rungContent + JSON.stringify(tagInfo) + language);
 
     const serviceSupabase = await createServiceClient();
 
@@ -130,7 +139,8 @@ export async function POST(request: Request) {
       routineName,
       rungContent,
       rungComment || undefined,
-      tagInfo.length > 0 ? tagInfo : undefined
+      tagInfo.length > 0 ? tagInfo : undefined,
+      language
     );
 
     // Cache result

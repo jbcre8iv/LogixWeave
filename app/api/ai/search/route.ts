@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { naturalLanguageSearch, generateHash } from "@/lib/ai/claude-client";
+import { naturalLanguageSearch, generateHash, AILanguage } from "@/lib/ai/claude-client";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +13,15 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Get user's language preference
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("ai_language")
+      .eq("id", user.id)
+      .single();
+
+    const language = (profile?.ai_language || "en") as AILanguage;
 
     const { projectId, query } = await request.json();
 
@@ -71,9 +80,9 @@ export async function POST(request: Request) {
     const udts = udtsResult.data || [];
     const aois = aoisResult.data || [];
 
-    // Check cache
+    // Check cache (include language in hash for language-specific caching)
     const fileId = fileIds[0];
-    const inputHash = generateHash(query + JSON.stringify(tags.slice(0, 50)));
+    const inputHash = generateHash(query + JSON.stringify(tags.slice(0, 50)) + language);
 
     const serviceSupabase = await createServiceClient();
 
@@ -129,7 +138,8 @@ export async function POST(request: Request) {
             name: a.name,
             description: a.description || undefined,
           }))
-        : undefined
+        : undefined,
+      language
     );
 
     // Cache result

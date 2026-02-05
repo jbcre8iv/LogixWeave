@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { SignOutButton } from "@/components/settings/sign-out-button";
+import { AILanguageSelector } from "@/components/settings/ai-language-selector";
+import { Sparkles } from "lucide-react";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -49,6 +51,19 @@ export default async function SettingsPage() {
                   : "Unknown"}
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              AI Preferences
+            </CardTitle>
+            <CardDescription>Customize your AI experience</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AILanguageSelector currentLanguage={profile?.ai_language || "en"} />
           </CardContent>
         </Card>
 

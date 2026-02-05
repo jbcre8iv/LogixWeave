@@ -13,18 +13,43 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { full_name } = await request.json();
+    const body = await request.json();
+    const { full_name, ai_language } = body;
 
-    if (!full_name || typeof full_name !== "string") {
+    // Build update object with only provided fields
+    const updates: Record<string, string> = {};
+
+    if (full_name !== undefined) {
+      if (typeof full_name !== "string" || !full_name.trim()) {
+        return NextResponse.json(
+          { error: "Name is required" },
+          { status: 400 }
+        );
+      }
+      updates.full_name = full_name.trim();
+    }
+
+    if (ai_language !== undefined) {
+      const validLanguages = ["en", "it", "es"];
+      if (!validLanguages.includes(ai_language)) {
+        return NextResponse.json(
+          { error: "Invalid language" },
+          { status: 400 }
+        );
+      }
+      updates.ai_language = ai_language;
+    }
+
+    if (Object.keys(updates).length === 0) {
       return NextResponse.json(
-        { error: "Name is required" },
+        { error: "No valid fields to update" },
         { status: 400 }
       );
     }
 
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: full_name.trim() })
+      .update(updates)
       .eq("id", user.id);
 
     if (error) {
