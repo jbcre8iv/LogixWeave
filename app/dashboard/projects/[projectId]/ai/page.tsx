@@ -61,7 +61,7 @@ export default async function AIPage({ params }: AIPageProps) {
         </Button>
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="h-8 w-8" />
+            <Sparkles className="h-8 w-8 text-amber-500" />
             AI Assistant
           </h1>
           <p className="text-muted-foreground">{project.name}</p>
@@ -83,10 +83,10 @@ export default async function AIPage({ params }: AIPageProps) {
         </Card>
       ) : (
         <>
-          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
+          <Card className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/20">
             <CardContent className="py-6">
               <div className="flex items-start gap-4">
-                <Sparkles className="h-6 w-6 text-purple-500 mt-1" />
+                <Sparkles className="h-6 w-6 text-amber-500 mt-1" />
                 <div>
                   <h3 className="font-semibold mb-1">AI-Powered Analysis</h3>
                   <p className="text-sm text-muted-foreground">
@@ -102,10 +102,10 @@ export default async function AIPage({ params }: AIPageProps) {
           <div className="grid gap-4 md:grid-cols-3">
             {aiTools.map((tool) => (
               <Link key={tool.href} href={tool.href}>
-                <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
+                <Card className="h-full hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors cursor-pointer">
                   <CardHeader>
                     <div className="flex items-center gap-2">
-                      <tool.icon className="h-5 w-5 text-muted-foreground" />
+                      <tool.icon className="h-5 w-5 text-amber-500" />
                       <CardTitle className="text-lg">{tool.title}</CardTitle>
                     </div>
                     <CardDescription>{tool.description}</CardDescription>

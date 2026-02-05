@@ -28,7 +28,7 @@ const tools = [
   { name: "UDTs", href: "/dashboard/tools/udts", icon: Layers },
   { name: "AOIs", href: "/dashboard/tools/aois", icon: Package },
   { name: "Analysis", href: "/dashboard/tools/analysis", icon: BarChart3 },
-  { name: "AI Assistant", href: "/dashboard/tools/ai", icon: Sparkles },
+  { name: "AI Assistant", href: "/dashboard/tools/ai", icon: Sparkles, isAI: true },
   { name: "Project Compare", href: "/dashboard/tools/compare", icon: FileCode2 },
 ];
 
@@ -73,6 +73,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           <div className="mt-2 space-y-1">
             {tools.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isAI = "isAI" in item && item.isAI;
               return (
                 <Link
                   key={item.name}
@@ -81,11 +82,15 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      ? isAI
+                        ? "bg-amber-500 text-white"
+                        : "bg-primary text-primary-foreground"
+                      : isAI
+                        ? "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className={cn("h-4 w-4", !isActive && isAI && "text-amber-500")} />
                   {item.name}
                 </Link>
               );

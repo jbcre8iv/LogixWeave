@@ -41,7 +41,7 @@ export default async function IssuesPage({ params }: IssuesPageProps) {
         </Button>
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <AlertTriangle className="h-8 w-8" />
+            <AlertTriangle className="h-8 w-8 text-amber-500" />
             Issue Finder
           </h1>
           <p className="text-muted-foreground">{project.name}</p>

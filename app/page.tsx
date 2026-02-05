@@ -91,9 +91,9 @@ export default function HomePage() {
           </Link>
 
           <Link href="/dashboard/tools/ai">
-            <Card className="h-full transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-amber-500/50 cursor-pointer border-amber-500/20 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
               <CardHeader>
-                <Sparkles className="h-10 w-10 text-primary mb-2" />
+                <Sparkles className="h-10 w-10 text-amber-500 mb-2" />
                 <CardTitle>AI Assistant</CardTitle>
                 <CardDescription>
                   Get plain-English explanations of ladder logic, find potential

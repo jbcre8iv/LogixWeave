@@ -34,7 +34,7 @@ export default async function GlobalAIPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Sparkles className="h-8 w-8" />
+          <Sparkles className="h-8 w-8 text-amber-500" />
           AI Assistant
         </h1>
         <p className="text-muted-foreground">
@@ -42,10 +42,10 @@ export default async function GlobalAIPage() {
         </p>
       </div>
 
-      <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
+      <Card className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/20">
         <CardContent className="py-6">
           <div className="flex items-start gap-4">
-            <Sparkles className="h-6 w-6 text-purple-500 mt-1" />
+            <Sparkles className="h-6 w-6 text-amber-500 mt-1" />
             <div>
               <h3 className="font-semibold mb-1">AI-Powered Features</h3>
               <p className="text-sm text-muted-foreground">
@@ -61,10 +61,10 @@ export default async function GlobalAIPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projectsWithData.map((project) => (
             <Link key={project.id} href={`/dashboard/projects/${project.id}/ai`}>
-              <Card className="h-full transition-colors hover:bg-accent/50">
+              <Card className="h-full transition-colors hover:bg-amber-500/10 hover:border-amber-500/30">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <FolderOpen className="h-5 w-5 text-primary" />
+                    <FolderOpen className="h-5 w-5 text-amber-500" />
                     <CardTitle className="text-lg">{project.name}</CardTitle>
                   </div>
                 </CardHeader>
@@ -72,11 +72,11 @@ export default async function GlobalAIPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Sparkles className="h-4 w-4" />
+                        <Sparkles className="h-4 w-4 text-amber-500" />
                         {project.completedFileCount} file{project.completedFileCount === 1 ? "" : "s"}
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10">
                       Open <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -88,7 +88,7 @@ export default async function GlobalAIPage() {
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
+            <Sparkles className="h-12 w-12 text-amber-500/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">No projects available</h3>
             <p className="text-muted-foreground mb-4 text-center max-w-md">
               Upload and parse L5X files to your projects to use AI features.

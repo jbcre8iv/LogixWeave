@@ -41,7 +41,7 @@ export default async function AISearchPage({ params }: SearchPageProps) {
         </Button>
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Search className="h-8 w-8" />
+            <Search className="h-8 w-8 text-amber-500" />
             AI Search
           </h1>
           <p className="text-muted-foreground">{project.name}</p>

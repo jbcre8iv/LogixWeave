@@ -42,7 +42,7 @@ export default async function ExplainPage({ params }: ExplainPageProps) {
           </Button>
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Brain className="h-8 w-8" />
+              <Brain className="h-8 w-8 text-amber-500" />
               Logic Explainer
             </h1>
             <p className="text-muted-foreground">{project.name}</p>
@@ -83,7 +83,7 @@ export default async function ExplainPage({ params }: ExplainPageProps) {
         </Button>
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Brain className="h-8 w-8" />
+            <Brain className="h-8 w-8 text-amber-500" />
             Logic Explainer
           </h1>
           <p className="text-muted-foreground">{project.name}</p>
