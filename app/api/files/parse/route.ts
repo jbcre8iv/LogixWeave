@@ -32,6 +32,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
+    // Get the current version record for linking parsed data
+    const { data: currentVersion } = await supabase
+      .from("file_versions")
+      .select("id")
+      .eq("file_id", fileId)
+      .eq("version_number", file.current_version || 1)
+      .single();
+
+    const versionId = currentVersion?.id || null;
+
     // Update status to processing
     await supabase
       .from("project_files")
@@ -91,6 +101,7 @@ export async function POST(request: Request) {
       if (parsed.tags.length > 0) {
         const tagRecords = parsed.tags.map((tag) => ({
           file_id: fileId,
+          version_id: versionId,
           name: tag.name,
           data_type: tag.dataType,
           scope: tag.scope,
@@ -120,6 +131,7 @@ export async function POST(request: Request) {
       if (parsed.modules.length > 0) {
         const moduleRecords = parsed.modules.map((module) => ({
           file_id: fileId,
+          version_id: versionId,
           name: module.name,
           catalog_number: module.catalogNumber,
           parent_module: module.parentModule,
@@ -139,6 +151,7 @@ export async function POST(request: Request) {
       if (parsed.routines.length > 0) {
         const routineRecords = parsed.routines.map((routine) => ({
           file_id: fileId,
+          version_id: versionId,
           name: routine.name,
           program_name: routine.programName,
           type: routine.type,
@@ -158,6 +171,7 @@ export async function POST(request: Request) {
       if (parsed.rungs.length > 0) {
         const rungRecords = parsed.rungs.map((rung) => ({
           file_id: fileId,
+          version_id: versionId,
           routine_name: rung.routineName,
           program_name: rung.programName,
           number: rung.number,
@@ -207,6 +221,7 @@ export async function POST(request: Request) {
             .from("parsed_udts")
             .insert({
               file_id: fileId,
+              version_id: versionId,
               name: udt.name,
               description: udt.description,
               family_type: udt.familyType,
@@ -247,6 +262,7 @@ export async function POST(request: Request) {
             .from("parsed_aois")
             .insert({
               file_id: fileId,
+              version_id: versionId,
               name: aoi.name,
               description: aoi.description,
               revision: aoi.revision,

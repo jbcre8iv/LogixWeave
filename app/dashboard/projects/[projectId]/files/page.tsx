@@ -4,9 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { FileUploader } from "@/components/tools/file-uploader";
 import { DeleteFileButton } from "@/components/tools/delete-file-button";
+import { DownloadFileButton } from "@/components/tools/download-file-button";
+import { DownloadAllButton } from "@/components/tools/download-all-button";
+import { FileVersionHistory } from "@/components/tools/file-version-history";
 
 interface FilesPageProps {
   params: Promise<{ projectId: string }>;
@@ -61,10 +64,19 @@ export default async function FilesPage({ params }: FilesPageProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Uploaded Files</CardTitle>
-          <CardDescription>
-            {files?.length || 0} file{files?.length !== 1 ? "s" : ""} in this project
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Uploaded Files</CardTitle>
+              <CardDescription>
+                {files?.length || 0} file{files?.length !== 1 ? "s" : ""} in this project
+              </CardDescription>
+            </div>
+            <DownloadAllButton
+              projectId={projectId}
+              projectName={project.name}
+              fileCount={files?.length || 0}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {files && files.length > 0 ? (
@@ -89,7 +101,7 @@ export default async function FilesPage({ params }: FilesPageProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Badge
                       variant={
                         file.parsing_status === "completed"
@@ -108,6 +120,14 @@ export default async function FilesPage({ params }: FilesPageProps) {
                         {file.parsing_error}
                       </span>
                     )}
+                    <FileVersionHistory
+                      fileId={file.id}
+                      fileName={file.file_name}
+                      currentVersion={file.current_version || 1}
+                      versionCount={file.version_count || 1}
+                      projectId={projectId}
+                    />
+                    <DownloadFileButton fileId={file.id} fileName={file.file_name} />
                     <DeleteFileButton fileId={file.id} fileName={file.file_name} />
                   </div>
                 </div>

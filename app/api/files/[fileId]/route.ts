@@ -6,6 +6,55 @@ interface RouteContext {
   params: Promise<{ fileId: string }>;
 }
 
+// Download a file
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    const { fileId } = await context.params;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get file details
+    const { data: file, error: fileError } = await supabase
+      .from("project_files")
+      .select("id, file_name, storage_path, project_id")
+      .eq("id", fileId)
+      .single();
+
+    if (fileError || !file) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    // Download from storage
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from("project-files")
+      .download(file.storage_path);
+
+    if (downloadError || !fileData) {
+      return NextResponse.json({ error: "Failed to download file" }, { status: 500 });
+    }
+
+    // Return the file with appropriate headers
+    const headers = new Headers();
+    headers.set("Content-Disposition", `attachment; filename="${file.file_name}"`);
+    headers.set("Content-Type", "application/octet-stream");
+
+    return new NextResponse(fileData, {
+      status: 200,
+      headers,
+    });
+  } catch (error) {
+    console.error("Download file error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 // Delete a file
 export async function DELETE(request: Request, context: RouteContext) {
   try {

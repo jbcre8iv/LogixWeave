@@ -16,6 +16,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const file1Id = searchParams.get("file1");
     const file2Id = searchParams.get("file2");
+    const version1 = searchParams.get("v1");
+    const version2 = searchParams.get("v2");
 
     if (!file1Id || !file2Id) {
       return NextResponse.json(
@@ -24,32 +26,52 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch data from both files in parallel
+    // If comparing versions of the same file, get version IDs
+    let version1Id: string | null = null;
+    let version2Id: string | null = null;
+
+    if (version1 && version2 && file1Id === file2Id) {
+      // Get version IDs for version comparison
+      const [v1Result, v2Result] = await Promise.all([
+        supabase
+          .from("file_versions")
+          .select("id")
+          .eq("file_id", file1Id)
+          .eq("version_number", parseInt(version1))
+          .single(),
+        supabase
+          .from("file_versions")
+          .select("id")
+          .eq("file_id", file2Id)
+          .eq("version_number", parseInt(version2))
+          .single(),
+      ]);
+
+      version1Id = v1Result.data?.id || null;
+      version2Id = v2Result.data?.id || null;
+    }
+
+    // Fetch data from both files/versions in parallel
+    // Use version_id if available for version comparison, otherwise file_id
     const [tags1, tags2, routines1, routines2, modules1, modules2] = await Promise.all([
-      supabase
-        .from("parsed_tags")
-        .select("name, data_type, scope, description")
-        .eq("file_id", file1Id),
-      supabase
-        .from("parsed_tags")
-        .select("name, data_type, scope, description")
-        .eq("file_id", file2Id),
-      supabase
-        .from("parsed_routines")
-        .select("name, program_name, type, description, rung_count")
-        .eq("file_id", file1Id),
-      supabase
-        .from("parsed_routines")
-        .select("name, program_name, type, description, rung_count")
-        .eq("file_id", file2Id),
-      supabase
-        .from("parsed_io_modules")
-        .select("name, catalog_number, parent_module, slot")
-        .eq("file_id", file1Id),
-      supabase
-        .from("parsed_io_modules")
-        .select("name, catalog_number, parent_module, slot")
-        .eq("file_id", file2Id),
+      version1Id
+        ? supabase.from("parsed_tags").select("name, data_type, scope, description").eq("version_id", version1Id)
+        : supabase.from("parsed_tags").select("name, data_type, scope, description").eq("file_id", file1Id),
+      version2Id
+        ? supabase.from("parsed_tags").select("name, data_type, scope, description").eq("version_id", version2Id)
+        : supabase.from("parsed_tags").select("name, data_type, scope, description").eq("file_id", file2Id),
+      version1Id
+        ? supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("version_id", version1Id)
+        : supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("file_id", file1Id),
+      version2Id
+        ? supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("version_id", version2Id)
+        : supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("file_id", file2Id),
+      version1Id
+        ? supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("version_id", version1Id)
+        : supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("file_id", file1Id),
+      version2Id
+        ? supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("version_id", version2Id)
+        : supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("file_id", file2Id),
     ]);
 
     // Compare tags

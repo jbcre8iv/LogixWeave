@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const projectId = formData.get("projectId") as string;
+    const versionComment = formData.get("comment") as string | null;
 
     if (!file || !projectId) {
       return NextResponse.json(
@@ -45,8 +46,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Upload to storage
-    const storagePath = `${projectId}/${Date.now()}-${file.name}`;
+    // Check if a file with the same name already exists in this project
+    const { data: existingFile } = await supabase
+      .from("project_files")
+      .select("id, version_count, current_version")
+      .eq("project_id", projectId)
+      .eq("file_name", file.name)
+      .single();
+
+    // Upload to storage (with version number in path for uniqueness)
+    const versionNum = existingFile ? (existingFile.version_count || 1) + 1 : 1;
+    const storagePath = `${projectId}/${Date.now()}-v${versionNum}-${file.name}`;
+
     const { error: uploadError } = await supabase.storage
       .from("project-files")
       .upload(storagePath, file);
@@ -55,40 +66,124 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    // Create file record
-    const { data: fileRecord, error: dbError } = await supabase
-      .from("project_files")
-      .insert({
-        project_id: projectId,
-        file_name: file.name,
-        file_type: extension as "l5x" | "l5k",
-        file_size: file.size,
-        storage_path: storagePath,
-        uploaded_by: user.id,
-        parsing_status: "pending",
-      })
-      .select()
-      .single();
+    let fileRecord;
 
-    if (dbError) {
-      // Try to clean up storage
-      await supabase.storage.from("project-files").remove([storagePath]);
-      return NextResponse.json({ error: dbError.message }, { status: 500 });
+    if (existingFile) {
+      // Create new version for existing file
+      const newVersionNumber = (existingFile.version_count || 1) + 1;
+
+      // Insert version record
+      const { error: versionError } = await supabase
+        .from("file_versions")
+        .insert({
+          file_id: existingFile.id,
+          version_number: newVersionNumber,
+          storage_path: storagePath,
+          file_size: file.size,
+          uploaded_by: user.id,
+          uploaded_by_email: user.email,
+          comment: versionComment,
+        });
+
+      if (versionError) {
+        await supabase.storage.from("project-files").remove([storagePath]);
+        return NextResponse.json({ error: versionError.message }, { status: 500 });
+      }
+
+      // Update the main file record
+      const { data: updatedFile, error: updateError } = await supabase
+        .from("project_files")
+        .update({
+          storage_path: storagePath,
+          file_size: file.size,
+          current_version: newVersionNumber,
+          version_count: newVersionNumber,
+          parsing_status: "pending",
+          parsing_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingFile.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+
+      fileRecord = updatedFile;
+
+      // Log activity for new version
+      await logActivity({
+        projectId,
+        userId: user.id,
+        userEmail: user.email,
+        action: "file_uploaded",
+        targetType: "file",
+        targetId: existingFile.id,
+        targetName: file.name,
+        metadata: {
+          fileSize: file.size,
+          fileType: extension,
+          version: newVersionNumber,
+          isNewVersion: true,
+        },
+      });
+    } else {
+      // Create new file record
+      const { data: newFile, error: dbError } = await supabase
+        .from("project_files")
+        .insert({
+          project_id: projectId,
+          file_name: file.name,
+          file_type: extension as "l5x" | "l5k",
+          file_size: file.size,
+          storage_path: storagePath,
+          uploaded_by: user.id,
+          parsing_status: "pending",
+          current_version: 1,
+          version_count: 1,
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        await supabase.storage.from("project-files").remove([storagePath]);
+        return NextResponse.json({ error: dbError.message }, { status: 500 });
+      }
+
+      // Create initial version record
+      await supabase
+        .from("file_versions")
+        .insert({
+          file_id: newFile.id,
+          version_number: 1,
+          storage_path: storagePath,
+          file_size: file.size,
+          uploaded_by: user.id,
+          uploaded_by_email: user.email,
+          comment: versionComment || "Initial upload",
+        });
+
+      fileRecord = newFile;
+
+      // Log activity
+      await logActivity({
+        projectId,
+        userId: user.id,
+        userEmail: user.email,
+        action: "file_uploaded",
+        targetType: "file",
+        targetId: newFile.id,
+        targetName: file.name,
+        metadata: { fileSize: file.size, fileType: extension, version: 1 },
+      });
     }
 
-    // Log activity
-    await logActivity({
-      projectId,
-      userId: user.id,
-      userEmail: user.email,
-      action: "file_uploaded",
-      targetType: "file",
-      targetId: fileRecord.id,
-      targetName: file.name,
-      metadata: { fileSize: file.size, fileType: extension },
+    return NextResponse.json({
+      file: fileRecord,
+      isNewVersion: !!existingFile,
+      version: existingFile ? (existingFile.version_count || 1) + 1 : 1,
     });
-
-    return NextResponse.json({ file: fileRecord });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
