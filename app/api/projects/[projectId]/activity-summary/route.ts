@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 
+// Ensure this route is always dynamic (no caching)
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
@@ -16,27 +19,39 @@ export async function GET(
     }
 
     // Get user's last visit to this project
-    const { data: session } = await supabase
+    const { data: session, error: sessionError } = await supabase
       .from("project_user_sessions")
       .select("last_seen_at")
       .eq("project_id", projectId)
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
+
+    if (sessionError) {
+      console.error("Error fetching session:", sessionError);
+    }
 
     const lastSeenAt = session?.last_seen_at;
 
     // If no previous session, this is their first visit - no summary needed
     if (!lastSeenAt) {
       // Create session record for next time
-      await supabase
+      const { error: insertError } = await supabase
         .from("project_user_sessions")
-        .upsert({
+        .insert({
           project_id: projectId,
           user_id: user.id,
           last_seen_at: new Date().toISOString(),
         });
 
-      return NextResponse.json({ summary: null, activities: [] });
+      if (insertError) {
+        console.error("Error creating session:", insertError);
+      }
+
+      return NextResponse.json({ summary: null, activities: [] }, {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
     }
 
     // Fetch activities since last visit (excluding current user's actions)
@@ -49,18 +64,19 @@ export async function GET(
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // Update session timestamp
-    await supabase
-      .from("project_user_sessions")
-      .upsert({
-        project_id: projectId,
-        user_id: user.id,
-        last_seen_at: new Date().toISOString(),
-      });
-
-    // If no activities, return empty
+    // If no activities, update timestamp and return empty
+    // (Don't update timestamp when activities exist - let user dismiss to update)
     if (!activities || activities.length === 0) {
-      return NextResponse.json({ summary: null, activities: [] });
+      await supabase
+        .from("project_user_sessions")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("project_id", projectId)
+        .eq("user_id", user.id);
+      return NextResponse.json({ summary: null, activities: [] }, {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
     }
 
     // Generate AI summary
@@ -70,6 +86,10 @@ export async function GET(
       summary,
       activities,
       since: lastSeenAt,
+    }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
     });
   } catch (error) {
     console.error("Error in activity summary API:", error);
@@ -170,4 +190,56 @@ function formatAction(action: string): string {
     project_updated: "updated project settings",
   };
   return actionMap[action] || action.replace(/_/g, " ");
+}
+
+// POST handler to explicitly dismiss/acknowledge the activity banner
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ projectId: string }> }
+) {
+  try {
+    const { projectId } = await params;
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const now = new Date().toISOString();
+
+    // Try to update existing session first
+    const { data: updateData, error: updateError } = await supabase
+      .from("project_user_sessions")
+      .update({ last_seen_at: now })
+      .eq("project_id", projectId)
+      .eq("user_id", user.id)
+      .select();
+
+    if (updateError) {
+      console.error("Error updating session:", updateError);
+      return NextResponse.json({ error: "Failed to dismiss" }, { status: 500 });
+    }
+
+    // If no rows updated, insert new session
+    if (!updateData || updateData.length === 0) {
+      const { error: insertError } = await supabase
+        .from("project_user_sessions")
+        .insert({
+          project_id: projectId,
+          user_id: user.id,
+          last_seen_at: now,
+        });
+
+      if (insertError) {
+        console.error("Error inserting session:", insertError);
+        return NextResponse.json({ error: "Failed to dismiss" }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error in activity dismiss API:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

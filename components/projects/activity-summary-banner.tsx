@@ -67,6 +67,46 @@ function formatActivityDescription(activity: Activity): string {
   }
 }
 
+// LocalStorage key for tracking dismissed banners
+const DISMISSED_KEY = "activity-banner-dismissed";
+
+// Get dismissed state from localStorage
+function getDismissedFromStorage(projectId: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const stored = localStorage.getItem(DISMISSED_KEY);
+    if (!stored) return false;
+    const dismissed: Record<string, number> = JSON.parse(stored);
+    const dismissedAt = dismissed[projectId];
+    if (!dismissedAt) return false;
+    // Consider dismissed for 24 hours
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    return Date.now() - dismissedAt < twentyFourHours;
+  } catch {
+    return false;
+  }
+}
+
+// Save dismissed state to localStorage
+function saveDismissedToStorage(projectId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = localStorage.getItem(DISMISSED_KEY);
+    const dismissed: Record<string, number> = stored ? JSON.parse(stored) : {};
+    dismissed[projectId] = Date.now();
+    // Clean up old entries (older than 7 days)
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    for (const key of Object.keys(dismissed)) {
+      if (Date.now() - dismissed[key] > sevenDays) {
+        delete dismissed[key];
+      }
+    }
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify(dismissed));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps) {
   const [summary, setSummary] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -74,7 +114,37 @@ export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps)
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  // Check localStorage on mount
   useEffect(() => {
+    if (getDismissedFromStorage(projectId)) {
+      setDismissed(true);
+    }
+  }, [projectId]);
+
+  // Handle dismiss - update both localStorage and server
+  const handleDismiss = async () => {
+    setDismissed(true);
+    saveDismissedToStorage(projectId);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/activity-summary`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Failed to dismiss activity banner:", data.error);
+      }
+    } catch (error) {
+      console.error("Failed to dismiss activity banner:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Skip fetch if already dismissed via localStorage
+    if (getDismissedFromStorage(projectId)) {
+      setLoading(false);
+      return;
+    }
+
     const fetchSummary = async () => {
       try {
         const response = await fetch(`/api/projects/${projectId}/activity-summary`);
@@ -159,7 +229,7 @@ export function ActivitySummaryBanner({ projectId }: ActivitySummaryBannerProps)
             variant="ghost"
             size="icon"
             className="shrink-0 h-8 w-8"
-            onClick={() => setDismissed(true)}
+            onClick={handleDismiss}
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Dismiss</span>
