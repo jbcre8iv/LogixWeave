@@ -15,6 +15,7 @@ import {
   Package,
   BarChart3,
   Sparkles,
+  Link2,
 } from "lucide-react";
 
 const navigation = [
@@ -75,10 +76,20 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           })}
         </div>
         <div className="pt-6">
-          <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Tools
-          </p>
-          <div className="mt-2 space-y-1">
+          <div className="px-3 mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Tools
+            </p>
+            {projectId ? (
+              <div className="flex items-center gap-1.5 mt-1">
+                <Link2 className="h-3 w-3 text-primary" />
+                <span className="text-xs text-primary">Linked to project</span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground/60">Select a project for context</span>
+            )}
+          </div>
+          <div className="space-y-1">
             {tools.map((item) => {
               // Use project-specific href if on a project page and tool supports it
               const href = projectId && item.projectHref
