@@ -30,6 +30,7 @@ import {
   Check,
   Plus,
   Shield,
+  Star,
 } from "lucide-react";
 
 const navigation = [
@@ -61,6 +62,7 @@ interface SidebarContentProps {
 interface Project {
   id: string;
   name: string;
+  is_favorite: boolean;
 }
 
 export function SidebarContent({ onNavClick }: SidebarContentProps) {
@@ -89,7 +91,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
       // Fetch all projects for dropdown
       const { data: projects } = await supabase
         .from("projects")
-        .select("id, name")
+        .select("id, name, is_favorite")
         .order("name");
 
       if (projects) {
@@ -186,19 +188,45 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                   No projects yet
                 </div>
               ) : (
-                allProjects.map((project) => (
-                  <DropdownMenuItem
-                    key={project.id}
-                    onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
-                    className="flex items-center gap-2"
-                  >
-                    <FolderIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="truncate flex-1">{project.name}</span>
-                    {project.id === projectId && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                ))
+                <>
+                  {allProjects.filter((p) => p.is_favorite).length > 0 && (
+                    <>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        Favorites
+                      </DropdownMenuLabel>
+                      {allProjects.filter((p) => p.is_favorite).map((project) => (
+                        <DropdownMenuItem
+                          key={project.id}
+                          onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
+                          className="flex items-center gap-2"
+                        >
+                          <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="truncate flex-1">{project.name}</span>
+                          {project.id === projectId && (
+                            <Check className="h-4 w-4 text-primary" />
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                      {allProjects.filter((p) => !p.is_favorite).length > 0 && (
+                        <DropdownMenuSeparator />
+                      )}
+                    </>
+                  )}
+                  {allProjects.filter((p) => !p.is_favorite).map((project) => (
+                    <DropdownMenuItem
+                      key={project.id}
+                      onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate flex-1">{project.name}</span>
+                      {project.id === projectId && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
