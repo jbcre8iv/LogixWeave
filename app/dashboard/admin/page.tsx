@@ -1,26 +1,16 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Users,
   FolderOpen,
   FileText,
   Shield,
-  ExternalLink,
   Building2,
 } from "lucide-react";
-import { UserActions } from "@/components/admin/user-actions";
+import { AdminUsersTable } from "@/components/admin/admin-users-table";
+import { AdminProjectsTable } from "@/components/admin/admin-projects-table";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -95,10 +85,41 @@ export default async function AdminDashboardPage() {
   const totalStorage = files.reduce((acc, f) => acc + (f.file_size || 0), 0);
   const parsedFiles = files.filter(f => f.parsing_status === "completed").length;
 
-  // Get recent projects with owner info
-  const recentProjects = projects
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10);
+  // Prepare user data with computed counts
+  const usersWithCounts = users.map(u => {
+    const userOrgs = userOrgMap.get(u.id) || new Set<string>();
+    let projectCount = 0;
+    let fileCount = 0;
+    userOrgs.forEach(orgId => {
+      const orgProjects = orgProjectMap.get(orgId) || new Set<string>();
+      projectCount += orgProjects.size;
+      orgProjects.forEach(projectId => {
+        fileCount += projectFileCount.get(projectId) || 0;
+      });
+    });
+    return {
+      id: u.id,
+      email: u.email,
+      full_name: u.full_name,
+      created_at: u.created_at,
+      is_platform_admin: u.is_platform_admin || false,
+      is_disabled: u.is_disabled || false,
+      projectCount,
+      fileCount,
+    };
+  });
+
+  // Prepare project data with organization names and file counts
+  const projectsWithDetails = projects.map(p => {
+    const org = p.organizations as unknown as { name: string } | null;
+    return {
+      id: p.id,
+      name: p.name,
+      organization_name: org?.name || "Unknown",
+      created_at: p.created_at,
+      file_count: projectFileCount.get(p.id) || 0,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -172,116 +193,18 @@ export default async function AdminDashboardPage() {
           <CardDescription>All registered users on the platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Projects</TableHead>
-                <TableHead>Files</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((u) => {
-                // Get organizations this user belongs to
-                const userOrgs = userOrgMap.get(u.id) || new Set<string>();
-
-                // Get projects from those organizations
-                let userProjectCount = 0;
-                let userFileCount = 0;
-                userOrgs.forEach(orgId => {
-                  const orgProjects = orgProjectMap.get(orgId) || new Set<string>();
-                  userProjectCount += orgProjects.size;
-                  orgProjects.forEach(projectId => {
-                    userFileCount += projectFileCount.get(projectId) || 0;
-                  });
-                });
-
-                return (
-                  <TableRow key={u.id} className={u.is_disabled ? "opacity-50" : ""}>
-                    <TableCell className="font-medium">
-                      {u.full_name || "—"}
-                    </TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>{userProjectCount}</TableCell>
-                    <TableCell>{userFileCount}</TableCell>
-                    <TableCell>
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {u.is_platform_admin ? (
-                        <Badge className="bg-primary">Admin</Badge>
-                      ) : u.is_disabled ? (
-                        <Badge variant="destructive">Disabled</Badge>
-                      ) : (
-                        <Badge variant="secondary">Active</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <UserActions
-                        userId={u.id}
-                        userEmail={u.email}
-                        userName={u.full_name}
-                        isDisabled={u.is_disabled || false}
-                        isCurrentUser={u.id === user.id}
-                        isPlatformAdmin={u.is_platform_admin || false}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <AdminUsersTable users={usersWithCounts} currentUserId={user.id} />
         </CardContent>
       </Card>
 
-      {/* Recent Projects */}
+      {/* All Projects */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Projects</CardTitle>
-          <CardDescription>Latest projects created across the platform</CardDescription>
+          <CardTitle>All Projects</CardTitle>
+          <CardDescription>All projects created across the platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Files</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentProjects.map((project) => {
-                const projectFiles = files.filter(f => f.project_id === project.id);
-                const org = project.organizations as unknown as { name: string } | null;
-                const orgName = org?.name || "Unknown";
-
-                return (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>{orgName}</TableCell>
-                    <TableCell>{projectFiles.length}</TableCell>
-                    <TableCell>
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/projects/${project.id}`}>
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          View
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <AdminProjectsTable projects={projectsWithDetails} />
         </CardContent>
       </Card>
     </div>
