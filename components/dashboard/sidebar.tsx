@@ -115,6 +115,12 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
     onNavClick?.();
   };
 
+  const handleProjectSelect = (selectedProjectId: string) => {
+    // Navigate to the selected project's main page
+    router.push(`/dashboard/projects/${selectedProjectId}`);
+    onNavClick?.();
+  };
+
   return (
     <>
       <nav className="flex-1 space-y-1 p-4">
@@ -149,10 +155,10 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
             </p>
           </div>
 
-          {/* Project switcher dropdown */}
-          {projectId && currentProject ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          {/* Project selector/switcher dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              {projectId && currentProject ? (
                 <button className="mx-3 mb-3 w-[calc(100%-1.5rem)] flex items-center gap-2 px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors text-left">
                   <FolderIcon className="h-4 w-4 text-primary flex-shrink-0" />
                   <span className="text-xs font-medium text-primary truncate flex-1">
@@ -160,16 +166,30 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                   </span>
                   <ChevronDown className="h-3 w-3 text-primary flex-shrink-0" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Switch Project
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {allProjects.map((project) => (
+              ) : (
+                <button className="mx-3 mb-3 w-[calc(100%-1.5rem)] flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20 hover:bg-muted hover:border-muted-foreground/40 transition-colors text-left">
+                  <FolderIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate flex-1">
+                    Select a project
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                </button>
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                {projectId ? "Switch Project" : "Select Project"}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {allProjects.length === 0 ? (
+                <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                  No projects yet
+                </div>
+              ) : (
+                allProjects.map((project) => (
                   <DropdownMenuItem
                     key={project.id}
-                    onClick={() => handleProjectSwitch(project.id)}
+                    onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
                     className="flex items-center gap-2"
                   >
                     <FolderIcon className="h-4 w-4 text-muted-foreground" />
@@ -178,23 +198,17 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                       <Check className="h-4 w-4 text-primary" />
                     )}
                   </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/projects" className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span>View All Projects</span>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="mx-3 mb-3 px-2.5 py-2 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20">
-              <p className="text-xs text-muted-foreground text-center">
-                Select a project for context
-              </p>
-            </div>
-          )}
+                ))
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/projects" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span>View All Projects</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div className={cn(
             "space-y-1",
