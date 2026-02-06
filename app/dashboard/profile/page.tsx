@@ -4,6 +4,7 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { AvatarUpload } from "@/components/settings/avatar-upload";
 import { Badge } from "@/components/ui/badge";
 import { FolderOpen, FileText, Calendar, Building2 } from "lucide-react";
+import { getDisplayName } from "@/lib/utils/display-name";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -54,11 +55,22 @@ export default async function ProfilePage() {
             <div className="flex items-start gap-6 mb-6">
               <AvatarUpload
                 avatarUrl={profile?.avatar_url || null}
-                fullName={profile?.full_name || null}
+                fullName={getDisplayName({
+                  first_name: profile?.first_name,
+                  last_name: profile?.last_name,
+                  full_name: profile?.full_name,
+                  email: user?.email,
+                })}
                 email={user?.email || ""}
               />
               <div className="space-y-1">
-                <h3 className="text-xl font-semibold">{profile?.full_name || "No name set"}</h3>
+                <h3 className="text-xl font-semibold">
+                  {getDisplayName({
+                    first_name: profile?.first_name,
+                    last_name: profile?.last_name,
+                    full_name: profile?.full_name,
+                  }) || "No name set"}
+                </h3>
                 <p className="text-muted-foreground">{user?.email}</p>
                 {membership && (
                   <Badge variant="secondary" className="mt-2">
@@ -69,7 +81,8 @@ export default async function ProfilePage() {
               </div>
             </div>
             <ProfileForm
-              fullName={profile?.full_name || null}
+              firstName={profile?.first_name || null}
+              lastName={profile?.last_name || null}
               email={user?.email || ""}
             />
           </CardContent>

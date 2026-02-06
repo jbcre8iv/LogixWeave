@@ -16,10 +16,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { LogOut, User, Settings, Scale, Mail, Home } from "lucide-react";
+import { getDisplayName, getInitials } from "@/lib/utils/display-name";
 
 interface HeaderProps {
   user: {
     email: string;
+    first_name?: string | null;
+    last_name?: string | null;
     full_name?: string | null;
     avatar_url?: string | null;
   };
@@ -35,13 +38,8 @@ export function Header({ user }: HeaderProps) {
     router.refresh();
   };
 
-  const initials = user.full_name
-    ? user.full_name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-    : user.email[0].toUpperCase();
+  const displayName = getDisplayName(user);
+  const initials = getInitials(user);
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
@@ -56,7 +54,7 @@ export function Header({ user }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={user.avatar_url || undefined} alt={user.full_name || user.email} />
+                <AvatarImage src={user.avatar_url || undefined} alt={displayName} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
             </Button>
@@ -64,8 +62,8 @@ export function Header({ user }: HeaderProps) {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                {user.full_name && (
-                  <p className="text-sm font-medium leading-none">{user.full_name}</p>
+                {displayName !== user.email && (
+                  <p className="text-sm font-medium leading-none">{displayName}</p>
                 )}
                 <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
               </div>

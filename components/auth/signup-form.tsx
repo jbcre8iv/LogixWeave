@@ -13,7 +13,8 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,12 +26,15 @@ export function SignupForm() {
     setError(null);
 
     const supabase = createClient();
+    const fullName = `${firstName} ${lastName}`.trim();
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
+          first_name: firstName,
+          last_name: lastName,
         },
       },
     });
@@ -61,17 +65,31 @@ export function SignupForm() {
               {error}
             </div>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              type="text"
-              placeholder="John Doe"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="John"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Doe"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

@@ -33,7 +33,7 @@ export async function GET(
     // Fetch user profile
     const { data: profile, error: profileError } = await serviceSupabase
       .from("profiles")
-      .select("id, email, full_name, created_at, is_platform_admin, is_disabled")
+      .select("id, email, first_name, last_name, full_name, created_at, is_platform_admin, is_disabled")
       .eq("id", userId)
       .single();
 
@@ -118,6 +118,8 @@ export async function GET(
     return NextResponse.json({
       id: profile.id,
       email: profile.email,
+      first_name: profile.first_name || null,
+      last_name: profile.last_name || null,
       full_name: profile.full_name,
       created_at: profile.created_at,
       is_platform_admin: profile.is_platform_admin || false,

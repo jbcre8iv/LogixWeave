@@ -8,14 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Pencil, X, Check } from "lucide-react";
 
 interface ProfileFormProps {
-  fullName: string | null;
+  firstName: string | null;
+  lastName: string | null;
   email: string;
 }
 
-export function ProfileForm({ fullName, email }: ProfileFormProps) {
+export function ProfileForm({ firstName, lastName, email }: ProfileFormProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(fullName || "");
+  const [first, setFirst] = useState(firstName || "");
+  const [last, setLast] = useState(lastName || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +29,10 @@ export function ProfileForm({ fullName, email }: ProfileFormProps) {
       const response = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: name }),
+        body: JSON.stringify({
+          first_name: first.trim(),
+          last_name: last.trim(),
+        }),
       });
 
       if (!response.ok) {
@@ -45,10 +50,13 @@ export function ProfileForm({ fullName, email }: ProfileFormProps) {
   };
 
   const handleCancel = () => {
-    setName(fullName || "");
+    setFirst(firstName || "");
+    setLast(lastName || "");
     setIsEditing(false);
     setError(null);
   };
+
+  const displayName = [firstName, lastName].filter(Boolean).join(" ") || "Not set";
 
   return (
     <div className="space-y-4">
@@ -74,13 +82,29 @@ export function ProfileForm({ fullName, email }: ProfileFormProps) {
         </div>
 
         {isEditing ? (
-          <div className="mt-1 space-y-2">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              disabled={isLoading}
-            />
+          <div className="mt-2 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="firstName" className="text-xs">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={first}
+                  onChange={(e) => setFirst(e.target.value)}
+                  placeholder="First name"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="lastName" className="text-xs">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={last}
+                  onChange={(e) => setLast(e.target.value)}
+                  placeholder="Last name"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
@@ -88,7 +112,7 @@ export function ProfileForm({ fullName, email }: ProfileFormProps) {
               <Button
                 size="sm"
                 onClick={handleSave}
-                disabled={isLoading || !name.trim()}
+                disabled={isLoading || (!first.trim() && !last.trim())}
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -111,7 +135,7 @@ export function ProfileForm({ fullName, email }: ProfileFormProps) {
             </div>
           </div>
         ) : (
-          <p className="text-sm mt-1">{fullName || "Not set"}</p>
+          <p className="text-sm mt-1">{displayName}</p>
         )}
       </div>
     </div>

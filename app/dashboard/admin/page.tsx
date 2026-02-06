@@ -43,7 +43,7 @@ export default async function AdminDashboardPage() {
     organizationsResult,
     membershipsResult,
   ] = await Promise.all([
-    serviceSupabase.from("profiles").select("id, email, full_name, created_at, is_platform_admin, is_disabled"),
+    serviceSupabase.from("profiles").select("id, email, first_name, last_name, full_name, created_at, is_platform_admin, is_disabled"),
     serviceSupabase.from("projects").select("id, name, organization_id, created_at, organizations(name)"),
     serviceSupabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
     serviceSupabase.from("organizations").select("id, name, created_at"),
@@ -100,6 +100,8 @@ export default async function AdminDashboardPage() {
     return {
       id: u.id,
       email: u.email,
+      first_name: u.first_name,
+      last_name: u.last_name,
       full_name: u.full_name,
       created_at: u.created_at,
       is_platform_admin: u.is_platform_admin || false,

@@ -40,7 +40,8 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardContent>
             <ProfileForm
-              fullName={profile?.full_name || null}
+              firstName={profile?.first_name || null}
+              lastName={profile?.last_name || null}
               email={user?.email || ""}
             />
             <div className="mt-4 pt-4 border-t">

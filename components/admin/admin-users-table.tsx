@@ -20,10 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Search, ArrowUpDown } from "lucide-react";
 import { UserActions } from "./user-actions";
+import { getDisplayName } from "@/lib/utils/display-name";
 
 interface UserData {
   id: string;
   email: string;
+  first_name: string | null;
+  last_name: string | null;
   full_name: string | null;
   created_at: string;
   is_platform_admin: boolean;
@@ -53,7 +56,7 @@ export function AdminUsersTable({ users, currentUserId }: AdminUsersTableProps) 
       const searchLower = search.toLowerCase();
       result = result.filter(
         (u) =>
-          u.full_name?.toLowerCase().includes(searchLower) ||
+          getDisplayName(u).toLowerCase().includes(searchLower) ||
           u.email.toLowerCase().includes(searchLower)
       );
     }
@@ -64,7 +67,7 @@ export function AdminUsersTable({ users, currentUserId }: AdminUsersTableProps) 
 
       switch (sortField) {
         case "name":
-          comparison = (a.full_name || "").localeCompare(b.full_name || "");
+          comparison = getDisplayName(a).localeCompare(getDisplayName(b));
           break;
         case "email":
           comparison = a.email.localeCompare(b.email);
@@ -194,7 +197,7 @@ export function AdminUsersTable({ users, currentUserId }: AdminUsersTableProps) 
             filteredAndSortedUsers.map((u) => (
               <TableRow key={u.id} className={u.is_disabled ? "opacity-50" : ""}>
                 <TableCell className="font-medium">
-                  {u.full_name || "—"}
+                  {getDisplayName(u) !== u.email ? getDisplayName(u) : "—"}
                 </TableCell>
                 <TableCell>{u.email}</TableCell>
                 <TableCell>{u.projectCount}</TableCell>

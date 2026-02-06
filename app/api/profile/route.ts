@@ -14,12 +14,31 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { full_name, ai_language } = body;
+    const { full_name, first_name, last_name, ai_language } = body;
 
     // Build update object with only provided fields
-    const updates: Record<string, string> = {};
+    const updates: Record<string, string | null> = {};
 
-    if (full_name !== undefined) {
+    // Handle first_name and last_name
+    if (first_name !== undefined || last_name !== undefined) {
+      const firstName = first_name?.trim() || "";
+      const lastName = last_name?.trim() || "";
+
+      if (!firstName && !lastName) {
+        return NextResponse.json(
+          { error: "At least first name or last name is required" },
+          { status: 400 }
+        );
+      }
+
+      updates.first_name = firstName || null;
+      updates.last_name = lastName || null;
+      // Also update full_name for backward compatibility
+      updates.full_name = [firstName, lastName].filter(Boolean).join(" ");
+    }
+
+    // Handle legacy full_name update (for backward compatibility)
+    if (full_name !== undefined && first_name === undefined && last_name === undefined) {
       if (typeof full_name !== "string" || !full_name.trim()) {
         return NextResponse.json(
           { error: "Name is required" },

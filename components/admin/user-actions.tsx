@@ -58,6 +58,8 @@ interface UserFile {
 interface UserDetails {
   id: string;
   email: string;
+  first_name: string | null;
+  last_name: string | null;
   full_name: string | null;
   created_at: string;
   is_platform_admin: boolean;
@@ -241,8 +243,12 @@ export function UserActions({
               <TabsContent value="profile" className="mt-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Full Name</p>
-                    <p className="font-medium">{userDetails.full_name || "—"}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">First Name</p>
+                    <p className="font-medium">{userDetails.first_name || "—"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Last Name</p>
+                    <p className="font-medium">{userDetails.last_name || "—"}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Email</p>
