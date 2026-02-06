@@ -673,6 +673,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 onToggleFavorite={toggleSingleFavorite}
                 getFileCount={getFileCount}
                 router={router}
+                showOwner={sharedProjects.length > 0}
               />
             </div>
           )}
@@ -692,6 +693,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 onToggleFavorite={toggleSingleFavorite}
                 getFileCount={getFileCount}
                 router={router}
+                showOwner={sharedProjects.length > 0}
               />
             </div>
           )}
