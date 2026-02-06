@@ -24,6 +24,11 @@ interface ActivityItem {
   projects: {
     name: string;
   } | null;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+    full_name: string | null;
+  } | null;
 }
 
 // Get icon for activity type
@@ -48,9 +53,20 @@ function getActivityIcon(action: string) {
   }
 }
 
+// Get display name from activity, preferring profile first+last name
+function getUserName(activity: ActivityItem): string {
+  const profile = activity.profiles;
+  if (profile) {
+    const firstLast = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
+    if (firstLast) return firstLast;
+    if (profile.full_name) return profile.full_name;
+  }
+  return activity.user_email?.split("@")[0] || "Someone";
+}
+
 // Format activity description
 function formatActivityDescription(activity: ActivityItem): string {
-  const userName = activity.user_email?.split("@")[0] || "Someone";
+  const userName = getUserName(activity);
 
   switch (activity.action) {
     case "file_uploaded":
@@ -128,7 +144,8 @@ export async function RecentActivity() {
       action,
       target_name,
       created_at,
-      projects:project_id(name)
+      projects:project_id(name),
+      profiles:user_id(first_name, last_name, full_name)
     `)
     .in("project_id", projectIds)
     .order("created_at", { ascending: false })

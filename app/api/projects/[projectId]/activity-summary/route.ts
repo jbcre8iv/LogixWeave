@@ -57,7 +57,7 @@ export async function GET(
     // Fetch activities since last visit (excluding current user's actions)
     const { data: activities } = await supabase
       .from("project_activity_log")
-      .select("*")
+      .select("*, profiles:user_id(first_name, last_name, full_name)")
       .eq("project_id", projectId)
       .gt("created_at", lastSeenAt)
       .neq("user_id", user.id)
@@ -103,6 +103,7 @@ async function generateActivitySummary(activities: Array<{
   target_name: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
+  profiles: { first_name: string | null; last_name: string | null; full_name: string | null } | null;
 }>): Promise<string> {
   // Check if API key is configured
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -115,7 +116,7 @@ async function generateActivitySummary(activities: Array<{
 
     // Format activities for the prompt
     const activityList = activities.map(a => {
-      const user = a.user_email || "Someone";
+      const user = getActivityUserName(a);
       const action = formatAction(a.action);
       const target = a.target_name ? ` "${a.target_name}"` : "";
       return `- ${user} ${action}${target}`;
@@ -149,6 +150,7 @@ function generateSimpleSummary(activities: Array<{
   user_email: string | null;
   action: string;
   target_name: string | null;
+  profiles?: { first_name: string | null; last_name: string | null; full_name: string | null } | null;
 }>): string {
   const uniqueUsers = new Set(activities.map(a => a.user_email).filter(Boolean));
   const userCount = uniqueUsers.size;
@@ -176,6 +178,19 @@ function generateSimpleSummary(activities: Array<{
 
   const userText = userCount > 0 ? ` by ${userCount} team member${userCount > 1 ? "s" : ""}` : "";
   return `While you were away, ${parts.join(", ")}${userText}.`;
+}
+
+function getActivityUserName(activity: {
+  user_email: string | null;
+  profiles?: { first_name: string | null; last_name: string | null; full_name: string | null } | null;
+}): string {
+  const profile = activity.profiles;
+  if (profile) {
+    const firstLast = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
+    if (firstLast) return firstLast;
+    if (profile.full_name) return profile.full_name;
+  }
+  return activity.user_email || "Someone";
 }
 
 function formatAction(action: string): string {

@@ -20,10 +20,10 @@ export async function GET(
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    // Fetch activity log
+    // Fetch activity log with profile names
     const { data: activities, error, count } = await supabase
       .from("project_activity_log")
-      .select("*", { count: "exact" })
+      .select("*, profiles:user_id(first_name, last_name, full_name)", { count: "exact" })
       .eq("project_id", projectId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);

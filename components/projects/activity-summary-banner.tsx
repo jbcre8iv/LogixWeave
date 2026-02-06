@@ -16,6 +16,11 @@ interface Activity {
   user_email: string | null;
   target_name: string | null;
   created_at: string;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+    full_name: string | null;
+  } | null;
 }
 
 interface SummaryResponse {
@@ -43,9 +48,20 @@ function getActivityIcon(action: string) {
   }
 }
 
+// Get display name from activity, preferring profile first+last name
+function getUserName(activity: Activity): string {
+  const profile = activity.profiles;
+  if (profile) {
+    const firstLast = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
+    if (firstLast) return firstLast;
+    if (profile.full_name) return profile.full_name;
+  }
+  return activity.user_email?.split("@")[0] || "Someone";
+}
+
 // Format activity description with user name
 function formatActivityDescription(activity: Activity): string {
-  const userName = activity.user_email?.split("@")[0] || "Someone";
+  const userName = getUserName(activity);
 
   switch (activity.action) {
     case "file_uploaded":

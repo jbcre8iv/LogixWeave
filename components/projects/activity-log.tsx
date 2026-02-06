@@ -34,6 +34,11 @@ interface ActivityEntry {
   target_name: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+    full_name: string | null;
+  } | null;
 }
 
 interface ActivityLogProps {
@@ -71,6 +76,16 @@ const actionColors: Record<string, string> = {
   documentation_exported: "bg-blue-500/10 text-blue-600",
   ai_analysis_run: "bg-purple-500/10 text-purple-600",
 };
+
+function getUserDisplayName(activity: ActivityEntry): string {
+  const profile = activity.profiles;
+  if (profile) {
+    const firstLast = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
+    if (firstLast) return firstLast;
+    if (profile.full_name) return profile.full_name;
+  }
+  return activity.user_email || "System";
+}
 
 function getActionDescription(action: string, targetName?: string | null): string {
   const descriptions: Record<string, string> = {
@@ -193,7 +208,7 @@ export function ActivityLog({ projectId }: ActivityLogProps) {
                     <div className="flex-1 space-y-1">
                       <p className="leading-tight">
                         <span className="font-medium">
-                          {activity.user_email || "System"}
+                          {getUserDisplayName(activity)}
                         </span>{" "}
                         <span className="text-muted-foreground">
                           {getActionDescription(activity.action, activity.target_name)}

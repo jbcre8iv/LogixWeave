@@ -203,9 +203,6 @@ export function FileUploader({ projectId }: FileUploaderProps) {
           <Upload className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-lg font-medium mb-2">Drop L5X/L5K files here</p>
           <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
-          <p className="text-xs text-muted-foreground/70 max-w-sm text-center">
-            Have an .ACD file? Open it in Studio 5000 and use File &rarr; Export to save as .L5X or .L5K
-          </p>
           <input
             type="file"
             accept=".l5x,.l5k"
@@ -219,6 +216,9 @@ export function FileUploader({ projectId }: FileUploaderProps) {
               Select Files
             </label>
           </Button>
+          <p className="text-xs text-muted-foreground/70 max-w-sm text-center mt-4">
+            Have an .ACD file? Open it in Studio 5000 and use File &rarr; Export to save as .L5X or .L5K
+          </p>
         </CardContent>
       </Card>
 
