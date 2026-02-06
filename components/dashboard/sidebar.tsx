@@ -131,7 +131,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
 
           <div className={cn(
             "space-y-1",
-            projectId && "relative before:absolute before:left-3 before:top-0 before:bottom-0 before:w-0.5 before:bg-primary/20 before:rounded-full"
+            projectId && "relative before:absolute before:left-1 before:top-0 before:bottom-0 before:w-0.5 before:bg-primary/20 before:rounded-full"
           )}>
             {tools.map((item) => {
               // Use project-specific href if on a project page and tool supports it
