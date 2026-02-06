@@ -29,6 +29,7 @@ import {
   ChevronDown,
   Check,
   Plus,
+  Shield,
 } from "lucide-react";
 
 const navigation = [
@@ -68,11 +69,23 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const projectId = getProjectIdFromPath(pathname);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const supabase = createClient();
 
-  // Fetch current project and all projects
+  // Fetch current project, all projects, and admin status
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchData = async () => {
+      // Check admin status
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_platform_admin")
+          .eq("id", user.id)
+          .single();
+        setIsPlatformAdmin(profile?.is_platform_admin || false);
+      }
+
       // Fetch all projects for dropdown
       const { data: projects } = await supabase
         .from("projects")
@@ -91,7 +104,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
       }
     };
 
-    fetchProjects();
+    fetchData();
   }, [projectId, supabase]);
 
   const handleProjectSwitch = (newProjectId: string) => {
@@ -225,7 +238,22 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           </div>
         </div>
       </nav>
-      <div className="border-t p-4">
+      <div className="border-t p-4 space-y-1">
+        {isPlatformAdmin && (
+          <Link
+            href="/dashboard/admin"
+            onClick={onNavClick}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname === "/dashboard/admin" || pathname.startsWith("/dashboard/admin/")
+                ? "bg-primary text-primary-foreground"
+                : "text-primary hover:bg-primary/10"
+            )}
+          >
+            <Shield className="h-4 w-4" />
+            Admin
+          </Link>
+        )}
         <Link
           href="/dashboard/settings"
           onClick={onNavClick}
