@@ -87,7 +87,7 @@ function parseModule(module: L5XModule): ParsedIOModule {
   };
 }
 
-function extractTagReferences(rungText: string): string[] {
+export function extractTagReferences(rungText: string): string[] {
   if (!rungText) return [];
 
   // Pattern to match tag references in ladder logic
@@ -126,7 +126,7 @@ function extractTagReferences(rungText: string): string[] {
   return uniqueTags;
 }
 
-function determineUsageType(rungText: string, tagName: string): "read" | "write" | "both" {
+export function determineUsageType(rungText: string, tagName: string): "read" | "write" | "both" {
   if (!rungText || !tagName) return "read";
 
   // Escape special regex characters in tag name

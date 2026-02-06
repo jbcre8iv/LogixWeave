@@ -62,7 +62,8 @@ export default async function FilesPage({ params }: FilesPageProps) {
           <CardTitle>Upload Files</CardTitle>
           <CardDescription>
             Upload L5X or L5K files exported from Studio 5000. Files will be automatically
-            parsed after upload.
+            parsed after upload. To convert an .ACD project, open it in Studio 5000 and
+            use File &rarr; Export.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { parseL5X } from "@/lib/parsers/l5x-parser";
+import { parseL5K } from "@/lib/parsers/l5k-parser";
 import { logActivity } from "@/lib/activity-log";
 
 export async function POST(request: Request) {
@@ -58,9 +59,10 @@ export async function POST(request: Request) {
         throw new Error(downloadError?.message || "Failed to download file");
       }
 
-      // Parse the file content
+      // Parse the file content based on file type
       const content = await fileData.text();
-      const parsed = parseL5X(content);
+      const isL5K = file.file_type === "l5k" || file.file_name?.toLowerCase().endsWith(".l5k");
+      const parsed = isL5K ? parseL5K(content) : parseL5X(content);
 
       // Use service client to bypass RLS for bulk inserts
       const serviceSupabase = await createServiceClient();

@@ -47,17 +47,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file content (L5X files should be XML)
-    if (extension === "l5x") {
-      // Only read first 500 bytes to check file signature
-      const headerSlice = file.slice(0, 500);
-      const headerBuffer = await headerSlice.arrayBuffer();
-      const fileStart = new TextDecoder().decode(headerBuffer);
+    // Validate file content based on type
+    const headerSlice = file.slice(0, 500);
+    const headerBuffer = await headerSlice.arrayBuffer();
+    const fileStart = new TextDecoder().decode(headerBuffer);
 
-      // Check for XML declaration or RSLogix5000Content root element
+    if (extension === "l5x") {
+      // L5X files should be XML
       if (!fileStart.includes("<?xml") && !fileStart.includes("<RSLogix5000Content")) {
         return NextResponse.json(
           { error: "Invalid L5X file format - file must be a valid Studio 5000 export" },
+          { status: 400 }
+        );
+      }
+    } else if (extension === "l5k") {
+      // L5K files are text-based and should start with IE_VER or CONTROLLER
+      const trimmedStart = fileStart.trimStart();
+      if (!trimmedStart.startsWith("IE_VER") && !trimmedStart.startsWith("CONTROLLER")) {
+        return NextResponse.json(
+          { error: "Invalid L5K file format - file must be a valid Studio 5000 text export" },
           { status: 400 }
         );
       }
