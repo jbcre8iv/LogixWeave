@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   Eye,
   Pencil,
   Crown,
+  Shield,
 } from "lucide-react";
 import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
@@ -34,7 +35,21 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: project, error } = await supabase
+  // Check if user is platform admin
+  let isPlatformAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_platform_admin")
+      .eq("id", user.id)
+      .single();
+    isPlatformAdmin = profile?.is_platform_admin || false;
+  }
+
+  // Use service client for platform admins to bypass RLS
+  const queryClient = isPlatformAdmin ? await createServiceClient() : supabase;
+
+  const { data: project, error } = await queryClient
     .from("projects")
     .select(`
       *,
@@ -58,11 +73,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const isOwner = project.created_by === user?.id;
 
   // Check user's permission level
-  let userPermission: "owner" | "edit" | "view" | null = isOwner ? "owner" : null;
-  let canEdit = isOwner;
+  let userPermission: "owner" | "edit" | "view" | "admin" | null = isOwner ? "owner" : isPlatformAdmin ? "admin" : null;
+  let canEdit = isOwner || isPlatformAdmin;
   let pendingShareId: string | null = null;
 
-  if (!isOwner && user) {
+  if (!isOwner && !isPlatformAdmin && user) {
     const { data: share } = await supabase
       .from("project_shares")
       .select("id, permission, accepted_at")
@@ -83,7 +98,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   // If user has no access and no pending invite, show not found
-  if (!isOwner && !userPermission && !pendingShareId) {
+  if (!isOwner && !isPlatformAdmin && !userPermission && !pendingShareId) {
     notFound();
   }
 
@@ -107,15 +122,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   if (fileIds.length > 0) {
     const [tagsResult, routinesResult, modulesResult] = await Promise.all([
-      supabase
+      queryClient
         .from("parsed_tags")
         .select("*", { count: "exact", head: true })
         .in("file_id", fileIds),
-      supabase
+      queryClient
         .from("parsed_routines")
         .select("*", { count: "exact", head: true })
         .in("file_id", fileIds),
-      supabase
+      queryClient
         .from("parsed_io_modules")
         .select("*", { count: "exact", head: true })
         .in("file_id", fileIds),
@@ -153,10 +168,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           {/* Show permission badge for non-owners */}
           {!isOwner && userPermission && (
             <Badge
-              variant={userPermission === "owner" ? "default" : userPermission === "edit" ? "secondary" : "outline"}
-              className="text-sm py-1.5 px-3"
+              variant={userPermission === "admin" ? "default" : userPermission === "owner" ? "default" : userPermission === "edit" ? "secondary" : "outline"}
+              className={`text-sm py-1.5 px-3 ${userPermission === "admin" ? "bg-primary" : ""}`}
             >
-              {userPermission === "owner" ? (
+              {userPermission === "admin" ? (
+                <><Shield className="h-3 w-3 mr-1" /> Admin Access</>
+              ) : userPermission === "owner" ? (
                 <><Crown className="h-3 w-3 mr-1" /> Co-Owner</>
               ) : userPermission === "edit" ? (
                 <><Pencil className="h-3 w-3 mr-1" /> Can Edit</>
@@ -165,8 +182,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               )}
             </Badge>
           )}
-          {/* Request higher permissions for shared users (not owners) */}
-          {!isOwner && userPermission && userPermission !== "owner" && (
+          {/* Request higher permissions for shared users (not owners or admins) */}
+          {!isOwner && !isPlatformAdmin && userPermission && userPermission !== "owner" && (
             <RequestPermissionDialog
               projectId={projectId}
               projectName={project.name}
