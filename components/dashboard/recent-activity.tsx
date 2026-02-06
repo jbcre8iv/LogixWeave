@@ -17,6 +17,7 @@ import {
 interface ActivityItem {
   id: string;
   project_id: string;
+  user_id: string | null;
   user_email: string | null;
   action: string;
   target_name: string | null;
@@ -24,11 +25,7 @@ interface ActivityItem {
   projects: {
     name: string;
   } | null;
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-    full_name: string | null;
-  } | null;
+  displayName?: string;
 }
 
 // Get icon for activity type
@@ -53,20 +50,9 @@ function getActivityIcon(action: string) {
   }
 }
 
-// Get display name from activity, preferring profile first+last name
-function getUserName(activity: ActivityItem): string {
-  const profile = activity.profiles;
-  if (profile) {
-    const firstLast = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
-    if (firstLast) return firstLast;
-    if (profile.full_name) return profile.full_name;
-  }
-  return activity.user_email?.split("@")[0] || "Someone";
-}
-
 // Format activity description
 function formatActivityDescription(activity: ActivityItem): string {
-  const userName = getUserName(activity);
+  const userName = activity.displayName || activity.user_email?.split("@")[0] || "Someone";
 
   switch (activity.action) {
     case "file_uploaded":
@@ -135,25 +121,49 @@ export async function RecentActivity() {
   }
 
   // Get recent activity across all accessible projects
-  const { data: activities } = await supabase
+  const { data: rawActivities } = await supabase
     .from("project_activity_log")
     .select(`
       id,
       project_id,
+      user_id,
       user_email,
       action,
       target_name,
       created_at,
-      projects:project_id(name),
-      profiles:user_id(first_name, last_name, full_name)
+      projects:project_id(name)
     `)
     .in("project_id", projectIds)
     .order("created_at", { ascending: false })
     .limit(10);
 
-  if (!activities || activities.length === 0) {
+  if (!rawActivities || rawActivities.length === 0) {
     return null;
   }
+
+  // Look up display names for unique user IDs
+  const userIds = [...new Set(rawActivities.map(a => a.user_id).filter(Boolean))] as string[];
+  const profileMap = new Map<string, string>();
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, full_name")
+      .in("id", userIds);
+
+    if (profiles) {
+      for (const p of profiles) {
+        const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || p.full_name;
+        if (name) profileMap.set(p.id, name);
+      }
+    }
+  }
+
+  // Attach display names to activities
+  const activities = rawActivities.map(a => ({
+    ...a,
+    displayName: a.user_id ? profileMap.get(a.user_id) : undefined,
+  }));
 
   return (
     <Card>

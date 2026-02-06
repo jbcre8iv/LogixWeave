@@ -55,9 +55,9 @@ export async function GET(
     }
 
     // Fetch activities since last visit (excluding current user's actions)
-    const { data: activities } = await supabase
+    const { data: rawActivities } = await supabase
       .from("project_activity_log")
-      .select("*, profiles:user_id(first_name, last_name, full_name)")
+      .select("*")
       .eq("project_id", projectId)
       .gt("created_at", lastSeenAt)
       .neq("user_id", user.id)
@@ -66,7 +66,7 @@ export async function GET(
 
     // If no activities, update timestamp and return empty
     // (Don't update timestamp when activities exist - let user dismiss to update)
-    if (!activities || activities.length === 0) {
+    if (!rawActivities || rawActivities.length === 0) {
       await supabase
         .from("project_user_sessions")
         .update({ last_seen_at: new Date().toISOString() })
@@ -78,6 +78,29 @@ export async function GET(
         },
       });
     }
+
+    // Look up display names for unique user IDs
+    const userIds = [...new Set(rawActivities.map(a => a.user_id).filter(Boolean))] as string[];
+    const profileMap = new Map<string, { first_name: string | null; last_name: string | null; full_name: string | null }>();
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, full_name")
+        .in("id", userIds);
+
+      if (profiles) {
+        for (const p of profiles) {
+          profileMap.set(p.id, { first_name: p.first_name, last_name: p.last_name, full_name: p.full_name });
+        }
+      }
+    }
+
+    // Attach profile data to activities
+    const activities = rawActivities.map(a => ({
+      ...a,
+      profiles: a.user_id ? profileMap.get(a.user_id) || null : null,
+    }));
 
     // Generate AI summary
     const summary = await generateActivitySummary(activities);
