@@ -305,7 +305,7 @@ export function HelpTourDialog({
         </div>
 
         {/* Step dots */}
-        <div className="flex items-center justify-center gap-1.5 py-3">
+        <div className="flex items-center justify-center gap-1.5 pt-6 pb-4">
           {tourSteps.map((_, i) => (
             <button
               key={i}
