@@ -118,6 +118,14 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   }, [projectId, supabase]);
 
   const handleProjectSwitch = (newProjectId: string) => {
+    if (newProjectId === projectId) {
+      // Deselect: navigate to the matching global tool page, or stay on projects list
+      const subPath = pathname.replace(/^\/dashboard\/projects\/[^/]+/, "");
+      const matchingTool = projectTools.find((t) => t.projectHref === subPath);
+      router.push(matchingTool?.globalHref || "/dashboard/projects");
+      onNavClick?.();
+      return;
+    }
     // Get the current sub-path within the project (e.g., /tags, /analysis)
     const subPath = pathname.replace(/^\/dashboard\/projects\/[^/]+/, "");
     // Navigate to the same sub-path in the new project
