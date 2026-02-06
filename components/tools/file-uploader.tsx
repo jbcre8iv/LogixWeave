@@ -17,9 +17,14 @@ interface UploadingFile {
   error?: string;
 }
 
+// Allowed file types and max size (50MB)
+const ALLOWED_EXTENSIONS = ["l5x", "l5k"];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 export function FileUploader({ projectId }: FileUploaderProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+  const [rejectionError, setRejectionError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -36,8 +41,12 @@ export function FileUploader({ projectId }: FileUploaderProps) {
   const uploadFile = async (file: File) => {
     const extension = file.name.split(".").pop()?.toLowerCase();
 
-    if (extension !== "l5x" && extension !== "l5k") {
-      return { error: "Only .l5x and .l5k files are supported" };
+    if (!extension || !ALLOWED_EXTENSIONS.includes(extension)) {
+      return { error: "Only .L5X and .L5K files are supported" };
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return { error: "File exceeds 50MB limit" };
     }
 
     try {
@@ -96,10 +105,33 @@ export function FileUploader({ projectId }: FileUploaderProps) {
 
   const handleFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
-    const validFiles = fileArray.filter((f) => {
-      const ext = f.name.split(".").pop()?.toLowerCase();
-      return ext === "l5x" || ext === "l5k";
-    });
+    setRejectionError(null);
+
+    // Validate files
+    const validFiles: File[] = [];
+    const rejectionReasons: string[] = [];
+
+    for (const file of fileArray) {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+
+      if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+        rejectionReasons.push(`"${file.name}" - Only .L5X and .L5K files are allowed`);
+        continue;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        rejectionReasons.push(`"${file.name}" - File exceeds 50MB limit`);
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    // Show rejection errors
+    if (rejectionReasons.length > 0) {
+      setRejectionError(rejectionReasons.join(". "));
+      setTimeout(() => setRejectionError(null), 8000);
+    }
 
     if (validFiles.length === 0) {
       return;
@@ -152,6 +184,13 @@ export function FileUploader({ projectId }: FileUploaderProps) {
 
   return (
     <div className="space-y-4">
+      {rejectionError && (
+        <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <span>{rejectionError}</span>
+        </div>
+      )}
+
       <Card
         className={`border-2 border-dashed transition-colors ${
           isDragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25"

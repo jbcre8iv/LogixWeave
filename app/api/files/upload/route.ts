@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity-log";
 
+// Security: Allowed file types and max size
+const ALLOWED_EXTENSIONS = ["l5x", "l5k"];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -28,11 +32,35 @@ export async function POST(request: Request) {
 
     // Validate file extension
     const extension = file.name.split(".").pop()?.toLowerCase();
-    if (extension !== "l5x" && extension !== "l5k") {
+    if (!extension || !ALLOWED_EXTENSIONS.includes(extension)) {
       return NextResponse.json(
-        { error: "Only .l5x and .l5k files are supported" },
+        { error: "Only .L5X and .L5K files are supported" },
         { status: 400 }
       );
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File exceeds maximum size of 50MB" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file content (L5X files should be XML)
+    if (extension === "l5x") {
+      // Only read first 500 bytes to check file signature
+      const headerSlice = file.slice(0, 500);
+      const headerBuffer = await headerSlice.arrayBuffer();
+      const fileStart = new TextDecoder().decode(headerBuffer);
+
+      // Check for XML declaration or RSLogix5000Content root element
+      if (!fileStart.includes("<?xml") && !fileStart.includes("<RSLogix5000Content")) {
+        return NextResponse.json(
+          { error: "Invalid L5X file format - file must be a valid Studio 5000 export" },
+          { status: 400 }
+        );
+      }
     }
 
     // Verify user has access to the project
