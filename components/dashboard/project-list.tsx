@@ -44,6 +44,7 @@ import {
   List,
   Search,
   ArrowUpDown,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,11 +55,13 @@ interface Project {
   created_at: string;
   updated_at: string;
   is_favorite: boolean;
+  created_by?: string;
   project_files: { count: number } | Array<unknown>;
 }
 
 interface ProjectListProps {
   projects: Project[];
+  currentUserId?: string;
 }
 
 type SortOption = "updated" | "created" | "name" | "files";
@@ -245,7 +248,7 @@ function ProjectListTable({
   );
 }
 
-export function ProjectList({ projects }: ProjectListProps) {
+export function ProjectList({ projects, currentUserId }: ProjectListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -263,7 +266,7 @@ export function ProjectList({ projects }: ProjectListProps) {
   };
 
   // Filter and sort projects
-  const { favoriteProjects, regularProjects, filteredAndSortedProjects } = useMemo(() => {
+  const { favoriteProjects, regularProjects, sharedProjects, filteredAndSortedProjects } = useMemo(() => {
     let result = [...projects];
 
     // Filter by search query
@@ -296,16 +299,26 @@ export function ProjectList({ projects }: ProjectListProps) {
       return sortDesc ? -comparison : comparison;
     };
 
-    // Separate favorites and regular projects
-    const favorites = result.filter((p) => p.is_favorite).sort(sortFn);
-    const regular = result.filter((p) => !p.is_favorite).sort(sortFn);
+    // Separate owned vs shared projects
+    const owned = currentUserId
+      ? result.filter((p) => !p.created_by || p.created_by === currentUserId)
+      : result;
+    const shared = currentUserId
+      ? result.filter((p) => p.created_by && p.created_by !== currentUserId)
+      : [];
+
+    // Separate favorites and regular from owned projects
+    const favorites = owned.filter((p) => p.is_favorite).sort(sortFn);
+    const regular = owned.filter((p) => !p.is_favorite).sort(sortFn);
+    const sortedShared = shared.sort(sortFn);
 
     return {
       favoriteProjects: favorites,
       regularProjects: regular,
-      filteredAndSortedProjects: [...favorites, ...regular],
+      sharedProjects: sortedShared,
+      filteredAndSortedProjects: [...favorites, ...regular, ...sortedShared],
     };
-  }, [projects, searchQuery, sortBy, sortDesc]);
+  }, [projects, searchQuery, sortBy, sortDesc, currentUserId]);
 
   const toggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) {
@@ -573,13 +586,37 @@ export function ProjectList({ projects }: ProjectListProps) {
           {/* All Projects section */}
           {regularProjects.length > 0 && (
             <div className="space-y-3">
-              {favoriteProjects.length > 0 && (
+              {(favoriteProjects.length > 0 || sharedProjects.length > 0) && (
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  All Projects
+                  {sharedProjects.length > 0 ? "My Projects" : "All Projects"}
                 </h2>
               )}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {regularProjects.map((project) => (
+                  <ProjectGridCard
+                    key={project.id}
+                    project={project}
+                    isSelected={selectedIds.has(project.id)}
+                    onToggleSelect={toggleSelect}
+                    onToggleFavorite={toggleSingleFavorite}
+                    getFileCount={getFileCount}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shared with me section */}
+          {sharedProjects.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Shared with me
+                </h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {sharedProjects.map((project) => (
                   <ProjectGridCard
                     key={project.id}
                     project={project}
@@ -621,13 +658,33 @@ export function ProjectList({ projects }: ProjectListProps) {
           {/* All Projects section */}
           {regularProjects.length > 0 && (
             <div className="space-y-3">
-              {favoriteProjects.length > 0 && (
+              {(favoriteProjects.length > 0 || sharedProjects.length > 0) && (
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  All Projects
+                  {sharedProjects.length > 0 ? "My Projects" : "All Projects"}
                 </h2>
               )}
               <ProjectListTable
                 projects={regularProjects}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleFavorite={toggleSingleFavorite}
+                getFileCount={getFileCount}
+                router={router}
+              />
+            </div>
+          )}
+
+          {/* Shared with me section */}
+          {sharedProjects.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Shared with me
+                </h2>
+              </div>
+              <ProjectListTable
+                projects={sharedProjects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
                 onToggleFavorite={toggleSingleFavorite}

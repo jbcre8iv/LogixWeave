@@ -8,6 +8,8 @@ import { ProjectList } from "@/components/dashboard/project-list";
 export default async function ProjectsPage() {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data: projects } = await supabase
     .from("projects")
     .select(`
@@ -17,6 +19,7 @@ export default async function ProjectsPage() {
       created_at,
       updated_at,
       is_favorite,
+      created_by,
       project_files(count)
     `)
     .order("updated_at", { ascending: false });
@@ -39,7 +42,7 @@ export default async function ProjectsPage() {
       </div>
 
       {projects && projects.length > 0 ? (
-        <ProjectList projects={projects} />
+        <ProjectList projects={projects} currentUserId={user?.id} />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

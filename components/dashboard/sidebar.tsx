@@ -31,6 +31,7 @@ import {
   Plus,
   Shield,
   Star,
+  Users,
 } from "lucide-react";
 
 const navigation = [
@@ -67,6 +68,7 @@ interface Project {
   id: string;
   name: string;
   is_favorite: boolean;
+  created_by?: string;
 }
 
 export function SidebarContent({ onNavClick }: SidebarContentProps) {
@@ -75,6 +77,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const projectId = getProjectIdFromPath(pathname);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const supabase = createClient();
 
@@ -84,6 +87,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
       // Check admin status
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setCurrentUserId(user.id);
         const { data: profile } = await supabase
           .from("profiles")
           .select("is_platform_admin")
@@ -95,7 +99,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
       // Fetch all projects for dropdown
       const { data: projects } = await supabase
         .from("projects")
-        .select("id, name, is_favorite")
+        .select("id, name, is_favorite, created_by")
         .order("name");
 
       if (projects) {
@@ -192,14 +196,39 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                   No projects yet
                 </div>
               ) : (
-                <>
-                  {allProjects.filter((p) => p.is_favorite).length > 0 && (
+                (() => {
+                  const owned = allProjects.filter((p) => !currentUserId || !p.created_by || p.created_by === currentUserId);
+                  const shared = allProjects.filter((p) => currentUserId && p.created_by && p.created_by !== currentUserId);
+                  const favorites = owned.filter((p) => p.is_favorite);
+                  const regular = owned.filter((p) => !p.is_favorite);
+
+                  return (
                     <>
-                      <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        Favorites
-                      </DropdownMenuLabel>
-                      {allProjects.filter((p) => p.is_favorite).map((project) => (
+                      {favorites.length > 0 && (
+                        <>
+                          <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            Favorites
+                          </DropdownMenuLabel>
+                          {favorites.map((project) => (
+                            <DropdownMenuItem
+                              key={project.id}
+                              onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                              <span className="truncate flex-1">{project.name}</span>
+                              {project.id === projectId && (
+                                <Check className="h-4 w-4 text-primary" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                          {(regular.length > 0 || shared.length > 0) && (
+                            <DropdownMenuSeparator />
+                          )}
+                        </>
+                      )}
+                      {regular.map((project) => (
                         <DropdownMenuItem
                           key={project.id}
                           onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
@@ -212,25 +241,31 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                           )}
                         </DropdownMenuItem>
                       ))}
-                      {allProjects.filter((p) => !p.is_favorite).length > 0 && (
-                        <DropdownMenuSeparator />
+                      {shared.length > 0 && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Users className="h-3 w-3" />
+                            Shared with me
+                          </DropdownMenuLabel>
+                          {shared.map((project) => (
+                            <DropdownMenuItem
+                              key={project.id}
+                              onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                              <span className="truncate flex-1">{project.name}</span>
+                              {project.id === projectId && (
+                                <Check className="h-4 w-4 text-primary" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </>
                       )}
                     </>
-                  )}
-                  {allProjects.filter((p) => !p.is_favorite).map((project) => (
-                    <DropdownMenuItem
-                      key={project.id}
-                      onClick={() => projectId ? handleProjectSwitch(project.id) : handleProjectSelect(project.id)}
-                      className="flex items-center gap-2"
-                    >
-                      <FolderIcon className="h-4 w-4 text-muted-foreground" />
-                      <span className="truncate flex-1">{project.name}</span>
-                      {project.id === projectId && (
-                        <Check className="h-4 w-4 text-primary" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </>
+                  );
+                })()
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
