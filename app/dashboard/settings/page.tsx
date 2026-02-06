@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { SignOutButton } from "@/components/settings/sign-out-button";
+import { ChangePasswordForm } from "@/components/settings/change-password-form";
 import { AILanguageSelector } from "@/components/settings/ai-language-selector";
 import { Sparkles } from "lucide-react";
 
@@ -96,8 +97,11 @@ export default async function SettingsPage() {
             <CardTitle>Account</CardTitle>
             <CardDescription>Manage your account</CardDescription>
           </CardHeader>
-          <CardContent>
-            <SignOutButton />
+          <CardContent className="space-y-4">
+            <ChangePasswordForm />
+            <div className="border-t pt-4">
+              <SignOutButton />
+            </div>
           </CardContent>
         </Card>
       </div>
