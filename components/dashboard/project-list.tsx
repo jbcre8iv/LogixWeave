@@ -163,6 +163,7 @@ interface ProjectListTableProps {
   router: ReturnType<typeof useRouter>;
   ownerMap?: Record<string, string>;
   showOwner?: boolean;
+  currentUserId?: string;
 }
 
 function ProjectListTable({
@@ -174,6 +175,7 @@ function ProjectListTable({
   router,
   ownerMap = {},
   showOwner = false,
+  currentUserId,
 }: ProjectListTableProps) {
   return (
     <div className="rounded-md border">
@@ -236,7 +238,7 @@ function ProjectListTable({
                 {showOwner && (
                   <TableCell className="hidden sm:table-cell">
                     <span className="text-muted-foreground truncate">
-                      {project.created_by ? ownerMap[project.created_by] || "Unknown" : "-"}
+                      {project.created_by === currentUserId ? "Me" : project.created_by ? ownerMap[project.created_by] || "Unknown" : "-"}
                     </span>
                   </TableCell>
                 )}
@@ -690,6 +692,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 router={router}
                 showOwner={hasAnySharedProject}
                 ownerMap={ownerMap}
+                currentUserId={currentUserId}
               />
             </div>
           )}
@@ -710,6 +713,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 getFileCount={getFileCount}
                 router={router}
                 showOwner={hasAnySharedProject}
+                currentUserId={currentUserId}
               />
             </div>
           )}
@@ -732,6 +736,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 router={router}
                 showOwner={hasAnySharedProject}
                 ownerMap={ownerMap}
+                currentUserId={currentUserId}
               />
             </div>
           )}
