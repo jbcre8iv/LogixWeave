@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FolderOpen, Tags, HardDrive, Sparkles, Plus, ArrowRight, Users } from "lucide-react";
+import { FolderOpen, Plus, ArrowRight, Users, Mail } from "lucide-react";
 import { PendingInvites } from "@/components/dashboard/pending-invites";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 
@@ -27,12 +27,12 @@ export default async function DashboardPage() {
     .limit(5);
 
   // Get shared projects (only accepted invites)
-  const { data: sharedProjects } = await supabase
+  const { data: sharedProjects, count: sharedCount } = await supabase
     .from("project_shares")
     .select(`
       permission,
       projects:project_id(id, name, updated_at)
-    `)
+    `, { count: "exact" })
     .or(`shared_with_user_id.eq.${user?.id},shared_with_email.eq.${user?.email}`)
     .not("accepted_at", "is", null)
     .limit(5);
@@ -53,8 +53,8 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Blue - Projects */}
+      <div className={`grid gap-4 md:grid-cols-2 ${pendingInvitesCount ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+        {/* Blue - Total Projects */}
         <Card className="border-l-4 border-l-[#3B82F6] bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
@@ -70,65 +70,39 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Indigo - Tags */}
+        {/* Indigo - Shared with Me */}
         <Card className="border-l-4 border-l-[#6366F1] bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-950/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tag Explorer</CardTitle>
+            <CardTitle className="text-sm font-medium">Shared with Me</CardTitle>
             <div className="rounded-full bg-indigo-100 dark:bg-indigo-900/30 p-2">
-              <Tags className="h-4 w-4 text-[#6366F1]" />
+              <Users className="h-4 w-4 text-[#6366F1]" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground mb-2">
-              Search and analyze PLC tags
+            <div className="text-2xl font-bold">{sharedCount || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Shared projects
             </p>
-            <Button variant="outline" size="sm" asChild className="border-[#6366F1]/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/30">
-              <Link href="/dashboard/tools/tags">
-                Open Tool <ArrowRight className="ml-2 h-3 w-3" />
-              </Link>
-            </Button>
           </CardContent>
         </Card>
 
-        {/* Violet - I/O */}
-        <Card className="border-l-4 border-l-[#8B5CF6] bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-950/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">I/O Mapping</CardTitle>
-            <div className="rounded-full bg-violet-100 dark:bg-violet-900/30 p-2">
-              <HardDrive className="h-4 w-4 text-[#8B5CF6]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground mb-2">
-              View hardware configuration
-            </p>
-            <Button variant="outline" size="sm" asChild className="border-[#8B5CF6]/30 hover:bg-violet-50 dark:hover:bg-violet-950/30">
-              <Link href="/dashboard/tools/io">
-                Open Tool <ArrowRight className="ml-2 h-3 w-3" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Amber - AI Assistant */}
-        <Card className="border-l-4 border-l-[#F59E0B] bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI Assistant</CardTitle>
-            <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-2">
-              <Sparkles className="h-4 w-4 text-[#F59E0B]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground mb-2">
-              Explain logic in plain English
-            </p>
-            <Button variant="outline" size="sm" asChild className="border-[#F59E0B]/30 hover:bg-amber-50 dark:hover:bg-amber-950/30">
-              <Link href="/dashboard/tools/ai">
-                Open Tool <ArrowRight className="ml-2 h-3 w-3" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Amber - Pending Invites (only shown if count > 0) */}
+        {pendingInvitesCount ? (
+          <Card className="border-l-4 border-l-[#F59E0B] bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
+              <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-2">
+                <Mail className="h-4 w-4 text-[#F59E0B]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pendingInvitesCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Pending invites
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
 
       {/* Pending Invites - shows if user has any */}
