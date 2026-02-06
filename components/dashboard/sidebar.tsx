@@ -126,8 +126,15 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   };
 
   const handleProjectSelect = (selectedProjectId: string) => {
-    // Navigate to the selected project's main page
-    router.push(`/dashboard/projects/${selectedProjectId}`);
+    // If on a global tool page, navigate to the same tool within the project
+    const currentTool = projectTools.find(
+      (t) => pathname === t.globalHref || pathname.startsWith(t.globalHref + "/")
+    );
+    if (currentTool?.projectHref) {
+      router.push(`/dashboard/projects/${selectedProjectId}${currentTool.projectHref}`);
+    } else {
+      router.push(`/dashboard/projects/${selectedProjectId}`);
+    }
     onNavClick?.();
   };
 
