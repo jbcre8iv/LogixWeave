@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Building2,
 } from "lucide-react";
+import { UserActions } from "@/components/admin/user-actions";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -48,7 +49,7 @@ export default async function AdminDashboardPage() {
     filesResult,
     organizationsResult,
   ] = await Promise.all([
-    supabase.from("profiles").select("id, email, full_name, created_at, is_platform_admin"),
+    supabase.from("profiles").select("id, email, full_name, created_at, is_platform_admin, is_disabled"),
     supabase.from("projects").select("id, name, organization_id, created_at, organizations(name)"),
     supabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
     supabase.from("organizations").select("id, name, created_at"),
@@ -148,7 +149,8 @@ export default async function AdminDashboardPage() {
                 <TableHead>Projects</TableHead>
                 <TableHead>Files</TableHead>
                 <TableHead>Joined</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,7 +164,7 @@ export default async function AdminDashboardPage() {
                 );
 
                 return (
-                  <TableRow key={u.id}>
+                  <TableRow key={u.id} className={u.is_disabled ? "opacity-50" : ""}>
                     <TableCell className="font-medium">
                       {u.full_name || "—"}
                     </TableCell>
@@ -175,9 +177,21 @@ export default async function AdminDashboardPage() {
                     <TableCell>
                       {u.is_platform_admin ? (
                         <Badge className="bg-primary">Admin</Badge>
+                      ) : u.is_disabled ? (
+                        <Badge variant="destructive">Disabled</Badge>
                       ) : (
-                        <Badge variant="secondary">User</Badge>
+                        <Badge variant="secondary">Active</Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <UserActions
+                        userId={u.id}
+                        userEmail={u.email}
+                        userName={u.full_name}
+                        isDisabled={u.is_disabled || false}
+                        isCurrentUser={u.id === user.id}
+                        isPlatformAdmin={u.is_platform_admin || false}
+                      />
                     </TableCell>
                   </TableRow>
                 );
