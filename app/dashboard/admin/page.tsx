@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,23 +42,54 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  // Fetch all platform statistics
+  // Use service client to bypass RLS for admin queries
+  const serviceSupabase = await createServiceClient();
+
+  // Fetch all platform statistics using service client
   const [
     usersResult,
     projectsResult,
     filesResult,
     organizationsResult,
+    membershipsResult,
   ] = await Promise.all([
-    supabase.from("profiles").select("id, email, full_name, created_at, is_platform_admin, is_disabled"),
-    supabase.from("projects").select("id, name, organization_id, created_at, organizations(name)"),
-    supabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
-    supabase.from("organizations").select("id, name, created_at"),
+    serviceSupabase.from("profiles").select("id, email, full_name, created_at, is_platform_admin, is_disabled"),
+    serviceSupabase.from("projects").select("id, name, organization_id, created_at, organizations(name)"),
+    serviceSupabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
+    serviceSupabase.from("organizations").select("id, name, created_at"),
+    serviceSupabase.from("organization_members").select("user_id, organization_id"),
   ]);
 
   const users = usersResult.data || [];
   const projects = projectsResult.data || [];
   const files = filesResult.data || [];
   const organizations = organizationsResult.data || [];
+  const memberships = membershipsResult.data || [];
+
+  // Build lookup maps for per-user stats
+  // Map user_id -> organization_ids they belong to
+  const userOrgMap = new Map<string, Set<string>>();
+  memberships.forEach(m => {
+    if (!userOrgMap.has(m.user_id)) {
+      userOrgMap.set(m.user_id, new Set());
+    }
+    userOrgMap.get(m.user_id)!.add(m.organization_id);
+  });
+
+  // Map organization_id -> project_ids
+  const orgProjectMap = new Map<string, Set<string>>();
+  projects.forEach(p => {
+    if (!orgProjectMap.has(p.organization_id)) {
+      orgProjectMap.set(p.organization_id, new Set());
+    }
+    orgProjectMap.get(p.organization_id)!.add(p.id);
+  });
+
+  // Map project_id -> file count
+  const projectFileCount = new Map<string, number>();
+  files.forEach(f => {
+    projectFileCount.set(f.project_id, (projectFileCount.get(f.project_id) || 0) + 1);
+  });
 
   // Calculate stats
   const totalStorage = files.reduce((acc, f) => acc + (f.file_size || 0), 0);
@@ -155,13 +186,19 @@ export default async function AdminDashboardPage() {
             </TableHeader>
             <TableBody>
               {users.map((u) => {
-                const userProjects = projects.filter(p => {
-                  const org = organizations.find(o => o.id === p.organization_id);
-                  return org !== undefined;
+                // Get organizations this user belongs to
+                const userOrgs = userOrgMap.get(u.id) || new Set<string>();
+
+                // Get projects from those organizations
+                let userProjectCount = 0;
+                let userFileCount = 0;
+                userOrgs.forEach(orgId => {
+                  const orgProjects = orgProjectMap.get(orgId) || new Set<string>();
+                  userProjectCount += orgProjects.size;
+                  orgProjects.forEach(projectId => {
+                    userFileCount += projectFileCount.get(projectId) || 0;
+                  });
                 });
-                const userFiles = files.filter(f =>
-                  userProjects.some(p => p.id === f.project_id)
-                );
 
                 return (
                   <TableRow key={u.id} className={u.is_disabled ? "opacity-50" : ""}>
@@ -169,8 +206,8 @@ export default async function AdminDashboardPage() {
                       {u.full_name || "—"}
                     </TableCell>
                     <TableCell>{u.email}</TableCell>
-                    <TableCell>{userProjects.length}</TableCell>
-                    <TableCell>{userFiles.length}</TableCell>
+                    <TableCell>{userProjectCount}</TableCell>
+                    <TableCell>{userFileCount}</TableCell>
                     <TableCell>
                       {new Date(u.created_at).toLocaleDateString()}
                     </TableCell>
