@@ -211,8 +211,8 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           </DropdownMenu>
 
           <div className={cn(
-            "space-y-1",
-            projectId && "relative before:absolute before:left-1 before:top-0 before:bottom-0 before:w-0.5 before:bg-primary/20 before:rounded-full"
+            "space-y-0.5",
+            projectId && "ml-3 pl-3 border-l-2 border-primary/20"
           )}>
             {tools.map((item) => {
               // Use project-specific href if on a project page and tool supports it
@@ -234,17 +234,18 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
                   href={href}
                   onClick={onNavClick}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    projectId ? "py-1.5 text-[13px]" : "",
                     isActive
                       ? isAI
-                        ? "bg-amber-500 text-white"
-                        : "bg-primary text-primary-foreground"
+                        ? "bg-amber-500 text-white font-medium"
+                        : "bg-primary text-primary-foreground font-medium"
                       : isAI
                         ? "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  <item.icon className={cn("h-4 w-4", !isActive && isAI && "text-amber-500")} />
+                  <item.icon className={cn("h-4 w-4", projectId && "h-3.5 w-3.5", !isActive && isAI && "text-amber-500")} />
                   {item.name}
                 </Link>
               );
