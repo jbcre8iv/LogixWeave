@@ -276,10 +276,21 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("projectViewMode");
+      if (saved === "grid" || saved === "list") return saved;
+    }
+    return "grid";
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [sortDesc, setSortDesc] = useState(true);
+
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode);
+    localStorage.setItem("projectViewMode", mode);
+  };
 
   const getFileCount = (project: Project) => {
     return Array.isArray(project.project_files)
@@ -546,7 +557,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="sm"
               className="rounded-r-none"
-              onClick={() => setViewMode("grid")}
+              onClick={() => handleViewModeChange("grid")}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -554,7 +565,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
               variant={viewMode === "list" ? "secondary" : "ghost"}
               size="sm"
               className="rounded-l-none"
-              onClick={() => setViewMode("list")}
+              onClick={() => handleViewModeChange("list")}
             >
               <List className="h-4 w-4" />
             </Button>
