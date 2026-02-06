@@ -207,7 +207,8 @@ export default async function AdminDashboardPage() {
             <TableBody>
               {recentProjects.map((project) => {
                 const projectFiles = files.filter(f => f.project_id === project.id);
-                const orgName = (project.organizations as { name: string } | null)?.name || "Unknown";
+                const org = project.organizations as unknown as { name: string } | null;
+                const orgName = org?.name || "Unknown";
 
                 return (
                   <TableRow key={project.id}>
