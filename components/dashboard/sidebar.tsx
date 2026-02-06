@@ -2,10 +2,18 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Logo, LogoIcon } from "@/components/ui/logo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -18,6 +26,9 @@ import {
   BarChart3,
   Sparkles,
   FolderOpen as FolderIcon,
+  ChevronDown,
+  Check,
+  Plus,
 } from "lucide-react";
 
 const navigation = [
@@ -46,33 +57,50 @@ interface SidebarContentProps {
   onNavClick?: () => void;
 }
 
+interface Project {
+  id: string;
+  name: string;
+}
+
 export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const projectId = getProjectIdFromPath(pathname);
-  const [projectName, setProjectName] = useState<string | null>(null);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const supabase = createClient();
 
-  // Fetch project name when projectId changes
+  // Fetch current project and all projects
   useEffect(() => {
-    if (!projectId) {
-      setProjectName(null);
-      return;
-    }
-
-    const fetchProjectName = async () => {
-      const { data } = await supabase
+    const fetchProjects = async () => {
+      // Fetch all projects for dropdown
+      const { data: projects } = await supabase
         .from("projects")
-        .select("name")
-        .eq("id", projectId)
-        .single();
+        .select("id, name")
+        .order("name");
 
-      if (data) {
-        setProjectName(data.name);
+      if (projects) {
+        setAllProjects(projects);
+        // Set current project if we have a projectId
+        if (projectId) {
+          const current = projects.find((p) => p.id === projectId);
+          setCurrentProject(current || null);
+        } else {
+          setCurrentProject(null);
+        }
       }
     };
 
-    fetchProjectName();
+    fetchProjects();
   }, [projectId, supabase]);
+
+  const handleProjectSwitch = (newProjectId: string) => {
+    // Get the current sub-path within the project (e.g., /tags, /analysis)
+    const subPath = pathname.replace(/^\/dashboard\/projects\/[^/]+/, "");
+    // Navigate to the same sub-path in the new project
+    router.push(`/dashboard/projects/${newProjectId}${subPath || ""}`);
+    onNavClick?.();
+  };
 
   return (
     <>
@@ -108,20 +136,46 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
             </p>
           </div>
 
-          {/* Project context badge */}
-          {projectId && projectName && (
-            <Link
-              href={`/dashboard/projects/${projectId}`}
-              className="mx-3 mb-3 flex items-center gap-2 px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors group"
-            >
-              <FolderIcon className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-xs font-medium text-primary truncate flex-1">
-                {projectName}
-              </span>
-            </Link>
-          )}
-
-          {!projectId && (
+          {/* Project switcher dropdown */}
+          {projectId && currentProject ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="mx-3 mb-3 w-[calc(100%-1.5rem)] flex items-center gap-2 px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors text-left">
+                  <FolderIcon className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="text-xs font-medium text-primary truncate flex-1">
+                    {currentProject.name}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-primary flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Switch Project
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {allProjects.map((project) => (
+                  <DropdownMenuItem
+                    key={project.id}
+                    onClick={() => handleProjectSwitch(project.id)}
+                    className="flex items-center gap-2"
+                  >
+                    <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="truncate flex-1">{project.name}</span>
+                    {project.id === projectId && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/projects" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span>View All Projects</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <div className="mx-3 mb-3 px-2.5 py-2 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20">
               <p className="text-xs text-muted-foreground text-center">
                 Select a project for context
