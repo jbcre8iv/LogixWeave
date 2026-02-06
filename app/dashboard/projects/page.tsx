@@ -24,6 +24,29 @@ export default async function ProjectsPage() {
     `)
     .order("updated_at", { ascending: false });
 
+  // Fetch owner names for shared projects
+  const sharedOwnerIds = projects
+    ?.filter((p) => user && p.created_by && p.created_by !== user.id)
+    .map((p) => p.created_by)
+    .filter((id, i, arr) => arr.indexOf(id) === i) || [];
+
+  let ownerMap: Record<string, string> = {};
+  if (sharedOwnerIds.length > 0) {
+    const { data: owners } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name")
+      .in("id", sharedOwnerIds);
+
+    if (owners) {
+      ownerMap = Object.fromEntries(
+        owners.map((o) => [
+          o.id,
+          [o.first_name, o.last_name].filter(Boolean).join(" ") || "Unknown",
+        ])
+      );
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -42,7 +65,7 @@ export default async function ProjectsPage() {
       </div>
 
       {projects && projects.length > 0 ? (
-        <ProjectList projects={projects} currentUserId={user?.id} />
+        <ProjectList projects={projects} currentUserId={user?.id} ownerMap={ownerMap} />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

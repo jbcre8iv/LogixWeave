@@ -62,6 +62,7 @@ interface Project {
 interface ProjectListProps {
   projects: Project[];
   currentUserId?: string;
+  ownerMap?: Record<string, string>;
 }
 
 type SortOption = "updated" | "created" | "name" | "files";
@@ -160,6 +161,8 @@ interface ProjectListTableProps {
   onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
   getFileCount: (project: Project) => number;
   router: ReturnType<typeof useRouter>;
+  ownerMap?: Record<string, string>;
+  showOwner?: boolean;
 }
 
 function ProjectListTable({
@@ -169,18 +172,30 @@ function ProjectListTable({
   onToggleFavorite,
   getFileCount,
   router,
+  ownerMap = {},
+  showOwner = false,
 }: ProjectListTableProps) {
   return (
     <div className="rounded-md border">
-      <Table>
+      <Table className="table-fixed">
+        <colgroup>
+          <col className="w-[40px]" />
+          <col />
+          <col className="hidden md:table-column w-[30%]" />
+          {showOwner && <col className="hidden sm:table-column w-[140px]" />}
+          <col className="w-[70px]" />
+          <col className="w-[100px]" />
+          <col className="w-[50px]" />
+        </colgroup>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40px]"></TableHead>
+            <TableHead></TableHead>
             <TableHead>Name</TableHead>
             <TableHead className="hidden md:table-cell">Description</TableHead>
-            <TableHead className="w-[100px]">Files</TableHead>
-            <TableHead className="w-[120px]">Updated</TableHead>
-            <TableHead className="w-[50px] pr-4"></TableHead>
+            {showOwner && <TableHead className="hidden sm:table-cell">Owner</TableHead>}
+            <TableHead>Files</TableHead>
+            <TableHead>Updated</TableHead>
+            <TableHead className="pr-4"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -210,7 +225,7 @@ function ProjectListTable({
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 shrink-0" />
                     )}
                     <FolderOpen className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-medium">{project.name}</span>
+                    <span className="font-medium truncate">{project.name}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
@@ -218,6 +233,13 @@ function ProjectListTable({
                     {project.description || "-"}
                   </span>
                 </TableCell>
+                {showOwner && (
+                  <TableCell className="hidden sm:table-cell">
+                    <span className="text-muted-foreground truncate">
+                      {project.created_by ? ownerMap[project.created_by] || "Unknown" : "-"}
+                    </span>
+                  </TableCell>
+                )}
                 <TableCell>{fileCount}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(project.updated_at).toLocaleDateString()}
@@ -248,7 +270,7 @@ function ProjectListTable({
   );
 }
 
-export function ProjectList({ projects, currentUserId }: ProjectListProps) {
+export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -690,6 +712,8 @@ export function ProjectList({ projects, currentUserId }: ProjectListProps) {
                 onToggleFavorite={toggleSingleFavorite}
                 getFileCount={getFileCount}
                 router={router}
+                showOwner
+                ownerMap={ownerMap}
               />
             </div>
           )}
