@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useEffect, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -278,6 +278,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [optimisticFavorites, setOptimisticFavorites] = useState<Record<string, boolean>>({});
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("projectViewMode");
@@ -300,9 +301,21 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
       : (project.project_files as { count: number })?.count || 0;
   };
 
+  // Apply optimistic favorite toggles
+  const effectiveProjects = useMemo(() =>
+    projects.map((p) =>
+      p.id in optimisticFavorites ? { ...p, is_favorite: optimisticFavorites[p.id] } : p
+    ),
+  [projects, optimisticFavorites]);
+
+  // Clear optimistic state when server data catches up
+  useEffect(() => {
+    setOptimisticFavorites({});
+  }, [projects]);
+
   // Filter and sort projects
   const { favoriteProjects, regularProjects, sharedProjects, filteredAndSortedProjects } = useMemo(() => {
-    let result = [...projects];
+    let result = [...effectiveProjects];
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -352,7 +365,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
       sharedProjects: shared,
       filteredAndSortedProjects: [...favorites, ...regular, ...shared],
     };
-  }, [projects, searchQuery, sortBy, sortDesc, currentUserId]);
+  }, [effectiveProjects, searchQuery, sortBy, sortDesc, currentUserId]);
 
   // Show Owner column when any shared project exists (in any section)
   const hasAnySharedProject = currentUserId
@@ -441,6 +454,9 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
     e.preventDefault();
     e.stopPropagation();
 
+    // Optimistic update — toggle instantly
+    setOptimisticFavorites((prev) => ({ ...prev, [id]: !currentValue }));
+
     try {
       const response = await fetch("/api/projects/bulk", {
         method: "PATCH",
@@ -458,6 +474,8 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
         router.refresh();
       });
     } catch (error) {
+      // Revert on failure
+      setOptimisticFavorites((prev) => ({ ...prev, [id]: currentValue }));
       console.error("Failed to update favorite:", error);
     }
   };
