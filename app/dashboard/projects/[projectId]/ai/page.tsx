@@ -33,7 +33,7 @@ export default async function AIPage({ params }: AIPageProps) {
   const aiTools = [
     {
       title: "Logic Explainer",
-      description: "Get plain-English explanations of ladder logic rungs and routines",
+      description: "Get clear, intuitive explanations of ladder logic rungs and routines",
       href: `/dashboard/projects/${projectId}/ai/explain`,
       icon: Brain,
     },

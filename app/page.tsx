@@ -96,7 +96,7 @@ export default function HomePage() {
                 <Sparkles className="h-10 w-10 text-amber-500 mb-2" />
                 <CardTitle>AI Assistant</CardTitle>
                 <CardDescription>
-                  Get plain-English explanations of ladder logic, find potential
+                  Get clear, intuitive explanations of ladder logic, find potential
                   issues, and search your project using natural language.
                 </CardDescription>
               </CardHeader>

@@ -94,7 +94,7 @@ export default async function ExplainPage({ params }: ExplainPageProps) {
         <CardHeader>
           <CardTitle>Explain Ladder Logic</CardTitle>
           <CardDescription>
-            Select a routine to get a plain-English explanation of its logic.
+            Select a routine to get a clear, intuitive explanation of its logic.
             The AI will analyze the code and explain what each rung does.
           </CardDescription>
         </CardHeader>

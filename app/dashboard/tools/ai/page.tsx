@@ -49,7 +49,7 @@ export default async function GlobalAIPage() {
             <div>
               <h3 className="font-semibold mb-1">AI-Powered Features</h3>
               <p className="text-sm text-muted-foreground">
-                Get plain-English explanations of ladder logic, find potential issues,
+                Get clear, intuitive explanations of ladder logic, find potential issues,
                 and search your code using natural language queries.
               </p>
             </div>
