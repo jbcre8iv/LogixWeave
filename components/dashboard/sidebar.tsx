@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import { Logo, LogoIcon } from "@/components/ui/logo";
 import {
   LayoutDashboard,
@@ -15,7 +17,7 @@ import {
   Package,
   BarChart3,
   Sparkles,
-  Link2,
+  FolderOpen as FolderIcon,
 } from "lucide-react";
 
 const navigation = [
@@ -47,6 +49,30 @@ interface SidebarContentProps {
 export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const pathname = usePathname();
   const projectId = getProjectIdFromPath(pathname);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  const supabase = createClient();
+
+  // Fetch project name when projectId changes
+  useEffect(() => {
+    if (!projectId) {
+      setProjectName(null);
+      return;
+    }
+
+    const fetchProjectName = async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("name")
+        .eq("id", projectId)
+        .single();
+
+      if (data) {
+        setProjectName(data.name);
+      }
+    };
+
+    fetchProjectName();
+  }, [projectId, supabase]);
 
   return (
     <>
@@ -80,16 +106,33 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Tools
             </p>
-            {projectId ? (
-              <div className="flex items-center gap-1.5 mt-1">
-                <Link2 className="h-3 w-3 text-primary" />
-                <span className="text-xs text-primary">Linked to project</span>
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground/60">Select a project for context</span>
-            )}
           </div>
-          <div className="space-y-1">
+
+          {/* Project context badge */}
+          {projectId && projectName && (
+            <Link
+              href={`/dashboard/projects/${projectId}`}
+              className="mx-3 mb-3 flex items-center gap-2 px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors group"
+            >
+              <FolderIcon className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-xs font-medium text-primary truncate flex-1">
+                {projectName}
+              </span>
+            </Link>
+          )}
+
+          {!projectId && (
+            <div className="mx-3 mb-3 px-2.5 py-2 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20">
+              <p className="text-xs text-muted-foreground text-center">
+                Select a project for context
+              </p>
+            </div>
+          )}
+
+          <div className={cn(
+            "space-y-1",
+            projectId && "relative before:absolute before:left-3 before:top-0 before:bottom-0 before:w-0.5 before:bg-primary/20 before:rounded-full"
+          )}>
             {tools.map((item) => {
               // Use project-specific href if on a project page and tool supports it
               const href = projectId && item.projectHref
