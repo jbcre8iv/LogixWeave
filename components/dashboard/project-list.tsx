@@ -332,26 +332,30 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
       return sortDesc ? -comparison : comparison;
     };
 
-    // Separate owned vs shared projects
-    const owned = currentUserId
-      ? result.filter((p) => !p.created_by || p.created_by === currentUserId)
-      : result;
-    const shared = currentUserId
-      ? result.filter((p) => p.created_by && p.created_by !== currentUserId)
-      : [];
+    // Favorites come from all projects (owned + shared)
+    const favorites = result.filter((p) => p.is_favorite).sort(sortFn);
 
-    // Separate favorites and regular from owned projects
-    const favorites = owned.filter((p) => p.is_favorite).sort(sortFn);
-    const regular = owned.filter((p) => !p.is_favorite).sort(sortFn);
-    const sortedShared = shared.sort(sortFn);
+    // Non-favorite owned projects
+    const isOwned = (p: Project) => !currentUserId || !p.created_by || p.created_by === currentUserId;
+    const regular = result.filter((p) => !p.is_favorite && isOwned(p)).sort(sortFn);
+
+    // Non-favorite shared projects
+    const shared = currentUserId
+      ? result.filter((p) => !p.is_favorite && p.created_by && p.created_by !== currentUserId).sort(sortFn)
+      : [];
 
     return {
       favoriteProjects: favorites,
       regularProjects: regular,
-      sharedProjects: sortedShared,
-      filteredAndSortedProjects: [...favorites, ...regular, ...sortedShared],
+      sharedProjects: shared,
+      filteredAndSortedProjects: [...favorites, ...regular, ...shared],
     };
   }, [projects, searchQuery, sortBy, sortDesc, currentUserId]);
+
+  // Show Owner column when any shared project exists (in any section)
+  const hasAnySharedProject = currentUserId
+    ? projects.some((p) => p.created_by && p.created_by !== currentUserId)
+    : false;
 
   const toggleSelect = (id: string, e?: React.MouseEvent) => {
     if (e) {
@@ -619,9 +623,9 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
           {/* All Projects section */}
           {regularProjects.length > 0 && (
             <div className="space-y-3">
-              {(favoriteProjects.length > 0 || sharedProjects.length > 0) && (
+              {(favoriteProjects.length > 0 || hasAnySharedProject) && (
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  {sharedProjects.length > 0 ? "My Projects" : "All Projects"}
+                  {hasAnySharedProject ? "My Projects" : "All Projects"}
                 </h2>
               )}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -684,7 +688,8 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 onToggleFavorite={toggleSingleFavorite}
                 getFileCount={getFileCount}
                 router={router}
-                showOwner={sharedProjects.length > 0}
+                showOwner={hasAnySharedProject}
+                ownerMap={ownerMap}
               />
             </div>
           )}
@@ -692,9 +697,9 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
           {/* All Projects section */}
           {regularProjects.length > 0 && (
             <div className="space-y-3">
-              {(favoriteProjects.length > 0 || sharedProjects.length > 0) && (
+              {(favoriteProjects.length > 0 || hasAnySharedProject) && (
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  {sharedProjects.length > 0 ? "My Projects" : "All Projects"}
+                  {hasAnySharedProject ? "My Projects" : "All Projects"}
                 </h2>
               )}
               <ProjectListTable
@@ -704,7 +709,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 onToggleFavorite={toggleSingleFavorite}
                 getFileCount={getFileCount}
                 router={router}
-                showOwner={sharedProjects.length > 0}
+                showOwner={hasAnySharedProject}
               />
             </div>
           )}
@@ -725,7 +730,7 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                 onToggleFavorite={toggleSingleFavorite}
                 getFileCount={getFileCount}
                 router={router}
-                showOwner
+                showOwner={hasAnySharedProject}
                 ownerMap={ownerMap}
               />
             </div>
