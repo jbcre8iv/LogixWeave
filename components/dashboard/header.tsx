@@ -105,7 +105,7 @@ export function Header({ user }: HeaderProps) {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { setAutoTriggered(false); setHelpTourOpen(true); }}>
               <HelpCircle className="mr-2 h-4 w-4" />
-              Help
+              Take a Tour
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>

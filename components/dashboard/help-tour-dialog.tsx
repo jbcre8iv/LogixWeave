@@ -289,8 +289,8 @@ export function HelpTourDialog({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-6 pt-5 pb-2">
+        {/* Content — fixed height to prevent layout shift between slides */}
+        <div className="px-6 pt-5 pb-2 h-[120px] sm:h-[110px]">
           <div
             key={`content-${step}`}
             className="animate-tour-fade-in-up"
