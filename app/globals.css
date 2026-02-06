@@ -131,3 +131,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Help Tour Animations */
+@keyframes tour-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes tour-fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tour-slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes tour-slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-tour-float {
+  animation: tour-float 3s ease-in-out infinite;
+}
+
+.animate-tour-fade-in-up {
+  animation: tour-fade-in-up 0.4s ease-out both;
+}
+
+.animate-tour-slide-in-right {
+  animation: tour-slide-in-right 0.3s ease-out both;
+}
+
+.animate-tour-slide-in-left {
+  animation: tour-slide-in-left 0.3s ease-out both;
+}

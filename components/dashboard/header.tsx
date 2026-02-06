@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,8 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
-import { LogOut, User, Settings, Scale, Mail, Home } from "lucide-react";
+import { HelpTourDialog } from "./help-tour-dialog";
+import { LogOut, User, Settings, Scale, Mail, Home, HelpCircle } from "lucide-react";
 import { getDisplayName, getInitials } from "@/lib/utils/display-name";
 
 interface HeaderProps {
@@ -31,6 +33,16 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
+  const [helpTourOpen, setHelpTourOpen] = useState(false);
+  const [autoTriggered, setAutoTriggered] = useState(false);
+
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem("logixweave-tour-completed");
+    if (!tourCompleted) {
+      setAutoTriggered(true);
+      setHelpTourOpen(true);
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -91,6 +103,10 @@ export function Header({ user }: HeaderProps) {
                 Support
               </a>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setAutoTriggered(false); setHelpTourOpen(true); }}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Help
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -99,6 +115,11 @@ export function Header({ user }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <HelpTourDialog
+        open={helpTourOpen}
+        onOpenChange={setHelpTourOpen}
+        autoTriggered={autoTriggered}
+      />
     </header>
   );
 }
