@@ -3,27 +3,43 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, GitCompare, Loader2, Plus, Minus, RefreshCw } from "lucide-react";
+import {
+  ArrowRight,
+  GitCompare,
+  Loader2,
+  Plus,
+  Minus,
+  RefreshCw,
+  FolderOpen,
+  FileText,
+  ChevronRight,
+  ChevronDown,
+  Check,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProjectFile {
   id: string;
   file_name: string;
   parsing_status: string;
+  folder_id: string | null;
+  current_version?: number;
+  version_count?: number;
+}
+
+interface ProjectFolder {
+  id: string;
+  name: string;
 }
 
 interface Project {
   id: string;
   name: string;
   project_files: ProjectFile[];
+  project_folders?: ProjectFolder[];
 }
 
 interface CompareSelectorProps {
@@ -52,6 +68,185 @@ interface ComparisonResult {
     routinesChanged: number;
     modulesChanged: number;
   };
+}
+
+// File browser component for selecting files
+function FileBrowserPanel({
+  projects,
+  selectedFileId,
+  onSelectFile,
+  label,
+}: {
+  projects: Project[];
+  selectedFileId: string;
+  onSelectFile: (fileId: string) => void;
+  label: string;
+}) {
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    new Set(projects.map((p) => p.id)) // Expand all by default
+  );
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  const toggleProject = (projectId: string) => {
+    const newExpanded = new Set(expandedProjects);
+    if (newExpanded.has(projectId)) {
+      newExpanded.delete(projectId);
+    } else {
+      newExpanded.add(projectId);
+    }
+    setExpandedProjects(newExpanded);
+  };
+
+  const toggleFolder = (folderId: string) => {
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(folderId)) {
+      newExpanded.delete(folderId);
+    } else {
+      newExpanded.add(folderId);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
+  const getSelectedFileInfo = () => {
+    for (const project of projects) {
+      const file = project.project_files.find((f) => f.id === selectedFileId);
+      if (file) {
+        return { file, projectName: project.name };
+      }
+    }
+    return null;
+  };
+
+  const selectedInfo = getSelectedFileInfo();
+
+  return (
+    <div className="flex-1 min-w-0">
+      <label className="text-sm font-medium mb-2 block">{label}</label>
+      <Card className="border-2">
+        <CardContent className="p-0">
+          {/* Selected file display */}
+          <div className="px-3 py-2 border-b bg-muted/30 min-h-[52px] flex items-center">
+            {selectedInfo ? (
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{selectedInfo.file.file_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{selectedInfo.projectName}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Click a file below to select</p>
+            )}
+          </div>
+
+          {/* File tree */}
+          <ScrollArea className="h-[280px]">
+            <div className="p-2">
+              {projects.map((project) => {
+                const isExpanded = expandedProjects.has(project.id);
+                const folders = project.project_folders || [];
+                const rootFiles = project.project_files.filter((f) => !f.folder_id);
+                const folderFiles = (folderId: string) =>
+                  project.project_files.filter((f) => f.folder_id === folderId);
+
+                return (
+                  <div key={project.id} className="mb-1">
+                    {/* Project header */}
+                    <button
+                      onClick={() => toggleProject(project.id)}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <FolderOpen className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm font-medium truncate">{project.name}</span>
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {project.project_files.length}
+                      </Badge>
+                    </button>
+
+                    {/* Project contents */}
+                    {isExpanded && (
+                      <div className="ml-4 border-l pl-2">
+                        {/* Folders */}
+                        {folders.map((folder) => {
+                          const isFolderExpanded = expandedFolders.has(folder.id);
+                          const filesInFolder = folderFiles(folder.id);
+                          if (filesInFolder.length === 0) return null;
+
+                          return (
+                            <div key={folder.id} className="mb-1">
+                              <button
+                                onClick={() => toggleFolder(folder.id)}
+                                className="w-full flex items-center gap-2 px-2 py-1 rounded hover:bg-muted text-left"
+                              >
+                                {isFolderExpanded ? (
+                                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                )}
+                                <FolderOpen className="h-4 w-4 text-amber-500" />
+                                <span className="text-sm truncate">{folder.name}</span>
+                              </button>
+                              {isFolderExpanded && (
+                                <div className="ml-5">
+                                  {filesInFolder.map((file) => (
+                                    <button
+                                      key={file.id}
+                                      onClick={() => onSelectFile(file.id)}
+                                      className={cn(
+                                        "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-sm",
+                                        selectedFileId === file.id
+                                          ? "bg-primary/10 text-primary"
+                                          : "hover:bg-muted"
+                                      )}
+                                    >
+                                      <FileText className="h-4 w-4 flex-shrink-0" />
+                                      <span className="truncate flex-1">{file.file_name}</span>
+                                      {selectedFileId === file.id && (
+                                        <Check className="h-4 w-4 flex-shrink-0" />
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* Root files */}
+                        {rootFiles.map((file) => (
+                          <button
+                            key={file.id}
+                            onClick={() => onSelectFile(file.id)}
+                            className={cn(
+                              "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-sm",
+                              selectedFileId === file.id
+                                ? "bg-primary/10 text-primary"
+                                : "hover:bg-muted"
+                            )}
+                          >
+                            <FileText className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate flex-1">{file.file_name}</span>
+                            {selectedFileId === file.id && (
+                              <Check className="h-4 w-4 flex-shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export function CompareSelector({ projects }: CompareSelectorProps) {
@@ -119,80 +314,51 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
         <CardHeader>
           <CardTitle>Select Files to Compare</CardTitle>
           <CardDescription>
-            Choose two parsed L5X/L5K files to see their differences
+            Browse your projects and select two files to compare
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="flex-1 w-full">
-              <label className="text-sm font-medium mb-2 block">Base File (Original)</label>
-              <Select value={file1} onValueChange={setFile1}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select base file..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <div key={project.id}>
-                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                        {project.name}
-                      </div>
-                      {project.project_files.map((file) => (
-                        <SelectItem key={file.id} value={file.id}>
-                          {file.file_name}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col lg:flex-row gap-4">
+            <FileBrowserPanel
+              projects={projects}
+              selectedFileId={file1}
+              onSelectFile={setFile1}
+              label="Base File (Original)"
+            />
+
+            <div className="flex items-center justify-center py-4 lg:py-0">
+              <div className="flex flex-col items-center gap-2">
+                <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
+                <Button
+                  onClick={handleCompare}
+                  disabled={!file1 || !file2 || loading}
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Comparing...
+                    </>
+                  ) : (
+                    <>
+                      <GitCompare className="mr-2 h-4 w-4" />
+                      Compare Files
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
-            <ArrowRight className="h-6 w-6 text-muted-foreground hidden md:block" />
-
-            <div className="flex-1 w-full">
-              <label className="text-sm font-medium mb-2 block">Compare File (Modified)</label>
-              <Select value={file2} onValueChange={setFile2}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select compare file..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <div key={project.id}>
-                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                        {project.name}
-                      </div>
-                      {project.project_files.map((file) => (
-                        <SelectItem key={file.id} value={file.id}>
-                          {file.file_name}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={handleCompare}
-              disabled={!file1 || !file2 || loading}
-              className="w-full md:w-auto"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Comparing...
-                </>
-              ) : (
-                <>
-                  <GitCompare className="mr-2 h-4 w-4" />
-                  Compare
-                </>
-              )}
-            </Button>
+            <FileBrowserPanel
+              projects={projects}
+              selectedFileId={file2}
+              onSelectFile={setFile2}
+              label="Compare File (Modified)"
+            />
           </div>
 
           {error && (
-            <p className="text-sm text-destructive mt-4">{error}</p>
+            <p className="text-sm text-destructive mt-4 text-center">{error}</p>
           )}
         </CardContent>
       </Card>
