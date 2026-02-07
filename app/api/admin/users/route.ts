@@ -77,7 +77,7 @@ export async function DELETE(request: Request) {
       .eq("id", userId);
 
     // Delete the auth user
-    const { error: authError } = await serviceSupabase.auth.admin.deleteUser(userId);
+    const { error: authError } = await serviceSupabase.auth.admin.deleteUser(userId, false);
 
     if (authError) {
       console.error("Error deleting auth user:", authError);
