@@ -17,7 +17,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { HelpTourDialog } from "./help-tour-dialog";
-import { LogOut, User, Settings, Scale, Mail, Home, HelpCircle } from "lucide-react";
+import { FeedbackDialog } from "./feedback-dialog";
+import { LogOut, User, Settings, Scale, MessageSquareMore, Home, HelpCircle } from "lucide-react";
 import { getDisplayName, getInitials } from "@/lib/utils/display-name";
 
 interface HeaderProps {
@@ -35,6 +36,7 @@ export function Header({ user }: HeaderProps) {
   const supabase = createClient();
   const [helpTourOpen, setHelpTourOpen] = useState(false);
   const [autoTriggered, setAutoTriggered] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     const tourCompleted = localStorage.getItem("logixweave-tour-completed");
@@ -97,11 +99,9 @@ export function Header({ user }: HeaderProps) {
               <Scale className="mr-2 h-4 w-4" />
               Terms & Privacy
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <a href={`mailto:support@jbcre8iv.com?subject=Support Request&body=%0A%0A---%0AAccount: ${encodeURIComponent(user.email)}`}>
-                <Mail className="mr-2 h-4 w-4" />
-                Support
-              </a>
+            <DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
+              <MessageSquareMore className="mr-2 h-4 w-4" />
+              Feedback
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { setAutoTriggered(false); setHelpTourOpen(true); }}>
               <HelpCircle className="mr-2 h-4 w-4" />
@@ -119,6 +119,11 @@ export function Header({ user }: HeaderProps) {
         open={helpTourOpen}
         onOpenChange={setHelpTourOpen}
         autoTriggered={autoTriggered}
+      />
+      <FeedbackDialog
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
+        userEmail={user.email}
       />
     </header>
   );
