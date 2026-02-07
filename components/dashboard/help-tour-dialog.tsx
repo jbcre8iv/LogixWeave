@@ -51,7 +51,7 @@ const tourSteps: TourStep[] = [
   {
     title: "Welcome to LogixWeave",
     description:
-      "Your toolkit for parsing, analyzing, and understanding Rockwell Automation PLC projects. Let's take a quick tour of what you can do.",
+      "Your toolkit for parsing, exploring, and understanding Rockwell Automation PLC projects. Let's take a quick tour of what you can do.",
     icons: [
       {
         Icon: Workflow,
@@ -74,7 +74,7 @@ const tourSteps: TourStep[] = [
   {
     title: "Create Projects",
     description:
-      "Organize your PLC work into projects. Each project holds your uploaded files, analysis results, and documentation in one place.",
+      "Organize your PLC work into projects. Each project holds your uploaded files, insights, and documentation in one place.",
     icons: [
       {
         Icon: FolderOpen,
@@ -148,7 +148,7 @@ const tourSteps: TourStep[] = [
   {
     title: "AI Assistant",
     description:
-      "Ask questions about your PLC program and get AI-powered analysis, explanations, and insights. Understand complex logic faster than ever.",
+      "Ask questions about your PLC program and get AI-powered explanations and insights. Understand complex logic faster than ever.",
     icons: [
       {
         Icon: Bot,
@@ -171,7 +171,7 @@ const tourSteps: TourStep[] = [
   {
     title: "Export & Share",
     description:
-      "Export documentation, tag lists, and analysis reports. Share projects with your team for seamless collaboration.",
+      "Export documentation, tag lists, and reports. Share projects with your team for seamless collaboration.",
     icons: [
       {
         Icon: FileDown,

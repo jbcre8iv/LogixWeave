@@ -2,7 +2,7 @@
   "name": "logixweave",
   "version": "0.1.0",
   "private": true,
-  "description": "Web toolkit for Studio 5000 programmers to parse L5X/L5K files and generate documentation",
+  "description": "Web toolkit for Studio 5000 teams to parse L5X/L5K files and generate documentation",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

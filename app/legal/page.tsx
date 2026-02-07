@@ -76,7 +76,7 @@ export default async function LegalPage() {
 
             <h3 className="text-lg font-semibold mt-6">2. Description of Service</h3>
             <p className="text-muted-foreground">
-              LogixWeave is a web-based toolkit for parsing, analyzing, and documenting Rockwell Automation
+              LogixWeave is a web-based toolkit for parsing, exploring, and documenting Rockwell Automation
               Studio 5000 project files (L5X/L5K format). The Service allows users to upload files, explore
               tags and routines, view I/O configurations, and export documentation.
             </p>

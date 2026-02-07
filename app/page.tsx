@@ -173,7 +173,7 @@ export default function HomePage() {
                     4
                   </div>
                   <div>
-                    <p className="font-medium">Explore and analyze</p>
+                    <p className="font-medium">Explore and understand</p>
                     <p className="text-sm text-muted-foreground">
                       Use tools to search and document
                     </p>

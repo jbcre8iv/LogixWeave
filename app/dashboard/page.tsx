@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-3xl font-bold">Welcome to LogixWeave</h1>
         <p className="text-muted-foreground mt-2">
-          Your toolkit for Studio 5000 project analysis and documentation
+          Your toolkit for exploring and documenting Studio 5000 projects
         </p>
       </div>
 
@@ -232,7 +232,7 @@ export default async function DashboardPage() {
                 </p>
               </li>
               <li>
-                <span className="font-medium">Explore and analyze</span>
+                <span className="font-medium">Explore and understand</span>
                 <p className="text-muted-foreground ml-5">
                   Search tags, view I/O, get AI explanations
                 </p>
