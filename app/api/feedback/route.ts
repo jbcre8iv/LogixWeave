@@ -71,12 +71,27 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { feedbackId } = await request.json();
+    const { feedbackId, action } = await request.json();
     if (!feedbackId) {
       return NextResponse.json({ error: "feedbackId is required" }, { status: 400 });
     }
 
     const serviceSupabase = await createServiceClient();
+
+    if (action === "mark_unread") {
+      const { error } = await serviceSupabase
+        .from("feedback")
+        .update({ read_at: null })
+        .eq("id", feedbackId);
+
+      if (error) {
+        console.error("Feedback update error:", error);
+        return NextResponse.json({ error: "Failed to update feedback" }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
     const { error } = await serviceSupabase
       .from("feedback")
       .update({ read_at: new Date().toISOString() })
@@ -90,6 +105,37 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Feedback PATCH error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const admin = await verifyAdmin();
+    if (!admin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const feedbackId = searchParams.get("id");
+    if (!feedbackId) {
+      return NextResponse.json({ error: "id is required" }, { status: 400 });
+    }
+
+    const serviceSupabase = await createServiceClient();
+    const { error } = await serviceSupabase
+      .from("feedback")
+      .delete()
+      .eq("id", feedbackId);
+
+    if (error) {
+      console.error("Feedback delete error:", error);
+      return NextResponse.json({ error: "Failed to delete feedback" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Feedback DELETE error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

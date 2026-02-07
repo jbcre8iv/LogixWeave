@@ -26,7 +26,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, ArrowUpDown, Eye, CheckCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Search, ArrowUpDown, Eye, CheckCircle, CircleDot, Trash2, MoreHorizontal } from "lucide-react";
 
 interface FeedbackItem {
   id: string;
@@ -52,13 +59,17 @@ const typeBadgeVariant: Record<string, "destructive" | "default" | "secondary" |
   "Question": "outline",
 };
 
+function isRead(item: FeedbackItem): boolean {
+  return typeof item.read_at === "string" && item.read_at.length > 0;
+}
+
 export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackTableProps) {
   const [feedback, setFeedback] = useState(initialFeedback);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [viewItem, setViewItem] = useState<FeedbackItem | null>(null);
-  const [markingRead, setMarkingRead] = useState<string | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
 
   const filteredAndSorted = useMemo(() => {
     let result = [...feedback];
@@ -93,26 +104,49 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
     return result;
   }, [feedback, search, sort, filterType]);
 
-  const handleMarkRead = async (feedbackId: string) => {
-    setMarkingRead(feedbackId);
+  const handleToggleRead = async (feedbackId: string, markUnread: boolean) => {
+    setLoading(feedbackId);
     try {
       const res = await fetch("/api/feedback", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feedbackId }),
+        body: JSON.stringify({
+          feedbackId,
+          ...(markUnread ? { action: "mark_unread" } : {}),
+        }),
       });
 
       if (res.ok) {
         setFeedback((prev) =>
           prev.map((f) =>
-            f.id === feedbackId ? { ...f, read_at: new Date().toISOString() } : f
+            f.id === feedbackId
+              ? { ...f, read_at: markUnread ? null : new Date().toISOString() }
+              : f
           )
         );
       }
     } catch (error) {
-      console.error("Failed to mark feedback as read:", error);
+      console.error("Failed to update feedback:", error);
     } finally {
-      setMarkingRead(null);
+      setLoading(null);
+    }
+  };
+
+  const handleDelete = async (feedbackId: string) => {
+    setLoading(feedbackId);
+    try {
+      const res = await fetch(`/api/feedback?id=${feedbackId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setFeedback((prev) => prev.filter((f) => f.id !== feedbackId));
+        if (viewItem?.id === feedbackId) setViewItem(null);
+      }
+    } catch (error) {
+      console.error("Failed to delete feedback:", error);
+    } finally {
+      setLoading(null);
     }
   };
 
@@ -191,7 +225,7 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
                   {new Date(item.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  {typeof item.read_at === "string" && item.read_at.length > 0 ? (
+                  {isRead(item) ? (
                     <Badge variant="secondary">Read</Badge>
                   ) : (
                     <Badge variant="default">Unread</Badge>
@@ -206,16 +240,34 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {!(typeof item.read_at === "string" && item.read_at.length > 0) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMarkRead(item.id)}
-                        disabled={markingRead === item.id}
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" disabled={loading === item.id}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {isRead(item) ? (
+                          <DropdownMenuItem onClick={() => handleToggleRead(item.id, true)}>
+                            <CircleDot className="h-4 w-4 mr-2" />
+                            Mark as Unread
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => handleToggleRead(item.id, false)}>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Mark as Read
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </TableCell>
               </TableRow>
@@ -243,19 +295,34 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
           <div className="mt-2 whitespace-pre-wrap text-sm">
             {viewItem?.description}
           </div>
-          {viewItem && !(typeof viewItem.read_at === "string" && viewItem.read_at.length > 0) && (
-            <div className="mt-4 flex justify-end">
-              <Button
-                size="sm"
-                onClick={() => {
-                  handleMarkRead(viewItem.id);
-                  setViewItem(null);
-                }}
-                disabled={markingRead === viewItem.id}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Mark as Read
-              </Button>
+          {viewItem && (
+            <div className="mt-4 flex justify-end gap-2">
+              {isRead(viewItem) ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleToggleRead(viewItem.id, true);
+                    setViewItem(null);
+                  }}
+                  disabled={loading === viewItem.id}
+                >
+                  <CircleDot className="h-4 w-4 mr-2" />
+                  Mark as Unread
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    handleToggleRead(viewItem.id, false);
+                    setViewItem(null);
+                  }}
+                  disabled={loading === viewItem.id}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Mark as Read
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>
