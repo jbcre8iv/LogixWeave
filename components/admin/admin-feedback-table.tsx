@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,12 +65,18 @@ function isRead(item: FeedbackItem): boolean {
 }
 
 export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackTableProps) {
+  const router = useRouter();
   const [feedback, setFeedback] = useState(initialFeedback);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [viewItem, setViewItem] = useState<FeedbackItem | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+
+  const notifyFeedbackChanged = useCallback(() => {
+    router.refresh();
+    window.dispatchEvent(new CustomEvent("feedback-updated"));
+  }, [router]);
 
   const filteredAndSorted = useMemo(() => {
     let result = [...feedback];
@@ -124,6 +131,7 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
               : f
           )
         );
+        notifyFeedbackChanged();
       }
     } catch (error) {
       console.error("Failed to update feedback:", error);
@@ -142,6 +150,7 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
       if (res.ok) {
         setFeedback((prev) => prev.filter((f) => f.id !== feedbackId));
         if (viewItem?.id === feedbackId) setViewItem(null);
+        notifyFeedbackChanged();
       }
     } catch (error) {
       console.error("Failed to delete feedback:", error);

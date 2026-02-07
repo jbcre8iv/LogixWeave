@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -82,6 +82,26 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const supabase = createClient();
 
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/feedback?unread=true");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadFeedbackCount(data.count || 0);
+      }
+    } catch {
+      // Silently fail — badge just won't show
+    }
+  }, []);
+
+  // Re-fetch unread count when feedback changes
+  useEffect(() => {
+    if (!isPlatformAdmin) return;
+    const handler = () => fetchUnreadCount();
+    window.addEventListener("feedback-updated", handler);
+    return () => window.removeEventListener("feedback-updated", handler);
+  }, [isPlatformAdmin, fetchUnreadCount]);
+
   // Fetch current project, all projects, and admin status
   useEffect(() => {
     const fetchData = async () => {
@@ -97,15 +117,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
         setIsPlatformAdmin(profile?.is_platform_admin || false);
 
         if (profile?.is_platform_admin) {
-          try {
-            const res = await fetch("/api/feedback?unread=true");
-            if (res.ok) {
-              const data = await res.json();
-              setUnreadFeedbackCount(data.count || 0);
-            }
-          } catch {
-            // Silently fail — badge just won't show
-          }
+          fetchUnreadCount();
         }
       }
 
