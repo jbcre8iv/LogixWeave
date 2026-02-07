@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export function SignupForm() {
@@ -15,6 +16,7 @@ export function SignupForm() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +37,7 @@ export function SignupForm() {
           full_name: fullName,
           first_name: firstName,
           last_name: lastName,
+          ...(role && { role }),
         },
       },
     });
@@ -90,6 +93,21 @@ export function SignupForm() {
                 disabled={isLoading}
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Select value={role} onValueChange={setRole} disabled={isLoading}>
+              <SelectTrigger id="role" className="w-full">
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Controls Engineer">Controls Engineer</SelectItem>
+                <SelectItem value="Electrical Engineer">Electrical Engineer</SelectItem>
+                <SelectItem value="Maintenance Technician">Maintenance Technician</SelectItem>
+                <SelectItem value="Project Manager">Project Manager</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

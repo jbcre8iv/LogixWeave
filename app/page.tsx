@@ -31,7 +31,7 @@ export default function HomePage() {
           Studio 5000 Toolkit
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Analyze, document, and collaborate on your PLC projects.
+          Upload your PLC project. Understand it instantly.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md mx-auto sm:max-w-none sm:w-auto">
           <Button size="lg" asChild className="w-full sm:w-auto">
@@ -48,7 +48,7 @@ export default function HomePage() {
       {/* Features */}
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-center mb-12">
-          LogixWeave will streamline your Studio 5000 productivity and efficiency
+          Everything you need to understand your PLC projects
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link href="/dashboard/projects">
@@ -96,8 +96,8 @@ export default function HomePage() {
                 <Sparkles className="h-10 w-10 text-amber-500 mb-2" />
                 <CardTitle>AI Assistant</CardTitle>
                 <CardDescription>
-                  Get clear, intuitive explanations of ladder logic, find potential
-                  issues, and search your project using natural language.
+                  Ask questions in plain English and get clear explanations of
+                  ladder logic, potential issues, and program behavior.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -111,7 +111,7 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold mb-6">
-                Built for PLC Programmers
+                Built for PLC Teams
               </h2>
               <ul className="space-y-4">
                 {[
@@ -189,7 +189,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-24 text-center">
         <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
         <p className="text-xl text-muted-foreground mb-8">
-          Create your free account and start analyzing your PLC projects today.
+          Create your free account and start exploring your PLC projects today.
         </p>
         <Button size="lg" asChild>
           <Link href="/signup">
@@ -203,7 +203,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-sm text-muted-foreground">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
-              <p>&copy; {new Date().getFullYear()} LogixWeave. Built for Studio 5000 programmers.</p>
+              <p>&copy; {new Date().getFullYear()} LogixWeave. Built for Studio 5000 teams.</p>
               <p className="text-xs mt-1">Not affiliated with Rockwell Automation, Inc.</p>
             </div>
             <div className="flex items-center gap-4">

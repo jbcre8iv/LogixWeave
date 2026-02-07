@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { full_name, first_name, last_name, ai_language } = body;
+    const { full_name, first_name, last_name, ai_language, role } = body;
 
     // Build update object with only provided fields
     const updates: Record<string, string | null> = {};
@@ -59,7 +59,28 @@ export async function PATCH(request: Request) {
       updates.ai_language = ai_language;
     }
 
+    // Handle role update (stored in auth user_metadata, not profiles table)
+    if (role !== undefined) {
+      const validRoles = ["Controls Engineer", "Electrical Engineer", "Maintenance Technician", "Project Manager", "Other"];
+      if (typeof role !== "string" || !validRoles.includes(role)) {
+        return NextResponse.json(
+          { error: "Invalid role" },
+          { status: 400 }
+        );
+      }
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { role },
+      });
+      if (authError) {
+        return NextResponse.json({ error: authError.message }, { status: 500 });
+      }
+    }
+
     if (Object.keys(updates).length === 0) {
+      // If only role was updated (no profile table changes), return success
+      if (role !== undefined) {
+        return NextResponse.json({ success: true });
+      }
       return NextResponse.json(
         { error: "No valid fields to update" },
         { status: 400 }
