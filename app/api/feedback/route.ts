@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 const VALID_TYPES = [
   "Bug Report",
@@ -47,22 +44,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const userEmail = user.email || "unknown";
+    const serviceSupabase = await createServiceClient();
 
-    await resend.emails.send({
-      from: "LogixWeave <noreply@jbcre8iv.com>",
-      to: "support@jbcre8iv.com",
-      replyTo: userEmail,
-      subject: `[${type}] ${subject.trim()}`,
-      html: `
-        <h2>${type}</h2>
-        <p><strong>From:</strong> ${userEmail}</p>
-        <p><strong>User ID:</strong> ${user.id}</p>
-        <p><strong>Subject:</strong> ${subject.trim()}</p>
-        <hr />
-        <p>${description.trim().replace(/\n/g, "<br />")}</p>
-      `,
+    const { error } = await serviceSupabase.from("feedback").insert({
+      user_id: user.id,
+      user_email: user.email || "unknown",
+      type,
+      subject: subject.trim(),
+      description: description.trim(),
     });
+
+    if (error) {
+      console.error("Feedback insert error:", error);
+      return NextResponse.json(
+        { error: "Failed to save feedback" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
