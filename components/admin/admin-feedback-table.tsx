@@ -191,7 +191,7 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
                   {new Date(item.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  {item.read_at ? (
+                  {typeof item.read_at === "string" && item.read_at.length > 0 ? (
                     <Badge variant="secondary">Read</Badge>
                   ) : (
                     <Badge variant="default">Unread</Badge>
@@ -206,7 +206,7 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {!item.read_at && (
+                    {!(typeof item.read_at === "string" && item.read_at.length > 0) && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -243,7 +243,7 @@ export function AdminFeedbackTable({ feedback: initialFeedback }: AdminFeedbackT
           <div className="mt-2 whitespace-pre-wrap text-sm">
             {viewItem?.description}
           </div>
-          {viewItem && !viewItem.read_at && (
+          {viewItem && !(typeof viewItem.read_at === "string" && viewItem.read_at.length > 0) && (
             <div className="mt-4 flex justify-end">
               <Button
                 size="sm"

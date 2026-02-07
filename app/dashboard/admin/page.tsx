@@ -51,7 +51,7 @@ export default async function AdminDashboardPage() {
     serviceSupabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
     serviceSupabase.from("organizations").select("id, name, created_at"),
     serviceSupabase.from("organization_members").select("user_id, organization_id"),
-    serviceSupabase.from("feedback").select("*").order("created_at", { ascending: false }),
+    serviceSupabase.from("feedback").select("id, user_email, type, subject, description, created_at, read_at").order("created_at", { ascending: false }),
   ]);
 
   const users = usersResult.data || [];
@@ -59,8 +59,18 @@ export default async function AdminDashboardPage() {
   const files = filesResult.data || [];
   const organizations = organizationsResult.data || [];
   const memberships = membershipsResult.data || [];
-  const feedbackItems = feedbackResult.data || [];
-  const unreadFeedbackCount = feedbackItems.filter((f: { read_at: string | null }) => !f.read_at).length;
+
+  // Explicitly normalize feedback to ensure read_at is null or string across RSC boundary
+  const feedbackItems = (feedbackResult.data || []).map((f: Record<string, unknown>) => ({
+    id: f.id as string,
+    user_email: f.user_email as string,
+    type: f.type as string,
+    subject: f.subject as string,
+    description: f.description as string,
+    created_at: f.created_at as string,
+    read_at: typeof f.read_at === "string" ? f.read_at : null,
+  }));
+  const unreadFeedbackCount = feedbackItems.filter(f => f.read_at === null).length;
 
   // Build lookup maps for per-user stats
   // Map user_id -> organization_ids they belong to
