@@ -8,9 +8,11 @@ import {
   FileText,
   Shield,
   Building2,
+  MessageSquare,
 } from "lucide-react";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AdminProjectsTable } from "@/components/admin/admin-projects-table";
+import { AdminFeedbackTable } from "@/components/admin/admin-feedback-table";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -42,12 +44,14 @@ export default async function AdminDashboardPage() {
     filesResult,
     organizationsResult,
     membershipsResult,
+    feedbackResult,
   ] = await Promise.all([
     serviceSupabase.from("profiles").select("id, email, first_name, last_name, full_name, created_at, is_platform_admin, is_disabled"),
     serviceSupabase.from("projects").select("id, name, organization_id, created_at, organizations(name)"),
     serviceSupabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
     serviceSupabase.from("organizations").select("id, name, created_at"),
     serviceSupabase.from("organization_members").select("user_id, organization_id"),
+    serviceSupabase.from("feedback").select("*").order("created_at", { ascending: false }),
   ]);
 
   const users = usersResult.data || [];
@@ -55,6 +59,8 @@ export default async function AdminDashboardPage() {
   const files = filesResult.data || [];
   const organizations = organizationsResult.data || [];
   const memberships = membershipsResult.data || [];
+  const feedbackItems = feedbackResult.data || [];
+  const unreadFeedbackCount = feedbackItems.filter((f: { read_at: string | null }) => !f.read_at).length;
 
   // Build lookup maps for per-user stats
   // Map user_id -> organization_ids they belong to
@@ -141,7 +147,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
@@ -186,6 +192,21 @@ export default async function AdminDashboardPage() {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Feedback</CardDescription>
+            <CardTitle className="text-3xl flex items-center gap-2">
+              <MessageSquare className="h-6 w-6 text-muted-foreground" />
+              {feedbackItems.length}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              {unreadFeedbackCount} unread
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Users Table */}
@@ -207,6 +228,24 @@ export default async function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           <AdminProjectsTable projects={projectsWithDetails} />
+        </CardContent>
+      </Card>
+
+      {/* User Feedback */}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Feedback</CardTitle>
+          <CardDescription>
+            Feedback submissions from users
+            {unreadFeedbackCount > 0 && (
+              <Badge variant="default" className="ml-2">
+                {unreadFeedbackCount} unread
+              </Badge>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AdminFeedbackTable feedback={feedbackItems} />
         </CardContent>
       </Card>
     </div>

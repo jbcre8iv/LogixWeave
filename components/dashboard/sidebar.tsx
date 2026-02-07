@@ -79,6 +79,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const supabase = createClient();
 
   // Fetch current project, all projects, and admin status
@@ -94,6 +95,18 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           .eq("id", user.id)
           .single();
         setIsPlatformAdmin(profile?.is_platform_admin || false);
+
+        if (profile?.is_platform_admin) {
+          try {
+            const res = await fetch("/api/feedback?unread=true");
+            if (res.ok) {
+              const data = await res.json();
+              setUnreadFeedbackCount(data.count || 0);
+            }
+          } catch {
+            // Silently fail — badge just won't show
+          }
+        }
       }
 
       // Fetch all projects for dropdown
@@ -379,6 +392,11 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
           >
             <Shield className="h-4 w-4" />
             Admin
+            {unreadFeedbackCount > 0 && (
+              <span className="ml-auto h-5 min-w-5 px-1 rounded-full bg-destructive text-white text-xs flex items-center justify-center font-medium">
+                {unreadFeedbackCount > 9 ? "9+" : unreadFeedbackCount}
+              </span>
+            )}
           </Link>
         )}
         <Link
