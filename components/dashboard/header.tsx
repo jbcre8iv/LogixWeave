@@ -29,9 +29,10 @@ interface HeaderProps {
     full_name?: string | null;
     avatar_url?: string | null;
   };
+  isPlatformAdmin?: boolean;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, isPlatformAdmin }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
   const [helpTourOpen, setHelpTourOpen] = useState(false);
@@ -58,7 +59,7 @@ export function Header({ user }: HeaderProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
       <div className="flex items-center gap-3">
-        <MobileSidebar />
+        <MobileSidebar isPlatformAdmin={isPlatformAdmin} />
         <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">

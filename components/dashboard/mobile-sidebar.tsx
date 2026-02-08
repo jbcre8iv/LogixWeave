@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar";
 
-export function MobileSidebar() {
+export function MobileSidebar({ isPlatformAdmin }: { isPlatformAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -34,7 +34,7 @@ export function MobileSidebar() {
               <Logo size="lg" />
             </Link>
           </div>
-          <SidebarContent onNavClick={() => setOpen(false)} />
+          <SidebarContent onNavClick={() => setOpen(false)} isPlatformAdmin={isPlatformAdmin} />
         </div>
       </SheetContent>
     </Sheet>

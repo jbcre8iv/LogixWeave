@@ -62,6 +62,7 @@ function getProjectIdFromPath(pathname: string): string | null {
 
 interface SidebarContentProps {
   onNavClick?: () => void;
+  isPlatformAdmin?: boolean;
 }
 
 interface Project {
@@ -71,14 +72,14 @@ interface Project {
   created_by?: string;
 }
 
-export function SidebarContent({ onNavClick }: SidebarContentProps) {
+export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminProp }: SidebarContentProps) {
   const pathname = usePathname();
   const router = useRouter();
   const projectId = getProjectIdFromPath(pathname);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(isPlatformAdminProp || false);
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const supabase = createClient();
 
@@ -105,18 +106,21 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   // Fetch current project, all projects, and admin status
   useEffect(() => {
     const fetchData = async () => {
-      // Check admin status
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("is_platform_admin")
-          .eq("id", user.id)
-          .single();
-        setIsPlatformAdmin(profile?.is_platform_admin || false);
-
-        if (profile?.is_platform_admin) {
+        // Only fetch admin status if not provided as prop
+        if (isPlatformAdminProp === undefined) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("is_platform_admin")
+            .eq("id", user.id)
+            .single();
+          setIsPlatformAdmin(profile?.is_platform_admin || false);
+          if (profile?.is_platform_admin) {
+            fetchUnreadCount();
+          }
+        } else if (isPlatformAdminProp) {
           fetchUnreadCount();
         }
       }
@@ -430,7 +434,7 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ isPlatformAdmin }: { isPlatformAdmin?: boolean }) {
   return (
     <div className="hidden md:flex h-full w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-4">
@@ -438,7 +442,7 @@ export function Sidebar() {
           <Logo size="lg" />
         </Link>
       </div>
-      <SidebarContent />
+      <SidebarContent isPlatformAdmin={isPlatformAdmin} />
     </div>
   );
 }
