@@ -103,6 +103,26 @@ export default async function TagXrefPage({ params, searchParams }: TagXrefPageP
 
   const { data: references, count } = await query;
 
+  // Fetch all references (no pagination) for CSV export
+  let allQuery = supabase
+    .from("tag_references")
+    .select("*")
+    .in("file_id", fileIds);
+
+  if (search) {
+    allQuery = allQuery.ilike("tag_name", `%${search}%`);
+  }
+  if (usageType && usageType !== "all") {
+    allQuery = allQuery.eq("usage_type", usageType);
+  }
+  if (program && program !== "all") {
+    allQuery = allQuery.eq("program_name", program);
+  }
+
+  allQuery = allQuery.order("tag_name").order("program_name").order("routine_name");
+
+  const { data: allReferences } = await allQuery;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -131,6 +151,7 @@ export default async function TagXrefPage({ params, searchParams }: TagXrefPageP
 
       <TagXrefTable
         references={references || []}
+        allReferences={allReferences || []}
         totalCount={count || 0}
         page={page}
         pageSize={PAGE_SIZE}

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, AlertCircle, CheckCircle } from "lucide-react";
+import { ExportCSVButton } from "@/components/export-csv-button";
 
 interface CommentCoveragePageProps {
   params: Promise<{ projectId: string }>;
@@ -171,16 +172,41 @@ export default async function CommentCoveragePage({ params }: CommentCoveragePag
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/projects/${projectId}/analysis`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Comment Coverage</h1>
-          <p className="text-muted-foreground">{project.name}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Comment Coverage</h1>
+            <p className="text-muted-foreground">{project.name}</p>
+          </div>
         </div>
+        <ExportCSVButton
+          filename={`comment_coverage_${new Date().toISOString().slice(0, 10)}.csv`}
+          data={[
+            ["Level", "Program", "Routine", "Total Rungs", "Commented Rungs", "Coverage %"],
+            ["Overall", "", "", String(totalRungs), String(commentedRungs), `${coveragePercent}%`],
+            ...byProgram.map((p) => [
+              "Program",
+              p.name,
+              "",
+              String(p.totalRungs),
+              String(p.commentedRungs),
+              `${p.coveragePercent}%`,
+            ]),
+            ...byRoutine.map((r) => [
+              "Routine",
+              r.programName,
+              r.routineName,
+              String(r.totalRungs),
+              String(r.commentedRungs),
+              `${r.coveragePercent}%`,
+            ]),
+          ]}
+        />
       </div>
 
       {/* Summary Card */}

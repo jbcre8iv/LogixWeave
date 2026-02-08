@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ExportCSVButton } from "@/components/export-csv-button";
 
 interface TagReference {
   id: string;
@@ -24,12 +25,13 @@ interface TagReference {
 
 interface TagXrefTableProps {
   references: TagReference[];
+  allReferences: TagReference[];
   totalCount: number;
   page: number;
   pageSize: number;
 }
 
-export function TagXrefTable({ references, totalCount, page, pageSize }: TagXrefTableProps) {
+export function TagXrefTable({ references, allReferences, totalCount, page, pageSize }: TagXrefTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -106,9 +108,24 @@ export function TagXrefTable({ references, totalCount, page, pageSize }: TagXref
 
       {totalCount > 0 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {startIndex} to {endIndex} of {totalCount} references
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              Showing {startIndex} to {endIndex} of {totalCount} references
+            </p>
+            <ExportCSVButton
+              filename={`tag_cross_reference_${new Date().toISOString().slice(0, 10)}.csv`}
+              data={[
+                ["Tag Name", "Program", "Routine", "Rung", "Usage Type"],
+                ...allReferences.map((ref) => [
+                  ref.tag_name,
+                  ref.program_name,
+                  ref.routine_name,
+                  String(ref.rung_number),
+                  ref.usage_type,
+                ]),
+              ]}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

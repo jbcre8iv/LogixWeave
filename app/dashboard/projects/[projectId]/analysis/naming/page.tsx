@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, AlertCircle, AlertTriangle, Info, CheckCircle, Settings } from "lucide-react";
+import { ExportCSVButton } from "@/components/export-csv-button";
 
 interface NamingPageProps {
   params: Promise<{ projectId: string }>;
@@ -227,12 +228,28 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/settings/naming-rules">
-            <Settings className="mr-2 h-4 w-4" />
-            Manage Rules
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {allViolations.length > 0 && (
+            <ExportCSVButton
+              filename={`naming_validation_${new Date().toISOString().slice(0, 10)}.csv`}
+              data={[
+                ["Severity", "Tag Name", "Scope", "Rule"],
+                ...allViolations.map((v) => [
+                  v.severity,
+                  v.tagName,
+                  v.tagScope,
+                  v.ruleName,
+                ]),
+              ]}
+            />
+          )}
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/settings/naming-rules">
+              <Settings className="mr-2 h-4 w-4" />
+              Manage Rules
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}

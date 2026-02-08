@@ -184,6 +184,7 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
 
       <TagTable
         tags={paginatedTags}
+        allTags={unusedTags}
         totalCount={totalCount}
         page={page}
         pageSize={PAGE_SIZE}
