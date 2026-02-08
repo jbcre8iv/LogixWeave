@@ -18,7 +18,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, project_files(id)")
+    .select("id, name, organization_id, project_files(id)")
     .eq("id", projectId)
     .single();
 
@@ -28,7 +28,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
-  // Fetch summary statistics
+  // Fetch full analysis data (used for both summary stats and CSV export)
   let stats = {
     totalTags: 0,
     unusedTags: 0,
@@ -38,21 +38,47 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     totalReferences: 0,
   };
 
+  let exportData: string[][] = [];
+
   if (fileIds.length > 0) {
-    const [tagsResult, referencesResult, rungsResult] = await Promise.all([
-      supabase.from("parsed_tags").select("id, name").in("file_id", fileIds),
-      supabase.from("tag_references").select("id, tag_name").in("file_id", fileIds),
-      supabase.from("parsed_rungs").select("id, comment").in("file_id", fileIds),
+    const [tagsResult, referencesResult, rungsResult, rulesResult] = await Promise.all([
+      supabase
+        .from("parsed_tags")
+        .select("id, name, data_type, scope, description, usage")
+        .in("file_id", fileIds),
+      supabase
+        .from("tag_references")
+        .select("id, tag_name, routine_name, program_name, rung_number, usage_type")
+        .in("file_id", fileIds)
+        .order("tag_name")
+        .order("program_name")
+        .order("routine_name"),
+      supabase
+        .from("parsed_rungs")
+        .select("id, comment, program_name, routine_name")
+        .in("file_id", fileIds),
+      supabase
+        .from("naming_rules")
+        .select("id, name, pattern, applies_to, severity")
+        .eq("organization_id", project.organization_id)
+        .eq("is_active", true),
     ]);
 
     const allTags = tagsResult.data || [];
     const references = referencesResult.data || [];
     const rungs = rungsResult.data || [];
+    const namingRules = rulesResult.data || [];
 
     const referencedTagNames = new Set(references.map((r) => r.tag_name));
     const unusedTags = allTags.filter((tag) => {
+      const tagParts = tag.name.split(".");
+      for (let i = 1; i <= tagParts.length; i++) {
+        const partialName = tagParts.slice(0, i).join(".");
+        if (referencedTagNames.has(partialName)) return false;
+      }
       const baseName = tag.name.split("[")[0];
-      return !referencedTagNames.has(tag.name) && !referencedTagNames.has(baseName);
+      if (referencedTagNames.has(baseName)) return false;
+      return !referencedTagNames.has(tag.name);
     });
 
     const commentedRungs = rungs.filter((r) => r.comment && r.comment.trim() !== "").length;
@@ -65,6 +91,105 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       commentCoverage: rungs.length > 0 ? Math.round((commentedRungs / rungs.length) * 100) : 0,
       totalReferences: references.length,
     };
+
+    // --- Build comprehensive export CSV ---
+
+    // Section 1: Summary
+    exportData.push(
+      ["=== SUMMARY ==="],
+      ["Metric", "Value"],
+      ["Total Tags", String(stats.totalTags)],
+      ["Total Rungs", String(stats.totalRungs)],
+      ["Tag References", String(stats.totalReferences)],
+      ["Unused Tags", String(stats.unusedTags)],
+      ["Comment Coverage", `${stats.commentCoverage}%`],
+      [],
+    );
+
+    // Section 2: Tag Cross-Reference
+    exportData.push(
+      ["=== TAG CROSS-REFERENCE ==="],
+      ["Tag Name", "Program", "Routine", "Rung", "Usage Type"],
+      ...references.map((ref) => [
+        ref.tag_name,
+        ref.program_name,
+        ref.routine_name,
+        String(ref.rung_number),
+        ref.usage_type,
+      ]),
+      [],
+    );
+
+    // Section 3: Unused Tags
+    exportData.push(
+      ["=== UNUSED TAGS ==="],
+      ["Name", "Data Type", "Scope", "Usage", "Description"],
+      ...unusedTags
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((tag) => [
+          tag.name,
+          tag.data_type,
+          tag.scope,
+          tag.usage || "",
+          tag.description || "",
+        ]),
+      [],
+    );
+
+    // Section 4: Comment Coverage by Routine
+    const routineCoverage = new Map<string, { program: string; total: number; commented: number }>();
+    rungs.forEach((rung) => {
+      const key = `${rung.program_name}::${rung.routine_name}`;
+      if (!routineCoverage.has(key)) {
+        routineCoverage.set(key, { program: rung.program_name, total: 0, commented: 0 });
+      }
+      const s = routineCoverage.get(key)!;
+      s.total++;
+      if (rung.comment && rung.comment.trim() !== "") s.commented++;
+    });
+
+    const coverageRows = Array.from(routineCoverage.entries())
+      .map(([key, s]) => {
+        const [programName, routineName] = key.split("::");
+        const pct = s.total > 0 ? Math.round((s.commented / s.total) * 100) : 0;
+        return [programName, routineName, String(s.total), String(s.commented), `${pct}%`];
+      })
+      .sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+
+    exportData.push(
+      ["=== COMMENT COVERAGE ==="],
+      ["Program", "Routine", "Total Rungs", "Commented Rungs", "Coverage"],
+      ...coverageRows,
+      [],
+    );
+
+    // Section 5: Naming Violations
+    if (namingRules.length > 0) {
+      const violations: string[][] = [];
+      for (const tag of allTags) {
+        for (const rule of namingRules) {
+          const appliesToTag =
+            rule.applies_to === "all" ||
+            (rule.applies_to === "controller" && tag.scope === "Controller") ||
+            (rule.applies_to === "program" && tag.scope !== "Controller");
+          if (!appliesToTag) continue;
+          try {
+            const regex = new RegExp(rule.pattern);
+            if (!regex.test(tag.name)) {
+              violations.push([rule.severity, tag.name, tag.scope, rule.name]);
+            }
+          } catch {
+            continue;
+          }
+        }
+      }
+
+      exportData.push(
+        ["=== NAMING VIOLATIONS ==="],
+        ["Severity", "Tag Name", "Scope", "Rule"],
+        ...violations,
+      );
+    }
   }
 
   const analysisTools = [
@@ -115,18 +240,15 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           </div>
         </div>
         {fileIds.length > 0 && (
-          <ExportCSVButton
-            filename={`analysis_summary_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`}
-            data={[
-              ["Metric", "Value"],
-              ["Total Tags", String(stats.totalTags)],
-              ["Total Rungs", String(stats.totalRungs)],
-              ["Tag References", String(stats.totalReferences)],
-              ["Unused Tags", String(stats.unusedTags)],
-              ["Commented Rungs", String(stats.commentedRungs)],
-              ["Comment Coverage", `${stats.commentCoverage}%`],
-            ]}
-          />
+          <div className="flex flex-col items-end gap-1">
+            <ExportCSVButton
+              filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`}
+              data={exportData}
+            />
+            <p className="text-xs text-muted-foreground">
+              Exports all analysis results
+            </p>
+          </div>
         )}
       </div>
 
