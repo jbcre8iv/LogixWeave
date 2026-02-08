@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
               "frame-src https://challenges.cloudflare.com",
+              "child-src https://challenges.cloudflare.com blob:",
+              "worker-src https://challenges.cloudflare.com blob:",
               "frame-ancestors 'none'",
               "img-src 'self' blob: data:",
               "font-src 'self'",
