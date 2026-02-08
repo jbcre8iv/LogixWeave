@@ -116,8 +116,8 @@ export function ExplainChat({
           Ask Follow-up Questions
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ScrollArea className="max-h-[400px]">
+      <CardContent className="flex flex-col gap-4">
+        <ScrollArea className="h-[350px]">
           <div className="space-y-3 pr-4">
             {messages.length === 0 && (
               <div className="space-y-2">
@@ -148,7 +148,7 @@ export function ExplainChat({
               >
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap",
+                    "max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words overflow-hidden",
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
@@ -175,7 +175,7 @@ export function ExplainChat({
           <p className="text-sm text-destructive">{error}</p>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex items-end gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -189,7 +189,7 @@ export function ExplainChat({
             size="icon"
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || isLoading}
-            className="shrink-0"
+            className="shrink-0 h-10 w-10"
           >
             <Send className="h-4 w-4" />
           </Button>
