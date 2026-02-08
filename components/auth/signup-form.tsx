@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Script from "next/script";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -15,12 +15,7 @@ const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 declare global {
   interface Window {
-    turnstile?: {
-      render: (container: string | HTMLElement, options: Record<string, unknown>) => string;
-      reset: (widgetId: string) => void;
-      remove: (widgetId: string) => void;
-    };
-    onTurnstileLoad?: () => void;
+    onTurnstileSuccess?: (token: string) => void;
   }
 }
 
@@ -35,39 +30,17 @@ export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
-  const turnstileContainerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
 
-  const renderWidget = useCallback(() => {
-    if (!turnstileSiteKey || !window.turnstile || !turnstileContainerRef.current) return;
-    if (widgetIdRef.current) return; // already rendered
-
-    widgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
-      sitekey: turnstileSiteKey,
-      callback: (token: string) => setCaptchaToken(token),
-      "error-callback": () => {
-        setCaptchaToken(null);
-        setError("Verification failed. Please try again.");
-      },
-      "expired-callback": () => setCaptchaToken(null),
-    });
+  const handleToken = useCallback((token: string) => {
+    setCaptchaToken(token);
   }, []);
 
   useEffect(() => {
-    // If turnstile script already loaded, render immediately
-    if (window.turnstile) {
-      renderWidget();
-    }
-    // Set up callback for when script loads
-    window.onTurnstileLoad = renderWidget;
-
+    window.onTurnstileSuccess = handleToken;
     return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
+      delete window.onTurnstileSuccess;
     };
-  }, [renderWidget]);
+  }, [handleToken]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,9 +72,6 @@ export function SignupForm() {
     if (error) {
       setError(error.message);
       setIsLoading(false);
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
       setCaptchaToken(null);
       return;
     }
@@ -138,7 +108,7 @@ export function SignupForm() {
     <>
       {turnstileSiteKey && (
         <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           async
           defer
         />
@@ -244,7 +214,11 @@ export function SignupForm() {
             </div>
             {turnstileSiteKey && (
               <div className="flex justify-center">
-                <div ref={turnstileContainerRef} />
+                <div
+                  className="cf-turnstile"
+                  data-sitekey={turnstileSiteKey}
+                  data-callback="onTurnstileSuccess"
+                />
               </div>
             )}
           </CardContent>
