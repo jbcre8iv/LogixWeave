@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { authLimiter, apiLimiter, aiLimiter, checkRateLimit } from "@/lib/rate-limit";
+import { getAuthLimiter, getApiLimiter, getAiLimiter, checkRateLimit } from "@/lib/rate-limit";
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -21,7 +21,7 @@ export async function updateSession(request: NextRequest) {
   const isApi = pathname.startsWith("/api/");
 
   if (isAuthPath) {
-    const { success } = await checkRateLimit(authLimiter, `auth:${ip}`);
+    const { success } = await checkRateLimit(getAuthLimiter(), `auth:${ip}`);
     if (!success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
       );
     }
   } else if (isAiApi) {
-    const { success } = await checkRateLimit(aiLimiter, `ai:${ip}`);
+    const { success } = await checkRateLimit(getAiLimiter(), `ai:${ip}`);
     if (!success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
       );
     }
   } else if (isApi) {
-    const { success } = await checkRateLimit(apiLimiter, `api:${ip}`);
+    const { success } = await checkRateLimit(getApiLimiter(), `api:${ip}`);
     if (!success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
