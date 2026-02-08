@@ -46,7 +46,10 @@ export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId, className
     }
   };
 
-  const selectValue = currentRuleSetId || "org-default";
+  const defaultSet = ruleSets.find((rs) => rs.is_default);
+  const selectValue = !currentRuleSetId || (defaultSet && currentRuleSetId === defaultSet.id)
+    ? "org-default"
+    : currentRuleSetId;
 
   return (
     <Select value={selectValue} onValueChange={handleChange} disabled={isUpdating}>
@@ -59,15 +62,10 @@ export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId, className
             Use organization default
           </span>
         </SelectItem>
-        {ruleSets.map((rs) => (
+        {ruleSets.filter((rs) => !rs.is_default).map((rs) => (
           <SelectItem key={rs.id} value={rs.id}>
             <span className="flex items-center gap-2">
               {rs.name}
-              {rs.is_default && (
-                <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                  Default
-                </Badge>
-              )}
             </span>
           </SelectItem>
         ))}
