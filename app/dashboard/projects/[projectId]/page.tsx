@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Archive,
   ArrowLeft,
   Upload,
   FileText,
@@ -17,6 +18,7 @@ import {
   Shield,
 } from "lucide-react";
 import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
+import { ArchiveProjectButton } from "@/components/dashboard/archive-project-button";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
 import { RequestPermissionDialog } from "@/components/dashboard/request-permission-dialog";
 import { PermissionRequestsList } from "@/components/dashboard/permission-requests-list";
@@ -158,7 +160,15 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             </Link>
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold break-words">{project.name}</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl md:text-3xl font-bold break-words">{project.name}</h1>
+              {project.is_archived && (
+                <Badge variant="secondary" className="text-sm py-1 px-2.5">
+                  <Archive className="h-3 w-3 mr-1" />
+                  Archived
+                </Badge>
+              )}
+            </div>
             {project.description && (
               <p className="text-muted-foreground text-sm md:text-base">{project.description}</p>
             )}
@@ -201,6 +211,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           {(isOwner || userPermission === "owner") && (
             <>
               <ShareProjectDialog projectId={projectId} projectName={project.name} />
+              {!project.is_archived && (
+                <ArchiveProjectButton projectId={projectId} projectName={project.name} />
+              )}
               <DeleteProjectButton projectId={projectId} projectName={project.name} />
             </>
           )}

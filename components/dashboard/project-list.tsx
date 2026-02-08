@@ -45,6 +45,10 @@ import {
   Search,
   ArrowUpDown,
   Users,
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,12 +59,14 @@ interface Project {
   created_at: string;
   updated_at: string;
   is_favorite: boolean;
+  is_archived?: boolean;
   created_by?: string;
   project_files: { count: number } | Array<unknown>;
 }
 
 interface ProjectListProps {
   projects: Project[];
+  archivedProjects?: Project[];
   currentUserId?: string;
   ownerMap?: Record<string, string>;
 }
@@ -272,11 +278,13 @@ function ProjectListTable({
   );
 }
 
-export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectListProps) {
+export function ProjectList({ projects, archivedProjects = [], currentUserId, ownerMap = {} }: ProjectListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archivedExpanded, setArchivedExpanded] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [optimisticFavorites, setOptimisticFavorites] = useState<Record<string, boolean>>({});
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
@@ -450,6 +458,58 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
     }
   };
 
+  const handleArchive = async () => {
+    setActionLoading("archive");
+    try {
+      const response = await fetch("/api/projects/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: Array.from(selectedIds),
+          action: "archive",
+          value: true,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to archive");
+
+      startTransition(() => {
+        router.refresh();
+      });
+      clearSelection();
+    } catch (error) {
+      console.error("Failed to archive:", error);
+    } finally {
+      setActionLoading(null);
+      setShowArchiveDialog(false);
+    }
+  };
+
+  const handleUnarchive = async (ids: string[]) => {
+    setActionLoading("unarchive");
+    try {
+      const response = await fetch("/api/projects/bulk", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          action: "archive",
+          value: false,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to unarchive");
+
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error("Failed to unarchive:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const toggleSingleFavorite = async (id: string, currentValue: boolean, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -557,6 +617,19 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
                   <Star className={cn("h-4 w-4 mr-2", allSelectedAreFavorites && "fill-yellow-400 text-yellow-400")} />
                 )}
                 {allSelectedAreFavorites ? "Unfavorite" : "Favorite"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowArchiveDialog(true)}
+                disabled={actionLoading !== null}
+              >
+                {actionLoading === "archive" ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Archive className="h-4 w-4 mr-2" />
+                )}
+                Archive
               </Button>
               <Button
                 variant="destructive"
@@ -760,6 +833,169 @@ export function ProjectList({ projects, currentUserId, ownerMap = {} }: ProjectL
           )}
         </div>
       )}
+
+      {/* Archived section (collapsible) */}
+      {archivedProjects.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <button
+            onClick={() => setArchivedExpanded(!archivedExpanded)}
+            className="flex items-center gap-2 w-full text-left group"
+          >
+            {archivedExpanded ? (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+            <Archive className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Archived
+            </h2>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {archivedProjects.length}
+            </span>
+          </button>
+
+          {archivedExpanded && (
+            viewMode === "grid" ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {archivedProjects.map((project) => (
+                  <div key={project.id} className="relative group opacity-75">
+                    <Link href={`/dashboard/projects/${project.id}`}>
+                      <Card className="h-full transition-all hover:bg-accent/50">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                              <CardTitle className="text-lg">{project.name}</CardTitle>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleUnarchive([project.id]);
+                              }}
+                            >
+                              <ArchiveRestore className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                          {project.description && (
+                            <CardDescription className="line-clamp-2">
+                              {project.description}
+                            </CardDescription>
+                          )}
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-4 w-4" />
+                              {getFileCount(project)} {getFileCount(project) === 1 ? "file" : "files"}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {new Date(project.updated_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border opacity-75">
+                <Table className="table-fixed">
+                  <colgroup>
+                    <col />
+                    <col className="hidden md:table-column w-[30%]" />
+                    <col className="w-[70px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[50px]" />
+                  </colgroup>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Description</TableHead>
+                      <TableHead>Files</TableHead>
+                      <TableHead>Updated</TableHead>
+                      <TableHead className="pr-4"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {archivedProjects.map((project) => {
+                      const fileCount = getFileCount(project);
+                      return (
+                        <TableRow
+                          key={project.id}
+                          className="cursor-pointer"
+                          onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="font-medium truncate">{project.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <span className="text-muted-foreground line-clamp-1">
+                              {project.description || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell>{fileCount}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(project.updated_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()} className="pr-4">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleUnarchive([project.id])}
+                            >
+                              <ArchiveRestore className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Archive confirmation dialog */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {selectedIds.size} project{selectedIds.size > 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedIds.size > 1 ? "These projects" : "This project"} will be hidden from
+              tools and the sidebar but can be restored at any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading === "archive"}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchive}
+              disabled={actionLoading === "archive"}
+            >
+              {actionLoading === "archive" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Archiving...
+                </>
+              ) : (
+                "Archive"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

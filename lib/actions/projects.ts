@@ -183,3 +183,51 @@ export async function deleteProject(projectId: string) {
   revalidatePath("/dashboard/projects");
   redirect("/dashboard/projects");
 }
+
+export async function archiveProject(projectId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ is_archived: true })
+    .eq("id", projectId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/projects");
+  redirect("/dashboard/projects");
+}
+
+export async function unarchiveProject(projectId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ is_archived: false })
+    .eq("id", projectId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/projects");
+  revalidatePath(`/dashboard/projects/${projectId}`);
+}

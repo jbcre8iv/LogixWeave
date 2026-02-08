@@ -121,10 +121,11 @@ export function SidebarContent({ onNavClick }: SidebarContentProps) {
         }
       }
 
-      // Fetch all projects for dropdown
+      // Fetch all projects for dropdown (exclude archived)
       const { data: projects } = await supabase
         .from("projects")
         .select("id, name, is_favorite, created_by")
+        .eq("is_archived", false)
         .order("name");
 
       if (projects) {

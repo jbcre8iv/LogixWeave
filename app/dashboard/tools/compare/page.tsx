@@ -15,6 +15,7 @@ export default async function FileComparePage() {
       project_files(id, file_name, parsing_status, folder_id, current_version, version_count),
       project_folders(id, name)
     `)
+    .eq("is_archived", false)
     .order("name");
 
   // Filter to only include projects with completed parsed files

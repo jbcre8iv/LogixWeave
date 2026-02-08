@@ -15,6 +15,7 @@ export default async function GlobalTagExplorerPage() {
       name,
       project_files(id)
     `)
+    .eq("is_archived", false)
     .order("name");
 
   // Get tag counts for each project

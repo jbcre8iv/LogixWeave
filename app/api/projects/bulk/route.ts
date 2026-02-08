@@ -32,6 +32,19 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: true, updated: ids.length });
     }
 
+    if (action === "archive") {
+      const { error } = await supabase
+        .from("projects")
+        .update({ is_archived: value })
+        .in("id", ids);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, updated: ids.length });
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     console.error("Bulk update error:", error);

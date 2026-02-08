@@ -15,6 +15,7 @@ export default async function GlobalAnalysisPage() {
       name,
       project_files(id, parsing_status)
     `)
+    .eq("is_archived", false)
     .order("name");
 
   // Filter to projects with completed parsing

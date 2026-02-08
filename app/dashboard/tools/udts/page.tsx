@@ -15,6 +15,7 @@ export default async function GlobalUDTsPage() {
       name,
       project_files(id)
     `)
+    .eq("is_archived", false)
     .order("name");
 
   // Get UDT counts for each project

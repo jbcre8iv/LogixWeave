@@ -15,6 +15,7 @@ export default async function GlobalIOPage() {
       name,
       project_files(id)
     `)
+    .eq("is_archived", false)
     .order("name");
 
   // Get I/O module counts for each project

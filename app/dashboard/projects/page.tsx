@@ -19,10 +19,14 @@ export default async function ProjectsPage() {
       created_at,
       updated_at,
       is_favorite,
+      is_archived,
       created_by,
       project_files(count)
     `)
     .order("updated_at", { ascending: false });
+
+  const activeProjects = projects?.filter((p) => !p.is_archived) || [];
+  const archivedProjects = projects?.filter((p) => p.is_archived) || [];
 
   // Fetch owner names for shared projects
   const sharedOwnerIds = projects
@@ -64,8 +68,8 @@ export default async function ProjectsPage() {
         </Button>
       </div>
 
-      {projects && projects.length > 0 ? (
-        <ProjectList projects={projects} currentUserId={user?.id} ownerMap={ownerMap} />
+      {activeProjects.length > 0 || archivedProjects.length > 0 ? (
+        <ProjectList projects={activeProjects} archivedProjects={archivedProjects} currentUserId={user?.id} ownerMap={ownerMap} />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

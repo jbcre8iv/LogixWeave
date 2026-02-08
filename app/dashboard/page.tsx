@@ -12,17 +12,19 @@ export default async function DashboardPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Get user's projects count (only owned projects)
+  // Get user's projects count (only owned, non-archived projects)
   const { count: projectCount } = await supabase
     .from("projects")
     .select("*", { count: "exact", head: true })
-    .eq("created_by", user?.id);
+    .eq("created_by", user?.id)
+    .eq("is_archived", false);
 
-  // Get recent projects (owned by user)
+  // Get recent projects (owned by user, not archived)
   const { data: recentProjects } = await supabase
     .from("projects")
     .select("id, name, updated_at")
     .eq("created_by", user?.id)
+    .eq("is_archived", false)
     .order("updated_at", { ascending: false })
     .limit(5);
 
