@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ExportCSVButton } from "@/components/export-csv-button";
 
 interface Tag {
   id: string;
@@ -25,13 +24,12 @@ interface Tag {
 
 interface TagTableProps {
   tags: Tag[];
-  allTags?: Tag[];
   totalCount: number;
   page: number;
   pageSize: number;
 }
 
-export function TagTable({ tags, allTags, totalCount, page, pageSize }: TagTableProps) {
+export function TagTable({ tags, totalCount, page, pageSize }: TagTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -95,26 +93,9 @@ export function TagTable({ tags, allTags, totalCount, page, pageSize }: TagTable
 
       {totalCount > 0 && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <p className="text-sm text-muted-foreground">
-              Showing {startIndex} to {endIndex} of {totalCount} tags
-            </p>
-            {allTags && allTags.length > 0 && (
-              <ExportCSVButton
-                filename={`unused_tags_${new Date().toISOString().slice(0, 10)}.csv`}
-                data={[
-                  ["Name", "Data Type", "Scope", "Usage", "Description"],
-                  ...allTags.map((tag) => [
-                    tag.name,
-                    tag.data_type,
-                    tag.scope,
-                    tag.usage || "",
-                    tag.description || "",
-                  ]),
-                ]}
-              />
-            )}
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Showing {startIndex} to {endIndex} of {totalCount} tags
+          </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

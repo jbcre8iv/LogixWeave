@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { TagFilters } from "@/components/tools/tag-filters";
 import { TagTable } from "@/components/tools/tag-table";
+import { ExportCSVButton } from "@/components/export-csv-button";
 
 interface UnusedTagsPageProps {
   params: Promise<{ projectId: string }>;
@@ -140,16 +141,33 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/projects/${projectId}/analysis`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Unused Tags</h1>
-          <p className="text-muted-foreground">{project.name}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Unused Tags</h1>
+            <p className="text-muted-foreground">{project.name}</p>
+          </div>
         </div>
+        {unusedTags.length > 0 && (
+          <ExportCSVButton
+            filename={`unused_tags_${new Date().toISOString().slice(0, 10)}.csv`}
+            data={[
+              ["Name", "Data Type", "Scope", "Usage", "Description"],
+              ...unusedTags.map((tag) => [
+                tag.name,
+                tag.data_type,
+                tag.scope,
+                tag.usage || "",
+                tag.description || "",
+              ]),
+            ]}
+          />
+        )}
       </div>
 
       {totalCount > 0 && (
@@ -184,7 +202,6 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
 
       <TagTable
         tags={paginatedTags}
-        allTags={unusedTags}
         totalCount={totalCount}
         page={page}
         pageSize={PAGE_SIZE}
