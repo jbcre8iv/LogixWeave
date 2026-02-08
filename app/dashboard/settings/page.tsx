@@ -5,7 +5,8 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { SignOutButton } from "@/components/settings/sign-out-button";
 import { ChangePasswordForm } from "@/components/settings/change-password-form";
 import { AILanguageSelector } from "@/components/settings/ai-language-selector";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ScrollText, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -68,6 +69,25 @@ export default async function SettingsPage() {
             <AILanguageSelector currentLanguage={profile?.ai_language || "en"} />
           </CardContent>
         </Card>
+
+        <Link href="/dashboard/settings/naming-rules" className="block group">
+          <Card className="transition-colors hover:bg-accent/50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ScrollText className="h-5 w-5 text-primary" />
+                    Naming Rules
+                  </CardTitle>
+                  <CardDescription className="mt-1.5">
+                    Configure tag naming conventions for your organization
+                  </CardDescription>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
 
         {/* Organization section hidden for now - uncomment when team features are needed
         {membership && (
