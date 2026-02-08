@@ -51,6 +51,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ProjectCardMenu } from "@/components/dashboard/project-card-menu";
 
 interface Project {
   id: string;
@@ -79,6 +80,7 @@ interface ProjectGridCardProps {
   onToggleSelect: (id: string, e?: React.MouseEvent) => void;
   onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
   getFileCount: (project: Project) => number;
+  currentUserId?: string;
 }
 
 function ProjectGridCard({
@@ -87,8 +89,10 @@ function ProjectGridCard({
   onToggleSelect,
   onToggleFavorite,
   getFileCount,
+  currentUserId,
 }: ProjectGridCardProps) {
   const fileCount = getFileCount(project);
+  const isOwner = !currentUserId || !project.created_by || project.created_by === currentUserId;
 
   return (
     <div className="relative group">
@@ -105,21 +109,11 @@ function ProjectGridCard({
                 <FolderOpen className="h-5 w-5 text-primary" />
                 <CardTitle className="text-lg">{project.name}</CardTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={(e) => onToggleFavorite(project.id, project.is_favorite, e)}
-              >
-                <Star
-                  className={cn(
-                    "h-4 w-4",
-                    project.is_favorite
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted-foreground"
-                  )}
-                />
-              </Button>
+              <ProjectCardMenu
+                project={project}
+                isOwner={isOwner}
+                onToggleFavorite={onToggleFavorite}
+              />
             </div>
             {project.description && (
               <CardDescription className="line-clamp-2 pl-6">
@@ -253,21 +247,11 @@ function ProjectListTable({
                   {new Date(project.updated_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()} className="pr-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={(e) => onToggleFavorite(project.id, project.is_favorite, e)}
-                  >
-                    <Star
-                      className={cn(
-                        "h-4 w-4",
-                        project.is_favorite
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-muted-foreground"
-                      )}
-                    />
-                  </Button>
+                  <ProjectCardMenu
+                    project={project}
+                    isOwner={!currentUserId || !project.created_by || project.created_by === currentUserId}
+                    onToggleFavorite={onToggleFavorite}
+                  />
                 </TableCell>
               </TableRow>
             );
@@ -707,6 +691,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     onToggleSelect={toggleSelect}
                     onToggleFavorite={toggleSingleFavorite}
                     getFileCount={getFileCount}
+                    currentUserId={currentUserId}
                   />
                 ))}
               </div>
@@ -730,6 +715,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     onToggleSelect={toggleSelect}
                     onToggleFavorite={toggleSingleFavorite}
                     getFileCount={getFileCount}
+                    currentUserId={currentUserId}
                   />
                 ))}
               </div>
@@ -754,6 +740,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     onToggleSelect={toggleSelect}
                     onToggleFavorite={toggleSingleFavorite}
                     getFileCount={getFileCount}
+                    currentUserId={currentUserId}
                   />
                 ))}
               </div>

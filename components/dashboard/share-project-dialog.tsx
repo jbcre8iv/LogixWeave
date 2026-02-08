@@ -33,11 +33,15 @@ interface Share {
 interface ShareProjectDialogProps {
   projectId: string;
   projectName: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialogProps) {
+export function ShareProjectDialog({ projectId, projectName, open: controlledOpen, onOpenChange }: ShareProjectDialogProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState<"view" | "edit" | "owner">("view");
   const [shares, setShares] = useState<Share[]>([]);
@@ -134,12 +138,14 @@ export function ShareProjectDialog({ projectId, projectName }: ShareProjectDialo
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Share2 className="h-4 w-4 mr-2" />
-          Share
-        </Button>
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-lg" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Share "{projectName}"</DialogTitle>
