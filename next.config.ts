@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
               "child-src https://challenges.cloudflare.com blob:",
               "worker-src https://challenges.cloudflare.com blob:",
               "frame-ancestors 'none'",
-              "img-src 'self' blob: data:",
+              "img-src 'self' blob: data: https://*.supabase.co",
               "font-src 'self' https://fonts.gstatic.com",
             ].join("; "),
           },
