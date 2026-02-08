@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, GitCompare, TagsIcon, MessageSquare, AlertTriangle, ArrowRight, FileCheck } from "lucide-react";
+import { ExportCSVButton } from "@/components/export-csv-button";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -101,16 +102,32 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/projects/${projectId}`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Analysis</h1>
-          <p className="text-muted-foreground">{project.name}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Analysis</h1>
+            <p className="text-muted-foreground">{project.name}</p>
+          </div>
         </div>
+        {fileIds.length > 0 && (
+          <ExportCSVButton
+            filename={`analysis_summary_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`}
+            data={[
+              ["Metric", "Value"],
+              ["Total Tags", String(stats.totalTags)],
+              ["Total Rungs", String(stats.totalRungs)],
+              ["Tag References", String(stats.totalReferences)],
+              ["Unused Tags", String(stats.unusedTags)],
+              ["Commented Rungs", String(stats.commentedRungs)],
+              ["Comment Coverage", `${stats.commentCoverage}%`],
+            ]}
+          />
+        )}
       </div>
 
       {fileIds.length === 0 ? (
