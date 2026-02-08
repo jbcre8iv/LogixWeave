@@ -12,11 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 
@@ -84,19 +79,17 @@ function AOIRow({ aoi }: { aoi: AOI }) {
   };
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <>
       <TableRow className="hover:bg-muted/50">
         <TableCell>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="p-0 h-auto">
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4 mr-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 mr-2" />
-              )}
-              <span className="font-mono">{aoi.name}</span>
-            </Button>
-          </CollapsibleTrigger>
+          <Button variant="ghost" size="sm" className="p-0 h-auto" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? (
+              <ChevronUp className="h-4 w-4 mr-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 mr-2" />
+            )}
+            <span className="font-mono">{aoi.name}</span>
+          </Button>
         </TableCell>
         <TableCell className="text-sm">{aoi.revision || "-"}</TableCell>
         <TableCell>
@@ -111,7 +104,7 @@ function AOIRow({ aoi }: { aoi: AOI }) {
           {aoi.description || "-"}
         </TableCell>
       </TableRow>
-      <CollapsibleContent asChild>
+      {isOpen && (
         <TableRow>
           <TableCell colSpan={5} className="bg-muted/30 p-0">
             <div className="p-4">
@@ -232,8 +225,8 @@ function AOIRow({ aoi }: { aoi: AOI }) {
             </div>
           </TableCell>
         </TableRow>
-      </CollapsibleContent>
-    </Collapsible>
+      )}
+    </>
   );
 }
 

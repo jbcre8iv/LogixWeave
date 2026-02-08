@@ -12,11 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 
 interface UDTMember {
@@ -47,19 +42,17 @@ function UDTRow({ udt }: { udt: UDT }) {
   const memberCount = udt.parsed_udt_members?.length || 0;
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <>
       <TableRow className="hover:bg-muted/50">
         <TableCell>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="p-0 h-auto">
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4 mr-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 mr-2" />
-              )}
-              <span className="font-mono">{udt.name}</span>
-            </Button>
-          </CollapsibleTrigger>
+          <Button variant="ghost" size="sm" className="p-0 h-auto" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? (
+              <ChevronUp className="h-4 w-4 mr-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 mr-2" />
+            )}
+            <span className="font-mono">{udt.name}</span>
+          </Button>
         </TableCell>
         <TableCell>
           {udt.family_type ? (
@@ -73,7 +66,7 @@ function UDTRow({ udt }: { udt: UDT }) {
           {udt.description || "-"}
         </TableCell>
       </TableRow>
-      <CollapsibleContent asChild>
+      {isOpen && (
         <TableRow>
           <TableCell colSpan={4} className="bg-muted/30 p-0">
             {memberCount > 0 ? (
@@ -111,8 +104,8 @@ function UDTRow({ udt }: { udt: UDT }) {
             )}
           </TableCell>
         </TableRow>
-      </CollapsibleContent>
-    </Collapsible>
+      )}
+    </>
   );
 }
 
