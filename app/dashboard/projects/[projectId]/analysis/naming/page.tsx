@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, AlertCircle, AlertTriangle, Info, CheckCircle, Settings } from "lucide-react";
 import { ExportCSVButton } from "@/components/export-csv-button";
+import { RuleSetPicker } from "@/components/tools/rule-set-picker";
 
 interface NamingPageProps {
   params: Promise<{ projectId: string }>;
@@ -80,10 +81,10 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
 
   const supabase = await createClient();
 
-  // Get project info
+  // Get project info (including naming_rule_set_id)
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, organization_id, project_files(id)")
+    .select("id, name, organization_id, naming_rule_set_id, project_files(id)")
     .eq("id", projectId)
     .single();
 
@@ -92,6 +93,23 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
   }
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
+
+  // Fetch all rule sets for the picker
+  const { data: allRuleSets } = await supabase
+    .from("naming_rule_sets")
+    .select("id, name, is_default")
+    .eq("organization_id", project.organization_id)
+    .order("is_default", { ascending: false })
+    .order("name");
+
+  // Resolve effective rule set
+  let effectiveRuleSetId = project.naming_rule_set_id;
+  if (!effectiveRuleSetId) {
+    const defaultSet = allRuleSets?.find((rs) => rs.is_default);
+    effectiveRuleSetId = defaultSet?.id || null;
+  }
+
+  const effectiveRuleSet = allRuleSets?.find((rs) => rs.id === effectiveRuleSetId);
 
   if (fileIds.length === 0) {
     return (
@@ -123,14 +141,18 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     );
   }
 
-  // Get active naming rules
-  const { data: rules } = await supabase
-    .from("naming_rules")
-    .select("id, name, pattern, applies_to, severity")
-    .eq("organization_id", project.organization_id)
-    .eq("is_active", true);
+  // Get active naming rules for the resolved rule set
+  let rules: NamingRule[] = [];
+  if (effectiveRuleSetId) {
+    const { data } = await supabase
+      .from("naming_rules")
+      .select("id, name, pattern, applies_to, severity")
+      .eq("rule_set_id", effectiveRuleSetId)
+      .eq("is_active", true);
+    rules = data || [];
+  }
 
-  if (!rules || rules.length === 0) {
+  if (rules.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -147,14 +169,16 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">
-              No naming rules have been configured for your organization.
+              No active naming rules found in the current rule set.
             </p>
-            <Button asChild>
-              <Link href="/dashboard/settings/naming-rules">
-                <Settings className="mr-2 h-4 w-4" />
-                Configure Naming Rules
-              </Link>
-            </Button>
+            <div className="flex items-center justify-center gap-2">
+              <Button asChild>
+                <Link href="/dashboard/settings/naming-rules">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configure Naming Rules
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -304,16 +328,31 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
         </Link>
       </div>
 
-      {/* Info Card */}
+      {/* Info Card with Rule Set Picker */}
       <Card>
         <CardContent className="py-4">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>Checked {tags?.length || 0} tags against {rules.length} active rules</span>
-            {severityFilter && severityFilter !== "all" && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="?">Clear Filter</Link>
-              </Button>
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>Checked {tags?.length || 0} tags against {rules.length} active rules</span>
+              {effectiveRuleSet && (
+                <Badge variant="outline">
+                  Rule set: {effectiveRuleSet.name}
+                  {!project.naming_rule_set_id && " (org default)"}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <RuleSetPicker
+                projectId={projectId}
+                ruleSets={allRuleSets || []}
+                currentRuleSetId={project.naming_rule_set_id}
+              />
+              {severityFilter && severityFilter !== "all" && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="?">Clear Filter</Link>
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

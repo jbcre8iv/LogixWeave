@@ -18,7 +18,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, organization_id, project_files(id)")
+    .select("id, name, organization_id, naming_rule_set_id, project_files(id)")
     .eq("id", projectId)
     .single();
 
@@ -41,6 +41,30 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   let exportSheets: ExportSheet[] = [];
 
   if (fileIds.length > 0) {
+    // Resolve effective rule set for naming rules
+    let effectiveRuleSetId = project.naming_rule_set_id;
+    if (!effectiveRuleSetId) {
+      const { data: defaultSet } = await supabase
+        .from("naming_rule_sets")
+        .select("id")
+        .eq("organization_id", project.organization_id)
+        .eq("is_default", true)
+        .single();
+      effectiveRuleSetId = defaultSet?.id || null;
+    }
+
+    // Build naming rules query based on resolved rule set
+    const namingRulesQuery = effectiveRuleSetId
+      ? supabase
+          .from("naming_rules")
+          .select("id, name, pattern, applies_to, severity")
+          .eq("rule_set_id", effectiveRuleSetId)
+          .eq("is_active", true)
+      : supabase
+          .from("naming_rules")
+          .select("id, name, pattern, applies_to, severity")
+          .eq("id", "00000000-0000-0000-0000-000000000000"); // no results if no rule set
+
     const [tagsResult, referencesResult, rungsResult, rulesResult] = await Promise.all([
       supabase
         .from("parsed_tags")
@@ -57,11 +81,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         .from("parsed_rungs")
         .select("id, comment, program_name, routine_name")
         .in("file_id", fileIds),
-      supabase
-        .from("naming_rules")
-        .select("id, name, pattern, applies_to, severity")
-        .eq("organization_id", project.organization_id)
-        .eq("is_active", true),
+      namingRulesQuery,
     ]);
 
     const allTags = tagsResult.data || [];

@@ -84,6 +84,7 @@ export interface Database {
           organization_id: string;
           name: string;
           description: string | null;
+          naming_rule_set_id: string | null;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -93,6 +94,7 @@ export interface Database {
           organization_id: string;
           name: string;
           description?: string | null;
+          naming_rule_set_id?: string | null;
           created_by: string;
           created_at?: string;
           updated_at?: string;
@@ -102,6 +104,7 @@ export interface Database {
           organization_id?: string;
           name?: string;
           description?: string | null;
+          naming_rule_set_id?: string | null;
           created_by?: string;
           created_at?: string;
           updated_at?: string;
@@ -543,6 +546,7 @@ export interface Database {
         Row: {
           id: string;
           organization_id: string;
+          rule_set_id: string;
           name: string;
           description: string | null;
           pattern: string;
@@ -556,6 +560,7 @@ export interface Database {
         Insert: {
           id?: string;
           organization_id: string;
+          rule_set_id: string;
           name: string;
           description?: string | null;
           pattern: string;
@@ -569,12 +574,45 @@ export interface Database {
         Update: {
           id?: string;
           organization_id?: string;
+          rule_set_id?: string;
           name?: string;
           description?: string | null;
           pattern?: string;
           applies_to?: "all" | "controller" | "program" | "io" | "udt" | "aoi";
           severity?: "error" | "warning" | "info";
           is_active?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      naming_rule_sets: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          description: string | null;
+          is_default: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          description?: string | null;
+          is_default?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          name?: string;
+          description?: string | null;
+          is_default?: boolean;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

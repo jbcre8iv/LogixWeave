@@ -37,11 +37,12 @@ export default async function NamingRulesPage() {
 
   const isAdmin = membership.role === "owner" || membership.role === "admin";
 
-  // Get existing naming rules
-  const { data: rules } = await supabase
-    .from("naming_rules")
-    .select("*")
+  // Get rule sets with their nested rules
+  const { data: ruleSets } = await supabase
+    .from("naming_rule_sets")
+    .select("*, naming_rules(*)")
     .eq("organization_id", membership.organization_id)
+    .order("is_default", { ascending: false })
     .order("name");
 
   return (
@@ -57,12 +58,12 @@ export default async function NamingRulesPage() {
         <CardHeader>
           <CardTitle>Tag Naming Convention Rules</CardTitle>
           <CardDescription>
-            Define regex patterns to validate tag names across all projects.
-            These rules help maintain consistent naming conventions in your PLC programs.
+            Organize rules into named sets that can be assigned per-project.
+            The default set is used when a project has no specific assignment.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <NamingRulesManager rules={rules || []} isAdmin={isAdmin} />
+          <NamingRulesManager ruleSets={ruleSets || []} isAdmin={isAdmin} />
         </CardContent>
       </Card>
     </div>

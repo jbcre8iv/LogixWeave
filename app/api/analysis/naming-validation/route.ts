@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     // Get project and organization
     const { data: project } = await supabase
       .from("projects")
-      .select("id, organization_id, project_files(id)")
+      .select("id, organization_id, naming_rule_set_id, project_files(id)")
       .eq("id", projectId)
       .single();
 
@@ -96,11 +96,33 @@ export async function GET(request: Request) {
       });
     }
 
-    // Get active naming rules for this organization
+    // Resolve the effective rule set: project override or org default
+    let ruleSetId = project.naming_rule_set_id;
+    if (!ruleSetId) {
+      const { data: defaultSet } = await supabase
+        .from("naming_rule_sets")
+        .select("id")
+        .eq("organization_id", project.organization_id)
+        .eq("is_default", true)
+        .single();
+
+      ruleSetId = defaultSet?.id || null;
+    }
+
+    if (!ruleSetId) {
+      return NextResponse.json({
+        violations: [],
+        summary: { errors: 0, warnings: 0, info: 0, total: 0 },
+        tagsChecked: 0,
+        message: "No rule set found for this project",
+      });
+    }
+
+    // Get active naming rules for the resolved rule set
     const { data: rules } = await supabase
       .from("naming_rules")
       .select("id, name, pattern, applies_to, severity")
-      .eq("organization_id", project.organization_id)
+      .eq("rule_set_id", ruleSetId)
       .eq("is_active", true);
 
     if (!rules || rules.length === 0) {
