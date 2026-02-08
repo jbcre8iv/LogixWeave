@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail } from "lucide-react";
+
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function SignupForm() {
   const [email, setEmail] = useState("");
@@ -20,10 +22,18 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (turnstileSiteKey && !captchaToken) {
+      setError("Please complete the verification challenge.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -39,19 +49,45 @@ export function SignupForm() {
           last_name: lastName,
           ...(role && { role }),
         },
+        ...(captchaToken && { captchaToken }),
       },
     });
 
     if (error) {
       setError(error.message);
       setIsLoading(false);
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       return;
     }
 
-    // Since email confirmation is disabled, redirect to dashboard
-    router.push("/dashboard");
-    router.refresh();
+    setEmailSent(true);
+    setIsLoading(false);
   };
+
+  if (emailSent) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-2">
+            <Mail className="h-12 w-12 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
+          <CardDescription>
+            We sent a verification link to <strong>{email}</strong>. Click the link in the email to verify your account.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className="flex flex-col space-y-4">
+          <p className="text-sm text-muted-foreground text-center">
+            Didn&apos;t receive the email? Check your spam folder or{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              try signing in
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md">
@@ -153,6 +189,20 @@ export function SignupForm() {
               </button>
             </div>
           </div>
+          {turnstileSiteKey && (
+            <div className="flex justify-center">
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={turnstileSiteKey}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setError("Verification failed. Please try again.");
+                }}
+                onExpire={() => setCaptchaToken(null)}
+              />
+            </div>
+          )}
         </CardContent>
         <div className="px-6 pb-6" />
         <CardFooter className="flex flex-col space-y-4">

@@ -1,7 +1,52 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { authLimiter, apiLimiter, aiLimiter, checkRateLimit } from "@/lib/rate-limit";
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
+  return request.headers.get("x-real-ip") ?? "127.0.0.1";
+}
 
 export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const ip = getClientIp(request);
+
+  // --- Rate Limiting ---
+  const authPaths = ["/login", "/signup", "/forgot-password", "/auth/callback"];
+  const isAuthPath = authPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isAiApi = pathname.startsWith("/api/ai/") || pathname.startsWith("/api/ai");
+  const isApi = pathname.startsWith("/api/");
+
+  if (isAuthPath) {
+    const { success } = await checkRateLimit(authLimiter, `auth:${ip}`);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+  } else if (isAiApi) {
+    const { success } = await checkRateLimit(aiLimiter, `ai:${ip}`);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+  } else if (isApi) {
+    const { success } = await checkRateLimit(apiLimiter, `api:${ip}`);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+  }
+
+  // --- Supabase Auth ---
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -38,12 +83,46 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Define public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/legal", "/auth/callback"];
+  const publicRoutes = ["/", "/login", "/signup", "/forgot-password", "/reset-password", "/legal", "/auth/callback", "/verify-email"];
   const isPublicRoute = publicRoutes.some(
     (route) =>
-      request.nextUrl.pathname === route ||
-      request.nextUrl.pathname.startsWith("/auth/")
+      pathname === route ||
+      pathname.startsWith("/auth/")
   );
+
+  // --- Banned User Check ---
+  if (user?.banned_until) {
+    const bannedUntil = new Date(user.banned_until);
+    if (bannedUntil > new Date()) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "account_disabled");
+      const redirectResponse = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value);
+      });
+      return redirectResponse;
+    }
+  }
+
+  // --- Email Verification Check ---
+  const emailExemptPaths = ["/verify-email", "/auth/callback", "/login", "/signup", "/forgot-password", "/reset-password", "/legal", "/"];
+  const isEmailExempt = emailExemptPaths.some(
+    (route) =>
+      pathname === route ||
+      pathname.startsWith("/auth/")
+  );
+
+  if (user && !user.email_confirmed_at && !isEmailExempt) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/verify-email";
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  }
 
   if (!user && !isPublicRoute) {
     // No user and trying to access protected route, redirect to login
@@ -52,7 +131,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     // User is logged in and trying to access auth pages, redirect to dashboard
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
