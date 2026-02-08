@@ -1,0 +1,212 @@
+IE_VER := 0;
+
+CONTROLLER ConveyorSystem_Line1 (ProcessorType := "1756-L73", Major := 33, Minor := 11,
+  ProjectCreationDate := "2026-01-10T08:00:00.000Z",
+  LastModifiedDate := "2026-02-06T16:45:00.000Z",
+  Description := "Packaging Line 1 - Conveyor and Sorting System")
+
+  DATATYPE UDT_MotorDrive (Description := "Variable frequency drive status and control")
+    MEMBER Running : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Drive running confirmation");
+    MEMBER Faulted : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Drive fault active");
+    MEMBER Ready : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Drive ready for start");
+    MEMBER Speed_Ref : REAL (Radix := Float, ExternalAccess := "Read/Write", Description := "Speed reference 0-100%");
+    MEMBER Speed_Act : REAL (Radix := Float, ExternalAccess := "Read Only", Description := "Actual speed feedback 0-100%");
+    MEMBER Current : REAL (Radix := Float, ExternalAccess := "Read Only", Description := "Motor current in amps");
+    MEMBER Start_Cmd : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Start command");
+    MEMBER Stop_Cmd : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Stop command");
+    MEMBER Reset_Cmd : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Fault reset command");
+    MEMBER RunHours : DINT (Radix := Decimal, ExternalAccess := "Read Only", Description := "Accumulated run hours");
+  END_DATATYPE
+
+  DATATYPE UDT_PhotoEye (Description := "Photoelectric sensor status")
+    MEMBER Detected : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Object detected");
+    MEMBER Blocked : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Sensor blocked fault");
+    MEMBER BlockedTimer : TIMER (ExternalAccess := "Read Only", Description := "Blocked detection timer");
+  END_DATATYPE
+
+  DATATYPE UDT_ProductCounter (Description := "Product counting and tracking")
+    MEMBER Count : DINT (Radix := Decimal, ExternalAccess := "Read Only", Description := "Current count");
+    MEMBER DailyTotal : DINT (Radix := Decimal, ExternalAccess := "Read Only", Description := "Daily total count");
+    MEMBER ShiftTotal : DINT (Radix := Decimal, ExternalAccess := "Read Only", Description := "Shift total count");
+    MEMBER ResetCmd : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Reset counter command");
+    MEMBER Rate_PerMin : REAL (Radix := Float, ExternalAccess := "Read Only", Description := "Products per minute");
+  END_DATATYPE
+
+  DATATYPE UDT_Diverter (Description := "Pneumatic diverter gate control")
+    MEMBER Divert_Cmd : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Divert command");
+    MEMBER Extended : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Diverter extended feedback");
+    MEMBER Retracted : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Diverter retracted feedback");
+    MEMBER Fault : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Diverter position fault");
+    MEMBER FaultTimer : TIMER (ExternalAccess := "Read Only");
+  END_DATATYPE
+
+  ADD_ON_INSTRUCTION_DEFINITION AOI_ConveyorSection (Description := "Standard conveyor section control with jam detection",
+    Revision := "1.5", Vendor := "LineEngineering",
+    ExecutePrescan := false, ExecutePostscan := false, ExecuteEnableInFalse := false,
+    CreatedDate := "2026-01-12T10:00:00.000Z", CreatedBy := "TAnderson",
+    EditedDate := "2026-02-03T11:30:00.000Z", EditedBy := "TAnderson")
+
+    PARAMETERS
+      EnableIn : BOOL (Usage := Input, Required := true, Visible := false);
+      EnableOut : BOOL (Usage := Output, Required := true, Visible := false);
+      Run_Permit : BOOL (Usage := Input, Required := true, Visible := true, Description := "Permission to run conveyor");
+      Speed_SP : REAL (Usage := Input, Required := true, Visible := true, Description := "Speed setpoint 0-100%");
+      Photo_Eye : BOOL (Usage := Input, Required := true, Visible := true, Description := "Product detect photo eye");
+      Drive_Running : BOOL (Usage := Input, Required := true, Visible := true, Description := "VFD running feedback");
+      Drive_Start : BOOL (Usage := Output, Required := true, Visible := true, Description := "Start drive command");
+      Drive_Speed : REAL (Usage := Output, Required := true, Visible := true, Description := "Speed reference output");
+      Jammed : BOOL (Usage := Output, Required := true, Visible := true, Description := "Jam detected flag");
+    END_PARAMETERS
+
+    LOCAL_TAGS
+      JamTimer : TIMER;
+      PrevPhotoEye : BOOL;
+    END_LOCAL_TAGS
+
+    ROUTINE Logic (Type := RLLContent)
+      N: [Start drive when permitted] XIC(Run_Permit) OTE(Drive_Start);
+      N: [Set speed reference] XIC(Run_Permit) MOV(Speed_SP,Drive_Speed);
+      N: [Zero speed when not permitted] XIO(Run_Permit) MOV(0.0,Drive_Speed);
+      N: [Detect jam - photo eye blocked for more than 30 seconds while running] XIC(Drive_Running) XIC(Photo_Eye) TON(JamTimer,30000,0);
+      N: [Set jam flag] XIC(JamTimer.DN) OTE(Jammed);
+    END_ROUTINE
+  END_ADD_ON_INSTRUCTION_DEFINITION
+
+  MODULE Local (CatalogNumber := "1756-A10", ParentModule := "Local", Slot := 0, Description := "Local Chassis - 10 Slot")
+  END_MODULE
+
+  MODULE ENet_Module (CatalogNumber := "1756-EN2T", ParentModule := "Local", Slot := 1, Description := "EtherNet/IP Communications")
+  END_MODULE
+
+  MODULE DI_Card1 (CatalogNumber := "1756-IB32", ParentModule := "Local", Slot := 2, Description := "32-Point Digital Input - Sensors and Feedback")
+  END_MODULE
+
+  MODULE DO_Card1 (CatalogNumber := "1756-OB32", ParentModule := "Local", Slot := 3, Description := "32-Point Digital Output - Motors and Solenoids")
+  END_MODULE
+
+  MODULE AI_Card1 (CatalogNumber := "1756-IF8", ParentModule := "Local", Slot := 4, Description := "8-Channel Analog Input - VFD Feedback")
+  END_MODULE
+
+  MODULE AO_Card1 (CatalogNumber := "1756-OF4", ParentModule := "Local", Slot := 5, Description := "4-Channel Analog Output - VFD Speed Ref")
+  END_MODULE
+
+  TAG
+    System_Running : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Line 1 system running") := 0;
+    Emergency_Stop : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Emergency stop circuit") := 0;
+    System_Fault : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Any system fault active") := 0;
+    Line_Speed_SP : REAL (Radix := Float, ExternalAccess := "Read/Write", Description := "Master line speed setpoint 0-100%") := 50.0;
+    Infeed_Conv : UDT_MotorDrive (ExternalAccess := "Read/Write", Description := "Infeed conveyor VFD");
+    Main_Conv : UDT_MotorDrive (ExternalAccess := "Read/Write", Description := "Main conveyor VFD");
+    Sortation_Conv : UDT_MotorDrive (ExternalAccess := "Read/Write", Description := "Sortation conveyor VFD");
+    Outfeed_Conv_A : UDT_MotorDrive (ExternalAccess := "Read/Write", Description := "Outfeed lane A conveyor VFD");
+    Outfeed_Conv_B : UDT_MotorDrive (ExternalAccess := "Read/Write", Description := "Outfeed lane B conveyor VFD");
+    Reject_Conv : UDT_MotorDrive (ExternalAccess := "Read/Write", Description := "Reject conveyor VFD");
+    PE_Infeed : UDT_PhotoEye (ExternalAccess := "Read Only", Description := "Infeed photo eye");
+    PE_PreSort : UDT_PhotoEye (ExternalAccess := "Read Only", Description := "Pre-sort photo eye");
+    PE_PostSort : UDT_PhotoEye (ExternalAccess := "Read Only", Description := "Post-sort photo eye");
+    PE_LaneA : UDT_PhotoEye (ExternalAccess := "Read Only", Description := "Lane A exit photo eye");
+    PE_LaneB : UDT_PhotoEye (ExternalAccess := "Read Only", Description := "Lane B exit photo eye");
+    PE_Reject : UDT_PhotoEye (ExternalAccess := "Read Only", Description := "Reject bin photo eye");
+    Diverter_LaneA : UDT_Diverter (ExternalAccess := "Read/Write", Description := "Lane A diverter gate");
+    Diverter_LaneB : UDT_Diverter (ExternalAccess := "Read/Write", Description := "Lane B diverter gate");
+    Product_Counter : UDT_ProductCounter (ExternalAccess := "Read/Write", Description := "Total product counter");
+    LaneA_Counter : UDT_ProductCounter (ExternalAccess := "Read/Write", Description := "Lane A product counter");
+    LaneB_Counter : UDT_ProductCounter (ExternalAccess := "Read/Write", Description := "Lane B product counter");
+    Reject_Counter : UDT_ProductCounter (ExternalAccess := "Read/Write", Description := "Reject product counter");
+    Sort_Mode : DINT (Radix := Decimal, ExternalAccess := "Read/Write", Description := "0=Alternate, 1=Lane A only, 2=Lane B only") := 0;
+    Sort_Toggle : BOOL (Radix := Decimal, ExternalAccess := "None", Description := "Internal alternate toggle") := 0;
+    Scanner_OK : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Barcode scanner communication OK") := 0;
+    Scanner_Reject : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Scanner reject signal") := 0;
+    Alarm_Active : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Active alarm indicator") := 0;
+    Alarm_Horn : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Alarm horn output") := 0;
+    Alarm_Silence : BOOL (Radix := Decimal, ExternalAccess := "Read/Write", Description := "Alarm silence button") := 0;
+    Stack_Light_Green : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Stack light green - running") := 0;
+    Stack_Light_Yellow : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Stack light yellow - warning") := 0;
+    Stack_Light_Red : BOOL (Radix := Decimal, ExternalAccess := "Read Only", Description := "Stack light red - fault") := 0;
+    Scan_Counter : DINT (Radix := Decimal, ExternalAccess := "Read Only", Description := "Program scan counter") := 0;
+  END_TAG
+
+  PROGRAM MainProgram (Description := "Main program - conveyor control and sorting logic")
+    TAG
+      Infeed_Jammed : BOOL (Radix := Decimal, ExternalAccess := "None") := 0;
+      Main_Jammed : BOOL (Radix := Decimal, ExternalAccess := "None") := 0;
+      Sort_Jammed : BOOL (Radix := Decimal, ExternalAccess := "None") := 0;
+      DivertToA : BOOL (Radix := Decimal, ExternalAccess := "None") := 0;
+      DivertToB : BOOL (Radix := Decimal, ExternalAccess := "None") := 0;
+      ProductAtSort : BOOL (Radix := Decimal, ExternalAccess := "None") := 0;
+      RateCalcTimer : TIMER (ExternalAccess := "None");
+      PrevCount : DINT (Radix := Decimal, ExternalAccess := "None") := 0;
+    END_TAG
+
+    ROUTINE Main (Type := RLLContent, Description := "Main routine - dispatch to subroutines")
+      N: [Scan counter] ADD(Scan_Counter,1,Scan_Counter);
+      N: [Call conveyor control] JSR(ConveyorControl,0);
+      N: [Call sorting logic when running] XIC(System_Running) JSR(SortingLogic,0);
+      N: [Call counting routine] JSR(ProductCounting,0);
+      N: [Call I/O mapping] JSR(IO_Mapping,0);
+      N: [Call alarm management] JSR(AlarmMgmt,0);
+    END_ROUTINE
+
+    ROUTINE ConveyorControl (Type := RLLContent, Description := "Conveyor section control using AOI")
+      N: [Infeed conveyor control] XIC(System_Running) XIO(Emergency_Stop) AOI_ConveyorSection(System_Running,Line_Speed_SP,PE_Infeed.Detected,Infeed_Conv.Running,Infeed_Conv.Start_Cmd,Infeed_Conv.Speed_Ref,Infeed_Jammed);
+      N: [Main conveyor control] XIC(System_Running) XIO(Emergency_Stop) AOI_ConveyorSection(System_Running,Line_Speed_SP,PE_PreSort.Detected,Main_Conv.Running,Main_Conv.Start_Cmd,Main_Conv.Speed_Ref,Main_Jammed);
+      N: [Sortation conveyor - runs slightly faster] XIC(System_Running) XIO(Emergency_Stop) AOI_ConveyorSection(System_Running,Line_Speed_SP,PE_PostSort.Detected,Sortation_Conv.Running,Sortation_Conv.Start_Cmd,Sortation_Conv.Speed_Ref,Sort_Jammed);
+      N: [Outfeed lane A] XIC(System_Running) XIO(Emergency_Stop) XIC(Infeed_Conv.Running) MOV(Line_Speed_SP,Outfeed_Conv_A.Speed_Ref) OTE(Outfeed_Conv_A.Start_Cmd);
+      N: [Outfeed lane B] XIC(System_Running) XIO(Emergency_Stop) XIC(Infeed_Conv.Running) MOV(Line_Speed_SP,Outfeed_Conv_B.Speed_Ref) OTE(Outfeed_Conv_B.Start_Cmd);
+      N: [Reject conveyor always runs when system on] XIC(System_Running) XIO(Emergency_Stop) MOV(75.0,Reject_Conv.Speed_Ref) OTE(Reject_Conv.Start_Cmd);
+      N: [Stop all on emergency stop] XIC(Emergency_Stop) OTU(Infeed_Conv.Start_Cmd) OTU(Main_Conv.Start_Cmd) OTU(Sortation_Conv.Start_Cmd) OTU(Outfeed_Conv_A.Start_Cmd) OTU(Outfeed_Conv_B.Start_Cmd) OTU(Reject_Conv.Start_Cmd);
+    END_ROUTINE
+
+    ROUTINE SortingLogic (Type := RLLContent, Description := "Product sorting and diverter control")
+      N: [Detect product at sort point] XIC(PE_PreSort.Detected) OTE(ProductAtSort);
+      N: [Reject path - scanner rejects product] XIC(ProductAtSort) XIC(Scanner_Reject) OTU(DivertToA) OTU(DivertToB);
+      N: [Alternate mode - toggle between lanes] EQU(Sort_Mode,0) XIC(ProductAtSort) XIO(Scanner_Reject) XIO(Sort_Toggle) OTE(DivertToA) OTU(DivertToB) OTE(Sort_Toggle);
+      N: [Alternate mode - other lane] EQU(Sort_Mode,0) XIC(ProductAtSort) XIO(Scanner_Reject) XIC(Sort_Toggle) OTU(DivertToA) OTE(DivertToB) OTU(Sort_Toggle);
+      N: [Lane A only mode] EQU(Sort_Mode,1) XIC(ProductAtSort) XIO(Scanner_Reject) OTE(DivertToA) OTU(DivertToB);
+      N: [Lane B only mode] EQU(Sort_Mode,2) XIC(ProductAtSort) XIO(Scanner_Reject) OTU(DivertToA) OTE(DivertToB);
+      N: [Actuate lane A diverter] XIC(DivertToA) OTE(Diverter_LaneA.Divert_Cmd);
+      N: [Actuate lane B diverter] XIC(DivertToB) OTE(Diverter_LaneB.Divert_Cmd);
+      N: [Diverter A fault - not in position within 2 seconds] XIC(Diverter_LaneA.Divert_Cmd) XIO(Diverter_LaneA.Extended) TON(Diverter_LaneA.FaultTimer,2000,0) XIC(Diverter_LaneA.FaultTimer.DN) OTE(Diverter_LaneA.Fault);
+      N: [Diverter B fault - not in position within 2 seconds] XIC(Diverter_LaneB.Divert_Cmd) XIO(Diverter_LaneB.Extended) TON(Diverter_LaneB.FaultTimer,2000,0) XIC(Diverter_LaneB.FaultTimer.DN) OTE(Diverter_LaneB.Fault);
+    END_ROUTINE
+
+    ROUTINE ProductCounting (Type := RLLContent, Description := "Product counting and rate calculation")
+      N: [Count products at infeed] XIC(PE_Infeed.Detected) CTU(Product_Counter.Count,1,999999);
+      N: [Count lane A products] XIC(PE_LaneA.Detected) CTU(LaneA_Counter.Count,1,999999);
+      N: [Count lane B products] XIC(PE_LaneB.Detected) CTU(LaneB_Counter.Count,1,999999);
+      N: [Count rejects] XIC(PE_Reject.Detected) CTU(Reject_Counter.Count,1,999999);
+      N: [Calculate rate every 60 seconds] TON(RateCalcTimer,60000,0);
+      N: [Compute products per minute] XIC(RateCalcTimer.DN) SUB(Product_Counter.Count,PrevCount,Product_Counter.Rate_PerMin) MOV(Product_Counter.Count,PrevCount) RES(RateCalcTimer);
+      N: [Reset counters on command] XIC(Product_Counter.ResetCmd) MOV(0,Product_Counter.Count) MOV(0,LaneA_Counter.Count) MOV(0,LaneB_Counter.Count) MOV(0,Reject_Counter.Count) OTU(Product_Counter.ResetCmd);
+    END_ROUTINE
+
+    ROUTINE IO_Mapping (Type := RLLContent, Description := "Physical I/O to tag mapping")
+      N: [Read infeed photo eye] XIC(DI_Card1:I.Data.0) OTE(PE_Infeed.Detected);
+      N: [Read pre-sort photo eye] XIC(DI_Card1:I.Data.1) OTE(PE_PreSort.Detected);
+      N: [Read post-sort photo eye] XIC(DI_Card1:I.Data.2) OTE(PE_PostSort.Detected);
+      N: [Read lane A photo eye] XIC(DI_Card1:I.Data.3) OTE(PE_LaneA.Detected);
+      N: [Read lane B photo eye] XIC(DI_Card1:I.Data.4) OTE(PE_LaneB.Detected);
+      N: [Read reject photo eye] XIC(DI_Card1:I.Data.5) OTE(PE_Reject.Detected);
+      N: [Read diverter A feedback] XIC(DI_Card1:I.Data.8) OTE(Diverter_LaneA.Extended) XIC(DI_Card1:I.Data.9) OTE(Diverter_LaneA.Retracted);
+      N: [Read diverter B feedback] XIC(DI_Card1:I.Data.10) OTE(Diverter_LaneB.Extended) XIC(DI_Card1:I.Data.11) OTE(Diverter_LaneB.Retracted);
+      N: [Read VFD running feedback] XIC(DI_Card1:I.Data.16) OTE(Infeed_Conv.Running) XIC(DI_Card1:I.Data.17) OTE(Main_Conv.Running) XIC(DI_Card1:I.Data.18) OTE(Sortation_Conv.Running);
+      N: [Read VFD faults] XIC(DI_Card1:I.Data.20) OTE(Infeed_Conv.Faulted) XIC(DI_Card1:I.Data.21) OTE(Main_Conv.Faulted) XIC(DI_Card1:I.Data.22) OTE(Sortation_Conv.Faulted);
+      N: [Write motor start commands] XIC(Infeed_Conv.Start_Cmd) OTE(DO_Card1:O.Data.0) XIC(Main_Conv.Start_Cmd) OTE(DO_Card1:O.Data.1) XIC(Sortation_Conv.Start_Cmd) OTE(DO_Card1:O.Data.2);
+      N: [Write outfeed and reject commands] XIC(Outfeed_Conv_A.Start_Cmd) OTE(DO_Card1:O.Data.3) XIC(Outfeed_Conv_B.Start_Cmd) OTE(DO_Card1:O.Data.4) XIC(Reject_Conv.Start_Cmd) OTE(DO_Card1:O.Data.5);
+      N: [Write diverter solenoids] XIC(Diverter_LaneA.Divert_Cmd) OTE(DO_Card1:O.Data.8) XIC(Diverter_LaneB.Divert_Cmd) OTE(DO_Card1:O.Data.9);
+      N: [Write stack lights] XIC(Stack_Light_Green) OTE(DO_Card1:O.Data.12) XIC(Stack_Light_Yellow) OTE(DO_Card1:O.Data.13) XIC(Stack_Light_Red) OTE(DO_Card1:O.Data.14);
+      N: [Write alarm horn] XIC(Alarm_Horn) OTE(DO_Card1:O.Data.15);
+    END_ROUTINE
+
+    ROUTINE AlarmMgmt (Type := RLLContent, Description := "Alarm aggregation and indicator control")
+      N: [Aggregate faults] [XIC(Infeed_Conv.Faulted) ,XIC(Main_Conv.Faulted) ,XIC(Sortation_Conv.Faulted) ,XIC(Infeed_Jammed) ,XIC(Main_Jammed) ,XIC(Sort_Jammed) ,XIC(Diverter_LaneA.Fault) ,XIC(Diverter_LaneB.Fault)] OTE(System_Fault);
+      N: [Set alarm active] [XIC(System_Fault) ,XIC(Emergency_Stop)] OTE(Alarm_Active);
+      N: [Horn control] XIC(Alarm_Active) XIO(Alarm_Silence) OTE(Alarm_Horn);
+      N: [Reset silence when alarms clear] XIO(Alarm_Active) OTU(Alarm_Silence);
+      N: [Green stack light - running no faults] XIC(System_Running) XIO(System_Fault) OTE(Stack_Light_Green);
+      N: [Yellow stack light - running with warning] XIC(System_Running) [XIC(Infeed_Jammed) ,XIC(Main_Jammed) ,XIC(Sort_Jammed)] OTE(Stack_Light_Yellow);
+      N: [Red stack light - faulted or E-stop] [XIC(System_Fault) ,XIC(Emergency_Stop)] OTE(Stack_Light_Red);
+    END_ROUTINE
+  END_PROGRAM
+
+END_CONTROLLER

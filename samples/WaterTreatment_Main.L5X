@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RSLogix5000Content SchemaRevision="1.0" SoftwareRevision="33.00" TargetName="WaterTreatment_Main" TargetType="Controller" ContainsContext="true" ExportDate="Fri Feb 07 10:30:00 2026" ExportOptions="DecoratedData ForceProtectedEncoding AllProjDocTrans">
+<Controller Use="Target" Name="WaterTreatment_Main" ProcessorType="1756-L75" MajorRev="33" MinorRev="11" ProjectCreationDate="Mon Jan 06 08:00:00 2026" LastModifiedDate="Fri Feb 07 10:15:00 2026" SFCExecutionControl="CurrentActive" SFCRestartPosition="MostRecent" SFCLastScan="DontScan" ProjectSN="16#0042_A1B2" MatchProjectToController="false" CanUseRPIFromProducer="false" InhibitAutomaticFirmwareUpdate="0">
+<Description>Water Treatment Plant - Primary Control System</Description>
+
+<DataTypes>
+<DataType Name="UDT_PumpStatus" Family="NoFamily" Class="User">
+<Description>Standard pump status and control structure</Description>
+<Members>
+<Member Name="Running" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>Pump running status</Description>
+</Member>
+<Member Name="Faulted" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>Pump fault status</Description>
+</Member>
+<Member Name="Speed_Command" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>Speed command 0-100%</Description>
+</Member>
+<Member Name="Speed_Feedback" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read Only">
+<Description>Actual speed feedback 0-100%</Description>
+</Member>
+<Member Name="RunHours" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only">
+<Description>Total run hours</Description>
+</Member>
+<Member Name="Auto_Mode" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>Automatic mode enabled</Description>
+</Member>
+<Member Name="Start_Command" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>Start command from HMI</Description>
+</Member>
+<Member Name="Stop_Command" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>Stop command from HMI</Description>
+</Member>
+</Members>
+</DataType>
+
+<DataType Name="UDT_AnalogInput" Family="NoFamily" Class="User">
+<Description>Scaled analog input with alarm limits</Description>
+<Members>
+<Member Name="RawValue" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only">
+<Description>Raw analog value 0-32767</Description>
+</Member>
+<Member Name="ScaledValue" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read Only">
+<Description>Engineering units value</Description>
+</Member>
+<Member Name="HighAlarm" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>High alarm setpoint</Description>
+</Member>
+<Member Name="LowAlarm" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>Low alarm setpoint</Description>
+</Member>
+<Member Name="HighAlarmActive" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only"/>
+<Member Name="LowAlarmActive" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only"/>
+<Member Name="InAlarm" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only"/>
+<Member Name="EU_Min" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>Engineering units minimum</Description>
+</Member>
+<Member Name="EU_Max" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>Engineering units maximum</Description>
+</Member>
+</Members>
+</DataType>
+
+<DataType Name="UDT_ValveControl" Family="NoFamily" Class="User">
+<Description>Valve control and feedback structure</Description>
+<Members>
+<Member Name="Open_Command" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="Close_Command" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="Open_Feedback" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only"/>
+<Member Name="Closed_Feedback" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only"/>
+<Member Name="Fault" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read Only"/>
+<Member Name="Position" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read Only">
+<Description>Valve position 0-100%</Description>
+</Member>
+<Member Name="Auto_Mode" DataType="BOOL" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+</Members>
+</DataType>
+</DataTypes>
+
+<AddOnInstructionDefinitions>
+<AddOnInstructionDefinition Name="AOI_ScaleAnalog" Revision="1.2" Vendor="PlantEngineering" ExecutePrescan="false" ExecutePostscan="false" ExecuteEnableInFalse="false" CreatedDate="2026-01-15T08:00:00.000Z" CreatedBy="JSmith" EditedDate="2026-02-01T14:30:00.000Z" EditedBy="JSmith">
+<Description>Scales a raw analog input to engineering units with alarm checking</Description>
+<Parameters>
+<Parameter Name="EnableIn" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="false"/>
+<Parameter Name="EnableOut" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="false"/>
+<Parameter Name="RawInput" TagType="Base" DataType="INT" Usage="Input" Radix="Decimal" Required="true" Visible="true">
+<Description>Raw analog input value</Description>
+</Parameter>
+<Parameter Name="EU_Min" TagType="Base" DataType="REAL" Usage="Input" Radix="Float" Required="true" Visible="true">
+<Description>Engineering units minimum</Description>
+</Parameter>
+<Parameter Name="EU_Max" TagType="Base" DataType="REAL" Usage="Input" Radix="Float" Required="true" Visible="true">
+<Description>Engineering units maximum</Description>
+</Parameter>
+<Parameter Name="HiAlarm_SP" TagType="Base" DataType="REAL" Usage="Input" Radix="Float" Required="false" Visible="true">
+<Description>High alarm setpoint</Description>
+</Parameter>
+<Parameter Name="LoAlarm_SP" TagType="Base" DataType="REAL" Usage="Input" Radix="Float" Required="false" Visible="true">
+<Description>Low alarm setpoint</Description>
+</Parameter>
+<Parameter Name="ScaledOutput" TagType="Base" DataType="REAL" Usage="Output" Radix="Float" Required="true" Visible="true">
+<Description>Scaled engineering units output</Description>
+</Parameter>
+<Parameter Name="HiAlarm" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="true">
+<Description>High alarm active</Description>
+</Parameter>
+<Parameter Name="LoAlarm" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="true">
+<Description>Low alarm active</Description>
+</Parameter>
+</Parameters>
+<LocalTags>
+<LocalTag Name="ScaleFactor" DataType="REAL" Radix="Float" ExternalAccess="None"/>
+<LocalTag Name="Offset" DataType="REAL" Radix="Float" ExternalAccess="None"/>
+</LocalTags>
+<Routines>
+<Routine Name="Logic" Type="RLL">
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Calculate scale factor and offset</Comment>
+<Text>CPT(ScaleFactor,(EU_Max - EU_Min) / 32767.0) CPT(Offset,EU_Min);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Scale the raw input</Comment>
+<Text>CPT(ScaledOutput,RawInput * ScaleFactor + Offset);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>High alarm check</Comment>
+<Text>GEQ(ScaledOutput,HiAlarm_SP) OTE(HiAlarm);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Low alarm check</Comment>
+<Text>LEQ(ScaledOutput,LoAlarm_SP) OTE(LoAlarm);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+</Routines>
+</AddOnInstructionDefinition>
+
+<AddOnInstructionDefinition Name="AOI_PumpControl" Revision="2.0" Vendor="PlantEngineering" ExecutePrescan="false" ExecutePostscan="false" ExecuteEnableInFalse="false" CreatedDate="2026-01-10T08:00:00.000Z" CreatedBy="JSmith" EditedDate="2026-02-05T09:00:00.000Z" EditedBy="MJohnson">
+<Description>Standard pump start/stop control with fault monitoring</Description>
+<Parameters>
+<Parameter Name="EnableIn" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="false"/>
+<Parameter Name="EnableOut" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="false"/>
+<Parameter Name="Start_PB" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="true">
+<Description>Start pushbutton or HMI command</Description>
+</Parameter>
+<Parameter Name="Stop_PB" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="true">
+<Description>Stop pushbutton or HMI command</Description>
+</Parameter>
+<Parameter Name="Auto_Mode" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="true">
+<Description>Auto mode selector</Description>
+</Parameter>
+<Parameter Name="Auto_Start" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="true">
+<Description>Automatic start signal from process logic</Description>
+</Parameter>
+<Parameter Name="RunFeedback" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="true">
+<Description>Motor running feedback from starter</Description>
+</Parameter>
+<Parameter Name="Motor_Output" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="true">
+<Description>Motor contactor output</Description>
+</Parameter>
+<Parameter Name="Running" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="true">
+<Description>Pump confirmed running</Description>
+</Parameter>
+<Parameter Name="Faulted" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="true">
+<Description>Pump faulted - no run feedback</Description>
+</Parameter>
+</Parameters>
+<LocalTags>
+<LocalTag Name="RunCommand" DataType="BOOL" Radix="Decimal" ExternalAccess="None"/>
+<LocalTag Name="FaultTimer" DataType="TIMER" ExternalAccess="None"/>
+</LocalTags>
+<Routines>
+<Routine Name="Logic" Type="RLL">
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Manual start/stop control</Comment>
+<Text>[XIO(Auto_Mode) XIC(Start_PB) ,XIO(Auto_Mode) XIC(RunCommand) XIO(Stop_PB)] OTE(RunCommand);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Auto mode control</Comment>
+<Text>XIC(Auto_Mode) XIC(Auto_Start) OTE(RunCommand);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Drive motor output</Comment>
+<Text>XIC(RunCommand) XIO(Faulted) OTE(Motor_Output);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Confirm running status</Comment>
+<Text>XIC(Motor_Output) XIC(RunFeedback) OTE(Running);</Text>
+</Rung>
+<Rung Number="4" Type="N">
+<Comment>Fault detection - commanded but no feedback after 5 seconds</Comment>
+<Text>XIC(Motor_Output) XIO(RunFeedback) TON(FaultTimer,5000,0) XIC(FaultTimer.DN) OTE(Faulted);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+</Routines>
+</AddOnInstructionDefinition>
+</AddOnInstructionDefinitions>
+
+<Modules>
+<Module Name="Local" CatalogNumber="1756-A7" Major="1" Minor="1" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="true">
+<Description>Local Chassis - 7 Slot</Description>
+</Module>
+<Module Name="ENet_Adapter" CatalogNumber="1756-EN2T" Major="11" Minor="3" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="false" Slot="1">
+<Description>EtherNet/IP Communications Module</Description>
+</Module>
+<Module Name="DI_Rack1_Slot2" CatalogNumber="1756-IB16I" Major="3" Minor="2" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="false" Slot="2">
+<Description>16-Point Digital Input - Pumps and Valves Status</Description>
+</Module>
+<Module Name="DO_Rack1_Slot3" CatalogNumber="1756-OB16E" Major="3" Minor="2" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="false" Slot="3">
+<Description>16-Point Digital Output - Pump and Valve Commands</Description>
+</Module>
+<Module Name="AI_Rack1_Slot4" CatalogNumber="1756-IF8" Major="3" Minor="4" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="false" Slot="4">
+<Description>8-Channel Analog Input - Level and Flow Transmitters</Description>
+</Module>
+<Module Name="AO_Rack1_Slot5" CatalogNumber="1756-OF4" Major="3" Minor="2" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="false" Slot="5">
+<Description>4-Channel Analog Output - VFD Speed References</Description>
+</Module>
+</Modules>
+
+<Tags>
+<Tag Name="Plant_Running" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Description>Master plant running status</Description>
+</Tag>
+<Tag Name="Emergency_Stop" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read Only">
+<Description>Global emergency stop - hardwired</Description>
+</Tag>
+<Tag Name="System_Alarm" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read Only">
+<Description>Any system alarm active</Description>
+</Tag>
+<Tag Name="Inlet_Pump_1" TagType="Base" DataType="UDT_PumpStatus" Constant="false" ExternalAccess="Read/Write">
+<Description>Raw water inlet pump #1</Description>
+</Tag>
+<Tag Name="Inlet_Pump_2" TagType="Base" DataType="UDT_PumpStatus" Constant="false" ExternalAccess="Read/Write">
+<Description>Raw water inlet pump #2</Description>
+</Tag>
+<Tag Name="Transfer_Pump" TagType="Base" DataType="UDT_PumpStatus" Constant="false" ExternalAccess="Read/Write">
+<Description>Treated water transfer pump</Description>
+</Tag>
+<Tag Name="Backwash_Pump" TagType="Base" DataType="UDT_PumpStatus" Constant="false" ExternalAccess="Read/Write">
+<Description>Filter backwash pump</Description>
+</Tag>
+<Tag Name="Inlet_Valve" TagType="Base" DataType="UDT_ValveControl" Constant="false" ExternalAccess="Read/Write">
+<Description>Raw water inlet valve</Description>
+</Tag>
+<Tag Name="Outlet_Valve" TagType="Base" DataType="UDT_ValveControl" Constant="false" ExternalAccess="Read/Write">
+<Description>Treated water outlet valve</Description>
+</Tag>
+<Tag Name="Drain_Valve" TagType="Base" DataType="UDT_ValveControl" Constant="false" ExternalAccess="Read/Write">
+<Description>Basin drain valve</Description>
+</Tag>
+<Tag Name="RawWater_Level" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>Raw water basin level transmitter (0-10 ft)</Description>
+</Tag>
+<Tag Name="TreatedWater_Level" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>Treated water tank level transmitter (0-20 ft)</Description>
+</Tag>
+<Tag Name="Inlet_Flow" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>Inlet flow meter (0-500 GPM)</Description>
+</Tag>
+<Tag Name="Outlet_Flow" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>Outlet flow meter (0-500 GPM)</Description>
+</Tag>
+<Tag Name="pH_Sensor" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>pH sensor (0-14 pH)</Description>
+</Tag>
+<Tag Name="Turbidity_Sensor" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>Turbidity sensor (0-100 NTU)</Description>
+</Tag>
+<Tag Name="Chlorine_Residual" TagType="Base" DataType="UDT_AnalogInput" Constant="false" ExternalAccess="Read/Write">
+<Description>Chlorine residual sensor (0-5 mg/L)</Description>
+</Tag>
+<Tag Name="RawWater_Level_SP" TagType="Base" DataType="REAL" Radix="Float" Constant="false" ExternalAccess="Read/Write">
+<Description>Raw water level setpoint (ft)</Description>
+</Tag>
+<Tag Name="TreatedWater_Level_SP" TagType="Base" DataType="REAL" Radix="Float" Constant="false" ExternalAccess="Read/Write">
+<Description>Treated water level setpoint (ft)</Description>
+</Tag>
+<Tag Name="pH_Setpoint" TagType="Base" DataType="REAL" Radix="Float" Constant="false" ExternalAccess="Read/Write">
+<Description>Target pH setpoint</Description>
+</Tag>
+<Tag Name="ChemFeed_Rate" TagType="Base" DataType="REAL" Radix="Float" Constant="false" ExternalAccess="Read/Write">
+<Description>Chemical feed rate command (GPH)</Description>
+</Tag>
+<Tag Name="Daily_Flow_Total" TagType="Base" DataType="REAL" Radix="Float" Constant="false" ExternalAccess="Read Only">
+<Description>Daily flow totalizer (gallons)</Description>
+</Tag>
+<Tag Name="Alarm_Horn" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Description>Alarm horn output</Description>
+</Tag>
+<Tag Name="Alarm_Silence" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Description>Alarm silence pushbutton</Description>
+</Tag>
+<Tag Name="Backwash_Active" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read Only">
+<Description>Filter backwash cycle in progress</Description>
+</Tag>
+<Tag Name="Backwash_Timer" TagType="Base" DataType="TIMER" Constant="false" ExternalAccess="Read Only">
+<Description>Backwash duration timer</Description>
+</Tag>
+<Tag Name="Scan_Counter" TagType="Base" DataType="DINT" Radix="Decimal" Constant="false" ExternalAccess="Read Only">
+<Description>Program scan counter for diagnostics</Description>
+</Tag>
+</Tags>
+
+<Programs>
+<Program Name="MainProgram" TestEdits="false" MainRoutineName="Main" Disabled="false">
+<Tags>
+<Tag Name="LevelControl_Enabled" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Description>Enable automatic level control</Description>
+</Tag>
+<Tag Name="Pump1_RunRequest" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="None"/>
+<Tag Name="Pump2_RunRequest" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="None"/>
+<Tag Name="HighLevel_Reached" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="None"/>
+<Tag Name="LowLevel_Reached" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="None"/>
+<Tag Name="Level_Deadband" TagType="Base" DataType="REAL" Radix="Float" Constant="false" ExternalAccess="Read/Write">
+<Description>Level control deadband (ft)</Description>
+</Tag>
+</Tags>
+<Routines>
+<Routine Name="Main" Type="RLL">
+<Description>Main routine - calls all subroutines</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Increment scan counter for diagnostics</Comment>
+<Text>ADD(Scan_Counter,1,Scan_Counter);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Call analog scaling routine</Comment>
+<Text>JSR(AnalogScaling,0);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Call level control routine</Comment>
+<Text>XIC(Plant_Running) JSR(LevelControl,0);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Call pump control routine</Comment>
+<Text>XIC(Plant_Running) JSR(PumpControl,0);</Text>
+</Rung>
+<Rung Number="4" Type="N">
+<Comment>Call valve control routine</Comment>
+<Text>XIC(Plant_Running) JSR(ValveControl,0);</Text>
+</Rung>
+<Rung Number="5" Type="N">
+<Comment>Call alarm management routine</Comment>
+<Text>JSR(AlarmManagement,0);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+
+<Routine Name="AnalogScaling" Type="RLL">
+<Description>Scale all analog inputs to engineering units</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Scale raw water level - 0 to 10 feet</Comment>
+<Text>AOI_ScaleAnalog(RawWater_Level.RawValue,0.0,10.0,9.0,1.0,RawWater_Level.ScaledValue,RawWater_Level.HighAlarmActive,RawWater_Level.LowAlarmActive);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Scale treated water level - 0 to 20 feet</Comment>
+<Text>AOI_ScaleAnalog(TreatedWater_Level.RawValue,0.0,20.0,18.0,2.0,TreatedWater_Level.ScaledValue,TreatedWater_Level.HighAlarmActive,TreatedWater_Level.LowAlarmActive);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Scale inlet flow - 0 to 500 GPM</Comment>
+<Text>AOI_ScaleAnalog(Inlet_Flow.RawValue,0.0,500.0,450.0,10.0,Inlet_Flow.ScaledValue,Inlet_Flow.HighAlarmActive,Inlet_Flow.LowAlarmActive);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Scale outlet flow - 0 to 500 GPM</Comment>
+<Text>AOI_ScaleAnalog(Outlet_Flow.RawValue,0.0,500.0,450.0,10.0,Outlet_Flow.ScaledValue,Outlet_Flow.HighAlarmActive,Outlet_Flow.LowAlarmActive);</Text>
+</Rung>
+<Rung Number="4" Type="N">
+<Comment>Scale pH sensor - 0 to 14 pH</Comment>
+<Text>AOI_ScaleAnalog(pH_Sensor.RawValue,0.0,14.0,9.0,5.5,pH_Sensor.ScaledValue,pH_Sensor.HighAlarmActive,pH_Sensor.LowAlarmActive);</Text>
+</Rung>
+<Rung Number="5" Type="N">
+<Comment>Scale turbidity - 0 to 100 NTU</Comment>
+<Text>AOI_ScaleAnalog(Turbidity_Sensor.RawValue,0.0,100.0,10.0,0.0,Turbidity_Sensor.ScaledValue,Turbidity_Sensor.HighAlarmActive,Turbidity_Sensor.LowAlarmActive);</Text>
+</Rung>
+<Rung Number="6" Type="N">
+<Comment>Scale chlorine residual - 0 to 5 mg/L</Comment>
+<Text>AOI_ScaleAnalog(Chlorine_Residual.RawValue,0.0,5.0,4.0,0.2,Chlorine_Residual.ScaledValue,Chlorine_Residual.HighAlarmActive,Chlorine_Residual.LowAlarmActive);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+
+<Routine Name="LevelControl" Type="RLL">
+<Description>Automatic level control logic for raw water basin</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Detect high level condition</Comment>
+<Text>GEQ(RawWater_Level.ScaledValue,RawWater_Level_SP) OTE(HighLevel_Reached);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Detect low level condition</Comment>
+<Text>LEQ(RawWater_Level.ScaledValue,2.0) OTE(LowLevel_Reached);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Request pump 1 run when level drops below setpoint minus deadband</Comment>
+<Text>XIC(LevelControl_Enabled) LEQ(TreatedWater_Level.ScaledValue,TreatedWater_Level_SP) OTE(Pump1_RunRequest);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Request pump 2 as lag pump when level drops further</Comment>
+<Text>XIC(LevelControl_Enabled) XIC(Pump1_RunRequest) LEQ(TreatedWater_Level.ScaledValue,8.0) OTE(Pump2_RunRequest);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+
+<Routine Name="PumpControl" Type="RLL">
+<Description>Individual pump control using AOI_PumpControl</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Inlet Pump 1 control - emergency stop disables</Comment>
+<Text>XIO(Emergency_Stop) AOI_PumpControl(Inlet_Pump_1.Start_Command,Inlet_Pump_1.Stop_Command,Inlet_Pump_1.Auto_Mode,Pump1_RunRequest,DI_Rack1_Slot2:I.Data.0,DO_Rack1_Slot3:O.Data.0,Inlet_Pump_1.Running,Inlet_Pump_1.Faulted);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Inlet Pump 2 control - emergency stop disables</Comment>
+<Text>XIO(Emergency_Stop) AOI_PumpControl(Inlet_Pump_2.Start_Command,Inlet_Pump_2.Stop_Command,Inlet_Pump_2.Auto_Mode,Pump2_RunRequest,DI_Rack1_Slot2:I.Data.1,DO_Rack1_Slot3:O.Data.1,Inlet_Pump_2.Running,Inlet_Pump_2.Faulted);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Transfer pump control</Comment>
+<Text>XIO(Emergency_Stop) AOI_PumpControl(Transfer_Pump.Start_Command,Transfer_Pump.Stop_Command,Transfer_Pump.Auto_Mode,HighLevel_Reached,DI_Rack1_Slot2:I.Data.2,DO_Rack1_Slot3:O.Data.2,Transfer_Pump.Running,Transfer_Pump.Faulted);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Backwash pump control</Comment>
+<Text>XIO(Emergency_Stop) AOI_PumpControl(Backwash_Pump.Start_Command,Backwash_Pump.Stop_Command,Backwash_Pump.Auto_Mode,Backwash_Active,DI_Rack1_Slot2:I.Data.3,DO_Rack1_Slot3:O.Data.3,Backwash_Pump.Running,Backwash_Pump.Faulted);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+
+<Routine Name="ValveControl" Type="RLL">
+<Description>Valve open/close control with feedback monitoring</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Open inlet valve when any inlet pump is running</Comment>
+<Text>[XIC(Inlet_Pump_1.Running) ,XIC(Inlet_Pump_2.Running)] OTE(Inlet_Valve.Open_Command);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Close inlet valve when no pumps running</Comment>
+<Text>XIO(Inlet_Pump_1.Running) XIO(Inlet_Pump_2.Running) OTE(Inlet_Valve.Close_Command);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Open outlet valve when transfer pump running</Comment>
+<Text>XIC(Transfer_Pump.Running) OTE(Outlet_Valve.Open_Command);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Open drain valve during backwash</Comment>
+<Text>XIC(Backwash_Active) OTE(Drain_Valve.Open_Command);</Text>
+</Rung>
+<Rung Number="4" Type="N">
+<Comment>Write valve commands to digital outputs</Comment>
+<Text>XIC(Inlet_Valve.Open_Command) OTE(DO_Rack1_Slot3:O.Data.4) XIC(Outlet_Valve.Open_Command) OTE(DO_Rack1_Slot3:O.Data.5) XIC(Drain_Valve.Open_Command) OTE(DO_Rack1_Slot3:O.Data.6);</Text>
+</Rung>
+<Rung Number="5" Type="N">
+<Comment>Read valve feedback from digital inputs</Comment>
+<Text>XIC(DI_Rack1_Slot2:I.Data.8) OTE(Inlet_Valve.Open_Feedback) XIC(DI_Rack1_Slot2:I.Data.9) OTE(Outlet_Valve.Open_Feedback) XIC(DI_Rack1_Slot2:I.Data.10) OTE(Drain_Valve.Open_Feedback);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+
+<Routine Name="AlarmManagement" Type="RLL">
+<Description>Alarm aggregation and horn control</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Aggregate all alarms into system alarm</Comment>
+<Text>[XIC(RawWater_Level.HighAlarmActive) ,XIC(RawWater_Level.LowAlarmActive) ,XIC(TreatedWater_Level.HighAlarmActive) ,XIC(TreatedWater_Level.LowAlarmActive) ,XIC(Inlet_Pump_1.Faulted) ,XIC(Inlet_Pump_2.Faulted) ,XIC(Transfer_Pump.Faulted) ,XIC(pH_Sensor.HighAlarmActive) ,XIC(pH_Sensor.LowAlarmActive) ,XIC(Turbidity_Sensor.HighAlarmActive)] OTE(System_Alarm);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Sound alarm horn when alarm active and not silenced</Comment>
+<Text>XIC(System_Alarm) XIO(Alarm_Silence) OTE(Alarm_Horn);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Reset alarm silence when all alarms clear</Comment>
+<Text>XIO(System_Alarm) OTU(Alarm_Silence);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+</Routines>
+</Program>
+
+<Program Name="BackwashSequence" TestEdits="false" MainRoutineName="Main" Disabled="false">
+<Tags>
+<Tag Name="BW_Step" TagType="Base" DataType="DINT" Radix="Decimal" Constant="false" ExternalAccess="Read Only">
+<Description>Current backwash sequence step</Description>
+</Tag>
+<Tag Name="BW_Duration" TagType="Base" DataType="DINT" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Description>Backwash duration in seconds</Description>
+</Tag>
+<Tag Name="BW_InitiateCmd" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Description>Command to initiate backwash cycle</Description>
+</Tag>
+<Tag Name="BW_Complete" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read Only">
+<Description>Backwash cycle complete</Description>
+</Tag>
+</Tags>
+<Routines>
+<Routine Name="Main" Type="RLL">
+<Description>Filter backwash sequence control</Description>
+<RLLContent>
+<Rung Number="0" Type="N">
+<Comment>Step 0 - Wait for backwash initiate command</Comment>
+<Text>EQU(BW_Step,0) XIC(BW_InitiateCmd) MOV(1,BW_Step) OTU(BW_Complete);</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Comment>Step 1 - Stop transfer pump and close outlet valve</Comment>
+<Text>EQU(BW_Step,1) OTU(Transfer_Pump.Start_Command) OTE(Outlet_Valve.Close_Command) MOV(2,BW_Step);</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Comment>Step 2 - Open drain valve and start backwash pump</Comment>
+<Text>EQU(BW_Step,2) OTE(Drain_Valve.Open_Command) OTE(Backwash_Pump.Start_Command) OTE(Backwash_Active) TON(Backwash_Timer,BW_Duration,0);</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Comment>Step 3 - Wait for backwash timer to complete</Comment>
+<Text>EQU(BW_Step,2) XIC(Backwash_Timer.DN) MOV(3,BW_Step);</Text>
+</Rung>
+<Rung Number="4" Type="N">
+<Comment>Step 4 - Stop backwash pump and close drain</Comment>
+<Text>EQU(BW_Step,3) OTU(Backwash_Pump.Start_Command) OTU(Drain_Valve.Open_Command) OTU(Backwash_Active) MOV(4,BW_Step);</Text>
+</Rung>
+<Rung Number="5" Type="N">
+<Comment>Step 5 - Sequence complete, reset to idle</Comment>
+<Text>EQU(BW_Step,4) OTE(BW_Complete) OTU(BW_InitiateCmd) MOV(0,BW_Step);</Text>
+</Rung>
+</RLLContent>
+</Routine>
+</Routines>
+</Program>
+</Programs>
+
+</Controller>
+</RSLogix5000Content>
