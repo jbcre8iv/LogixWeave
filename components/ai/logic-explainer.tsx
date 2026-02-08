@@ -230,14 +230,14 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
       doc.text("Tag Reference", margin, y);
       y += 8;
       Object.entries(result.tagsPurpose).forEach(([tag, purpose]) => {
+        addPageIfNeeded(14);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        addPageIfNeeded(10);
-        doc.text(`${tag}:`, margin, y);
+        doc.text(tag, margin, y);
+        y += 5.5;
         doc.setFont("helvetica", "normal");
-        const tagWidth = doc.getTextWidth(`${tag}: `);
-        addWrappedText(purpose, margin, 11, tagWidth);
-        y += 3;
+        addWrappedText(purpose, margin, 11, 4);
+        y += 4;
       });
       y += 3;
     }
