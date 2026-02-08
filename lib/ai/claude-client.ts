@@ -180,6 +180,44 @@ function extractPartialIssues(text: string): IssueResult | null {
 }
 
 /**
+ * Try to extract individual fields from truncated/malformed SearchResult JSON via regex.
+ */
+function extractPartialSearch(text: string): SearchResult | null {
+  const cleaned = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+
+  // Match objects like { "name": "...", "type": "...", "relevance": 0.9, "description": "..." }
+  const matchPattern = /\{\s*"name"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"type"\s*:\s*"(tag|routine|rung|udt|aoi)"\s*,\s*"relevance"\s*:\s*([\d.]+)\s*,\s*"description"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  const matches: SearchResult["matches"] = [];
+
+  let m;
+  while ((m = matchPattern.exec(cleaned)) !== null) {
+    const entry: SearchResult["matches"][0] = {
+      name: m[1].replace(/\\"/g, '"'),
+      type: m[2] as "tag" | "routine" | "rung" | "udt" | "aoi",
+      relevance: parseFloat(m[3]),
+      description: m[4].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\"),
+    };
+
+    const remaining = cleaned.substring(m.index + m[0].length);
+    const locationMatch = remaining.match(/^\s*,\s*"location"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (locationMatch) {
+      entry.location = locationMatch[1].replace(/\\"/g, '"');
+    }
+
+    matches.push(entry);
+  }
+
+  if (matches.length === 0) return null;
+
+  const summaryMatch = cleaned.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const summary = summaryMatch
+    ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\")
+    : `Found ${matches.length} matching items.`;
+
+  return { matches, summary };
+}
+
+/**
  * Strip markdown artifacts from a raw response for use as a plain-text fallback.
  */
 function stripMarkdownArtifacts(text: string): string {
@@ -459,7 +497,7 @@ Return up to 20 most relevant matches, sorted by relevance.${languageInstruction
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1536,
+    max_tokens: 4096,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
   });
@@ -472,6 +510,10 @@ Return up to 20 most relevant matches, sorted by relevance.${languageInstruction
   try {
     return extractJSON<SearchResult>(textContent.text);
   } catch {
+    // Response may be truncated — try to extract individual match objects via regex
+    const partial = extractPartialSearch(textContent.text);
+    if (partial) return partial;
+
     return {
       matches: [],
       summary: stripMarkdownArtifacts(textContent.text),
