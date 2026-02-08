@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo } from "@/components/ui/logo";
@@ -8,7 +9,9 @@ export default function LoginPage() {
       <Link href="/" className="mb-6">
         <Logo size="md" />
       </Link>
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
