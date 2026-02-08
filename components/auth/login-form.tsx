@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Script from "next/script";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,14 +11,34 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+declare global {
+  interface Window {
+    onTurnstileSuccess?: (token: string) => void;
+  }
+}
+
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const handleToken = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
+
+  useEffect(() => {
+    window.onTurnstileSuccess = handleToken;
+    return () => {
+      delete window.onTurnstileSuccess;
+    };
+  }, [handleToken]);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
@@ -35,11 +56,15 @@ export function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        ...(captchaToken && { captchaToken }),
+      },
     });
 
     if (error) {
       setError(error.message);
       setIsLoading(false);
+      setCaptchaToken(null);
       return;
     }
 
@@ -48,6 +73,14 @@ export function LoginForm() {
   };
 
   return (
+    <>
+      {turnstileSiteKey && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+        />
+      )}
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
@@ -112,6 +145,15 @@ export function LoginForm() {
               </button>
             </div>
           </div>
+          {turnstileSiteKey && (
+            <div className="flex justify-center">
+              <div
+                className="cf-turnstile"
+                data-sitekey={turnstileSiteKey}
+                data-callback="onTurnstileSuccess"
+              />
+            </div>
+          )}
         </CardContent>
         <div className="px-6 pb-6" />
         <CardFooter className="flex flex-col space-y-4">
@@ -133,5 +175,6 @@ export function LoginForm() {
         </Link>
       </div>
     </Card>
+    </>
   );
 }
