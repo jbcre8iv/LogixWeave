@@ -78,13 +78,21 @@ export async function GET(request: Request) {
     // Get project and organization
     const { data: project } = await supabase
       .from("projects")
-      .select("id, organization_id, naming_rule_set_id, project_files(id)")
+      .select("id, organization_id, project_files(id)")
       .eq("id", projectId)
       .single();
 
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+
+    // Fetch naming_rule_set_id separately (column may not exist pre-migration)
+    const { data: projectRuleSetRow } = await supabase
+      .from("projects")
+      .select("naming_rule_set_id")
+      .eq("id", projectId)
+      .single();
+    const projectRuleSetId: string | null = projectRuleSetRow?.naming_rule_set_id ?? null;
 
     const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
@@ -97,7 +105,7 @@ export async function GET(request: Request) {
     }
 
     // Resolve the effective rule set: project override or org default
-    let ruleSetId = project.naming_rule_set_id;
+    let ruleSetId = projectRuleSetId;
     if (!ruleSetId) {
       const { data: defaultSet } = await supabase
         .from("naming_rule_sets")
@@ -106,24 +114,26 @@ export async function GET(request: Request) {
         .eq("is_default", true)
         .single();
 
-      ruleSetId = defaultSet?.id || null;
+      ruleSetId = defaultSet?.id ?? null;
     }
 
-    if (!ruleSetId) {
-      return NextResponse.json({
-        violations: [],
-        summary: { errors: 0, warnings: 0, info: 0, total: 0 },
-        tagsChecked: 0,
-        message: "No rule set found for this project",
-      });
+    // Get active naming rules — use rule_set_id if available, fall back to organization_id
+    let rules;
+    if (ruleSetId) {
+      const { data } = await supabase
+        .from("naming_rules")
+        .select("id, name, pattern, applies_to, severity")
+        .eq("rule_set_id", ruleSetId)
+        .eq("is_active", true);
+      rules = data;
+    } else {
+      const { data } = await supabase
+        .from("naming_rules")
+        .select("id, name, pattern, applies_to, severity")
+        .eq("organization_id", project.organization_id)
+        .eq("is_active", true);
+      rules = data;
     }
-
-    // Get active naming rules for the resolved rule set
-    const { data: rules } = await supabase
-      .from("naming_rules")
-      .select("id, name, pattern, applies_to, severity")
-      .eq("rule_set_id", ruleSetId)
-      .eq("is_active", true);
 
     if (!rules || rules.length === 0) {
       return NextResponse.json({

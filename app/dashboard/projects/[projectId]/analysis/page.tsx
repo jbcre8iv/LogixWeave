@@ -18,13 +18,21 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, organization_id, naming_rule_set_id, project_files(id)")
+    .select("id, name, organization_id, project_files(id)")
     .eq("id", projectId)
     .single();
 
   if (projectError || !project) {
     notFound();
   }
+
+  // Fetch naming_rule_set_id separately (column may not exist pre-migration)
+  const { data: projectRuleSetRow } = await supabase
+    .from("projects")
+    .select("naming_rule_set_id")
+    .eq("id", projectId)
+    .single();
+  const projectRuleSetId: string | null = projectRuleSetRow?.naming_rule_set_id ?? null;
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
@@ -42,7 +50,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
   if (fileIds.length > 0) {
     // Resolve effective rule set for naming rules
-    let effectiveRuleSetId = project.naming_rule_set_id;
+    let effectiveRuleSetId = projectRuleSetId;
     if (!effectiveRuleSetId) {
       const { data: defaultSet } = await supabase
         .from("naming_rule_sets")
@@ -50,10 +58,10 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         .eq("organization_id", project.organization_id)
         .eq("is_default", true)
         .single();
-      effectiveRuleSetId = defaultSet?.id || null;
+      effectiveRuleSetId = defaultSet?.id ?? null;
     }
 
-    // Build naming rules query based on resolved rule set
+    // Build naming rules query — use rule_set_id if available, fall back to organization_id
     const namingRulesQuery = effectiveRuleSetId
       ? supabase
           .from("naming_rules")
@@ -63,7 +71,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       : supabase
           .from("naming_rules")
           .select("id, name, pattern, applies_to, severity")
-          .eq("id", "00000000-0000-0000-0000-000000000000"); // no results if no rule set
+          .eq("organization_id", project.organization_id)
+          .eq("is_active", true);
 
     const [tagsResult, referencesResult, rungsResult, rulesResult] = await Promise.all([
       supabase

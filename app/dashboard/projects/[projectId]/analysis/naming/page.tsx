@@ -81,10 +81,10 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
 
   const supabase = await createClient();
 
-  // Get project info (including naming_rule_set_id)
+  // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, organization_id, naming_rule_set_id, project_files(id)")
+    .select("id, name, organization_id, project_files(id)")
     .eq("id", projectId)
     .single();
 
@@ -92,9 +92,17 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     notFound();
   }
 
+  // Fetch naming_rule_set_id separately (column may not exist pre-migration)
+  const { data: projectRuleSetRow } = await supabase
+    .from("projects")
+    .select("naming_rule_set_id")
+    .eq("id", projectId)
+    .single();
+  const projectRuleSetId: string | null = projectRuleSetRow?.naming_rule_set_id ?? null;
+
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
-  // Fetch all rule sets for the picker
+  // Fetch all rule sets for the picker (may be empty pre-migration)
   const { data: allRuleSets } = await supabase
     .from("naming_rule_sets")
     .select("id, name, is_default")
@@ -103,10 +111,10 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     .order("name");
 
   // Resolve effective rule set
-  let effectiveRuleSetId = project.naming_rule_set_id;
+  let effectiveRuleSetId = projectRuleSetId;
   if (!effectiveRuleSetId) {
     const defaultSet = allRuleSets?.find((rs) => rs.is_default);
-    effectiveRuleSetId = defaultSet?.id || null;
+    effectiveRuleSetId = defaultSet?.id ?? null;
   }
 
   const effectiveRuleSet = allRuleSets?.find((rs) => rs.id === effectiveRuleSetId);
@@ -141,13 +149,21 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     );
   }
 
-  // Get active naming rules for the resolved rule set
+  // Get active naming rules — use rule_set_id if available, fall back to organization_id
   let rules: NamingRule[] = [];
   if (effectiveRuleSetId) {
     const { data } = await supabase
       .from("naming_rules")
       .select("id, name, pattern, applies_to, severity")
       .eq("rule_set_id", effectiveRuleSetId)
+      .eq("is_active", true);
+    rules = data || [];
+  }
+  if (rules.length === 0 && !effectiveRuleSetId) {
+    const { data } = await supabase
+      .from("naming_rules")
+      .select("id, name, pattern, applies_to, severity")
+      .eq("organization_id", project.organization_id)
       .eq("is_active", true);
     rules = data || [];
   }
@@ -337,7 +353,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
               {effectiveRuleSet && (
                 <Badge variant="outline">
                   Rule set: {effectiveRuleSet.name}
-                  {!project.naming_rule_set_id && " (org default)"}
+                  {!projectRuleSetId && " (org default)"}
                 </Badge>
               )}
             </div>
@@ -345,7 +361,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
               <RuleSetPicker
                 projectId={projectId}
                 ruleSets={allRuleSets || []}
-                currentRuleSetId={project.naming_rule_set_id}
+                currentRuleSetId={projectRuleSetId}
               />
               {severityFilter && severityFilter !== "all" && (
                 <Button variant="ghost" size="sm" asChild>
