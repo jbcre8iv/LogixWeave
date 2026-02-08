@@ -20,6 +20,7 @@ import {
 import { Loader2, Sparkles, CheckCircle, AlertCircle, Download, ChevronDown, FileText, FileType } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { ExplainChat } from "@/components/ai/explain-chat";
+import { AILoading } from "@/components/ai/ai-loading";
 
 interface Routine {
   name: string;
@@ -331,6 +332,8 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
           {error}
         </div>
       )}
+
+      {isAnalyzing && !result && <AILoading variant="explain" />}
 
       {result && (
         <div className="space-y-4">

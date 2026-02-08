@@ -168,3 +168,29 @@
 .animate-tour-slide-in-left {
   animation: tour-slide-in-left 0.3s ease-out both;
 }
+
+/* AI Loading Animations */
+@keyframes ai-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes ai-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-ai-glow {
+  animation: ai-glow 2s ease-in-out infinite;
+}
+
+.animate-ai-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-muted) 25%,
+    var(--color-muted-foreground) / 0.08 50%,
+    var(--color-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: ai-shimmer 1.5s ease-in-out infinite;
+}

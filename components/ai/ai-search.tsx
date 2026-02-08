@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Search, CheckCircle, Tags, Cpu, Layers, Package } from "lucide-react";
+import { AILoading } from "@/components/ai/ai-loading";
 
 interface SearchMatch {
   name: string;
@@ -202,6 +203,8 @@ export function AISearch({ projectId }: AISearchProps) {
           )}
         </div>
       )}
+
+      {isSearching && <AILoading variant="search" />}
 
       {!result && !isSearching && (
         <div className="text-center py-8 text-muted-foreground">

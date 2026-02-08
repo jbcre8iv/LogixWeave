@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Sparkles, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { AILoading } from "@/components/ai/ai-loading";
 
 interface Issue {
   severity: "error" | "warning" | "info";
@@ -137,6 +138,8 @@ export function IssueFinder({ projectId }: IssueFinderProps) {
           {error}
         </div>
       )}
+
+      {isAnalyzing && <AILoading variant="issues" />}
 
       {result && (
         <div className="space-y-4">
