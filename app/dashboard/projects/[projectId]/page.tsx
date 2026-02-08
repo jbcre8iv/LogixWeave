@@ -440,7 +440,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   />
                   <Link
                     href="/dashboard/settings/naming-rules"
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors mt-1 inline-block"
+                    className="text-xs text-blue-500 hover:text-blue-600 underline mt-1 inline-block"
                   >
                     Manage Rules
                   </Link>
