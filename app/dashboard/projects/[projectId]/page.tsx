@@ -438,6 +438,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     currentRuleSetId={projectRuleSetId}
                     className="w-full"
                   />
+                  <Link
+                    href="/dashboard/settings/naming-rules"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors mt-1 inline-block"
+                  >
+                    Manage Rules
+                  </Link>
                 </div>
               </div>
             )}
