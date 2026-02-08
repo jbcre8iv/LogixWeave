@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Script from "next/script";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,14 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-
-const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-
-declare global {
-  interface Window {
-    onTurnstileSuccess?: (token: string) => void;
-  }
-}
+import { TurnstileWidget, turnstileSiteKey } from "@/components/auth/turnstile-widget";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -33,12 +25,9 @@ export function LoginForm() {
     setCaptchaToken(token);
   }, []);
 
-  useEffect(() => {
-    window.onTurnstileSuccess = handleToken;
-    return () => {
-      delete window.onTurnstileSuccess;
-    };
-  }, [handleToken]);
+  const handleExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
@@ -73,14 +62,6 @@ export function LoginForm() {
   };
 
   return (
-    <>
-      {turnstileSiteKey && (
-        <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-          async
-          defer
-        />
-      )}
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
@@ -145,15 +126,7 @@ export function LoginForm() {
               </button>
             </div>
           </div>
-          {turnstileSiteKey && (
-            <div className="flex justify-center">
-              <div
-                className="cf-turnstile"
-                data-sitekey={turnstileSiteKey}
-                data-callback="onTurnstileSuccess"
-              />
-            </div>
-          )}
+          <TurnstileWidget onToken={handleToken} onExpire={handleExpire} />
         </CardContent>
         <div className="px-6 pb-6" />
         <CardFooter className="flex flex-col space-y-4">
@@ -175,6 +148,5 @@ export function LoginForm() {
         </Link>
       </div>
     </Card>
-    </>
   );
 }

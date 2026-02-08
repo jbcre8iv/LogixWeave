@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Script from "next/script";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,14 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Mail, CheckCircle } from "lucide-react";
-
-const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-
-declare global {
-  interface Window {
-    onTurnstileSuccess?: (token: string) => void;
-  }
-}
+import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -29,12 +21,9 @@ export function ForgotPasswordForm() {
     setCaptchaToken(token);
   }, []);
 
-  useEffect(() => {
-    window.onTurnstileSuccess = handleToken;
-    return () => {
-      delete window.onTurnstileSuccess;
-    };
-  }, [handleToken]);
+  const handleExpire = useCallback(() => {
+    setCaptchaToken(null);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,14 +79,6 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <>
-      {turnstileSiteKey && (
-        <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-          async
-          defer
-        />
-      )}
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
@@ -128,15 +109,7 @@ export function ForgotPasswordForm() {
               />
             </div>
           </div>
-          {turnstileSiteKey && (
-            <div className="flex justify-center">
-              <div
-                className="cf-turnstile"
-                data-sitekey={turnstileSiteKey}
-                data-callback="onTurnstileSuccess"
-              />
-            </div>
-          )}
+          <TurnstileWidget onToken={handleToken} onExpire={handleExpire} />
         </CardContent>
         <div className="px-6 pb-6" />
         <CardFooter className="flex flex-col space-y-4">
@@ -153,6 +126,5 @@ export function ForgotPasswordForm() {
         </CardFooter>
       </form>
     </Card>
-    </>
   );
 }
