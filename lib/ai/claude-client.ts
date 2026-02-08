@@ -137,6 +137,49 @@ function extractPartialExplanation(text: string): ExplanationResult | null {
 }
 
 /**
+ * Try to extract individual fields from truncated/malformed IssueResult JSON via regex.
+ */
+function extractPartialIssues(text: string): IssueResult | null {
+  const cleaned = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+
+  // Try to find issue objects: { "severity": "...", "type": "...", "description": "..." }
+  const issuePattern = /\{\s*"severity"\s*:\s*"(error|warning|info)"\s*,\s*"type"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"description"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  const issues: IssueResult["issues"] = [];
+
+  let match;
+  while ((match = issuePattern.exec(cleaned)) !== null) {
+    const entry: IssueResult["issues"][0] = {
+      severity: match[1] as "error" | "warning" | "info",
+      type: match[2].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\"),
+      description: match[3].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\"),
+    };
+
+    // Try to grab optional location and suggestion from the same object block
+    const remaining = cleaned.substring(match.index + match[0].length);
+    const locationMatch = remaining.match(/^\s*,\s*"location"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (locationMatch) {
+      entry.location = locationMatch[1].replace(/\\"/g, '"');
+    }
+    const suggestionMatch = remaining.match(/"suggestion"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (suggestionMatch) {
+      entry.suggestion = suggestionMatch[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\");
+    }
+
+    issues.push(entry);
+  }
+
+  if (issues.length === 0) return null;
+
+  // Try to pull the summary
+  const summaryMatch = cleaned.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const summary = summaryMatch
+    ? summaryMatch[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\")
+    : `Found ${issues.length} potential issues.`;
+
+  return { issues, summary };
+}
+
+/**
  * Strip markdown artifacts from a raw response for use as a plain-text fallback.
  */
 function stripMarkdownArtifacts(text: string): string {
@@ -324,7 +367,7 @@ Respond with JSON:
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-5-20250929",
-    max_tokens: 2048,
+    max_tokens: 8192,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
   });
@@ -337,6 +380,10 @@ Respond with JSON:
   try {
     return extractJSON<IssueResult>(textContent.text);
   } catch {
+    // Response may be truncated — try to extract individual issue objects via regex
+    const partial = extractPartialIssues(textContent.text);
+    if (partial) return partial;
+
     return {
       issues: [],
       summary: stripMarkdownArtifacts(textContent.text),
