@@ -26,6 +26,7 @@ import { ProjectInvitePrompt } from "@/components/dashboard/project-invite-promp
 import { ActivityLog } from "@/components/projects/activity-log";
 import { ActivitySummaryBanner } from "@/components/projects/activity-summary-banner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RuleSetPicker } from "@/components/tools/rule-set-picker";
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -141,6 +142,21 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     routineCount = routinesResult.count || 0;
     moduleCount = modulesResult.count || 0;
   }
+
+  // Fetch rule sets for the picker (graceful if migration not applied)
+  const { data: projectRuleSetRow } = await queryClient
+    .from("projects")
+    .select("naming_rule_set_id")
+    .eq("id", projectId)
+    .single();
+  const projectRuleSetId: string | null = projectRuleSetRow?.naming_rule_set_id ?? null;
+
+  const { data: ruleSets } = await queryClient
+    .from("naming_rule_sets")
+    .select("id, name, is_default")
+    .eq("organization_id", project.organization_id)
+    .order("is_default", { ascending: false })
+    .order("name");
 
   const creatorProfile = project.profiles as { full_name?: string; email?: string; avatar_url?: string } | null;
   const creatorName = creatorProfile?.full_name || creatorProfile?.email || "Unknown";
@@ -411,6 +427,20 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </p>
               </div>
             </div>
+            {ruleSets && ruleSets.length > 0 && (
+              <div className="flex items-center gap-3">
+                <Tags className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-muted-foreground mb-1">Naming Rules</p>
+                  <RuleSetPicker
+                    projectId={projectId}
+                    ruleSets={ruleSets}
+                    currentRuleSetId={projectRuleSetId}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
             {(tagCount > 0 || routineCount > 0 || moduleCount > 0) && (
               <div className="pt-4 space-y-2">
                 {tagCount > 0 && (

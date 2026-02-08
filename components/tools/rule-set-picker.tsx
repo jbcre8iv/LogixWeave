@@ -21,9 +21,10 @@ interface RuleSetPickerProps {
   projectId: string;
   ruleSets: RuleSet[];
   currentRuleSetId: string | null;
+  className?: string;
 }
 
-export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId }: RuleSetPickerProps) {
+export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId, className }: RuleSetPickerProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -49,7 +50,7 @@ export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId }: RuleSet
 
   return (
     <Select value={selectValue} onValueChange={handleChange} disabled={isUpdating}>
-      <SelectTrigger className="w-[220px]">
+      <SelectTrigger className={className || "w-[220px]"}>
         <SelectValue placeholder="Select rule set..." />
       </SelectTrigger>
       <SelectContent>
