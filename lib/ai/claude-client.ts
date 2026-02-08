@@ -46,6 +46,117 @@ export interface SearchResult {
   summary: string;
 }
 
+/**
+ * Extract JSON from Claude responses that may include markdown fences or prose.
+ * Tries three strategies: direct parse, code-fence extraction, brace scanning.
+ */
+function extractJSON<T>(text: string): T {
+  const trimmed = text.trim();
+
+  // Strategy 1: Direct parse
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // continue
+  }
+
+  // Strategy 2: Code-fence regex
+  const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    try {
+      return JSON.parse(fenceMatch[1].trim());
+    } catch {
+      // continue
+    }
+  }
+
+  // Strategy 3: Brace scanning — find first { to last }
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(trimmed.substring(firstBrace, lastBrace + 1));
+    } catch {
+      // continue
+    }
+  }
+
+  throw new Error("Could not extract JSON from response");
+}
+
+/**
+ * Try to extract individual fields from truncated/malformed JSON via regex.
+ * Returns a partial ExplanationResult or null if nothing useful was found.
+ */
+function extractPartialExplanation(text: string): ExplanationResult | null {
+  // Strip fences first
+  const cleaned = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+
+  // Try to pull the "summary" value
+  const summaryMatch = cleaned.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (!summaryMatch) return null;
+
+  const summary = summaryMatch[1]
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, "\n")
+    .replace(/\\\\/g, "\\");
+
+  const result: ExplanationResult = { summary, stepByStep: [], tagsPurpose: {} };
+
+  // Try to pull stepByStep array entries
+  const stepsMatch = cleaned.match(/"stepByStep"\s*:\s*\[([\s\S]*?)(?:\]|$)/);
+  if (stepsMatch) {
+    const stepStrings = [...stepsMatch[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)];
+    result.stepByStep = stepStrings.map((m) =>
+      m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\")
+    );
+  }
+
+  // Try to pull tagsPurpose entries
+  const tagsMatch = cleaned.match(/"tagsPurpose"\s*:\s*\{([\s\S]*?)(?:\}|$)/);
+  if (tagsMatch) {
+    const tagEntries = [...tagsMatch[1].matchAll(/"((?:[^"\\]|\\.)*)"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+    for (const entry of tagEntries) {
+      result.tagsPurpose[entry[1].replace(/\\"/g, '"')] = entry[2]
+        .replace(/\\"/g, '"')
+        .replace(/\\n/g, "\n")
+        .replace(/\\\\/g, "\\");
+    }
+  }
+
+  // Try to pull potentialIssues array entries
+  const issuesMatch = cleaned.match(/"potentialIssues"\s*:\s*\[([\s\S]*?)(?:\]|$)/);
+  if (issuesMatch) {
+    const issueStrings = [...issuesMatch[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)];
+    result.potentialIssues = issueStrings.map((m) =>
+      m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\")
+    );
+  }
+
+  return result;
+}
+
+/**
+ * Strip markdown artifacts from a raw response for use as a plain-text fallback.
+ */
+function stripMarkdownArtifacts(text: string): string {
+  const cleaned = text
+    .replace(/```(?:json)?\s*/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+  // If the entire response is a JSON blob, strip JSON syntax to get readable text
+  if (cleaned.startsWith("{")) {
+    return cleaned
+      .replace(/"[a-zA-Z]+"\s*:/g, "")
+      .replace(/[{}[\]",]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  return cleaned;
+}
+
 export function generateHash(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex").substring(0, 16);
 }
@@ -114,7 +225,7 @@ Provide your analysis as JSON with this structure:
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-5-20250929",
-    max_tokens: 1024,
+    max_tokens: 4096,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
   });
@@ -125,17 +236,20 @@ Provide your analysis as JSON with this structure:
   }
 
   try {
-    // Extract JSON from the response (handle markdown code blocks)
-    let jsonStr = textContent.text;
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1];
-    }
-    return JSON.parse(jsonStr.trim());
+    return extractJSON<ExplanationResult>(textContent.text);
   } catch {
-    // If JSON parsing fails, create a structured response from the text
+    // Response may be truncated or malformed — try to extract fields via regex
+    const partial = extractPartialExplanation(textContent.text);
+    if (partial) return partial;
+
     return {
-      summary: textContent.text,
+      summary: textContent.text
+        .replace(/```(?:json)?\s*/g, "")
+        .replace(/```/g, "")
+        .replace(/"[a-zA-Z]+"\s*:/g, "")
+        .replace(/[{}[\]",]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim(),
       stepByStep: [],
       tagsPurpose: {},
     };
@@ -221,16 +335,11 @@ Respond with JSON:
   }
 
   try {
-    let jsonStr = textContent.text;
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1];
-    }
-    return JSON.parse(jsonStr.trim());
+    return extractJSON<IssueResult>(textContent.text);
   } catch {
     return {
       issues: [],
-      summary: textContent.text,
+      summary: stripMarkdownArtifacts(textContent.text),
     };
   }
 }
@@ -314,16 +423,11 @@ Return up to 20 most relevant matches, sorted by relevance.${languageInstruction
   }
 
   try {
-    let jsonStr = textContent.text;
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1];
-    }
-    return JSON.parse(jsonStr.trim());
+    return extractJSON<SearchResult>(textContent.text);
   } catch {
     return {
       matches: [],
-      summary: textContent.text,
+      summary: stripMarkdownArtifacts(textContent.text),
     };
   }
 }
