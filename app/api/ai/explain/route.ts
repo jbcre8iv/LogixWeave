@@ -178,8 +178,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

@@ -113,7 +113,7 @@ Provide your analysis as JSON with this structure:
 }${languageInstruction}`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5-20250929",
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
@@ -209,7 +209,7 @@ Respond with JSON:
 }${languageInstruction}`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5-20250929",
     max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
@@ -302,7 +302,7 @@ Respond with JSON:
 Return up to 20 most relevant matches, sorted by relevance.${languageInstruction}`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5-20250929",
     max_tokens: 1536,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: prompt }],
