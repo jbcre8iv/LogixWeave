@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
   Check,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -249,6 +250,70 @@ function FileBrowserPanel({
   );
 }
 
+function escapeCSV(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function exportComparisonCSV(
+  result: ComparisonResult,
+  file1Name: string,
+  file2Name: string
+) {
+  const rows: string[][] = [["Category", "Change Type", "Name", "Detail", "Changes"]];
+
+  // Tags
+  for (const tag of result.tags.added) {
+    rows.push(["Tags", "Added", tag.name, tag.data_type, ""]);
+  }
+  for (const tag of result.tags.removed) {
+    rows.push(["Tags", "Removed", tag.name, tag.data_type, ""]);
+  }
+  for (const tag of result.tags.modified) {
+    rows.push(["Tags", "Modified", tag.name, tag.data_type, tag.changes.join("; ")]);
+  }
+
+  // Routines
+  for (const routine of result.routines.added) {
+    rows.push(["Routines", "Added", routine.name, `${routine.program_name} (${routine.type})`, ""]);
+  }
+  for (const routine of result.routines.removed) {
+    rows.push(["Routines", "Removed", routine.name, `${routine.program_name} (${routine.type})`, ""]);
+  }
+  for (const routine of result.routines.modified) {
+    rows.push(["Routines", "Modified", routine.name, routine.program_name, routine.changes.join("; ")]);
+  }
+
+  // I/O Modules
+  for (const mod of result.modules.added) {
+    rows.push(["I/O Modules", "Added", mod.name, mod.catalog_number || "", ""]);
+  }
+  for (const mod of result.modules.removed) {
+    rows.push(["I/O Modules", "Removed", mod.name, mod.catalog_number || "", ""]);
+  }
+  for (const mod of result.modules.modified) {
+    rows.push(["I/O Modules", "Modified", mod.name, "", mod.changes.join("; ")]);
+  }
+
+  const csvContent = rows.map((row) => row.map(escapeCSV).join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const sanitize = (name: string) => name.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const date = new Date().toISOString().slice(0, 10);
+  const filename = `comparison_${sanitize(file1Name)}_${sanitize(file2Name)}_${date}.csv`;
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function CompareSelector({ projects }: CompareSelectorProps) {
   const [file1, setFile1] = useState<string>("");
   const [file2, setFile2] = useState<string>("");
@@ -373,7 +438,7 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
                   {getFile1Info()?.file_name} → {getFile2Info()?.file_name}
                 </CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap items-center">
                 <Badge variant="outline" className="text-green-600">
                   <Plus className="h-3 w-3 mr-1" />
                   {result.tags.added.length + result.routines.added.length + result.modules.added.length} Added
@@ -386,6 +451,20 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
                   <RefreshCw className="h-3 w-3 mr-1" />
                   {result.tags.modified.length + result.routines.modified.length + result.modules.modified.length} Modified
                 </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    exportComparisonCSV(
+                      result,
+                      getFile1Info()?.file_name || "file1",
+                      getFile2Info()?.file_name || "file2"
+                    )
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
             </div>
           </CardHeader>
