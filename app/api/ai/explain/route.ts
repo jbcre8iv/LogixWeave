@@ -178,6 +178,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (error instanceof Error && error.message.includes("credit balance")) {
+      return NextResponse.json(
+        { error: "AI service credits have been exhausted. Please contact support." },
+        { status: 503 }
+      );
+    }
+
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
       { error: message },
