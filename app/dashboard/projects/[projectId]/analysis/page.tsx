@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, GitCompare, TagsIcon, MessageSquare, AlertTriangle, ArrowRight, FileCheck } from "lucide-react";
-import { ExportCSVButton } from "@/components/export-csv-button";
+import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -38,7 +38,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     totalReferences: 0,
   };
 
-  let exportData: string[][] = [];
+  let exportSheets: ExportSheet[] = [];
 
   if (fileIds.length > 0) {
     const [tagsResult, referencesResult, rungsResult, rulesResult] = await Promise.all([
@@ -92,51 +92,54 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       totalReferences: references.length,
     };
 
-    // --- Build comprehensive export CSV ---
+    // --- Build multi-sheet XLSX export ---
 
-    // Section 1: Summary
-    exportData.push(
-      ["=== SUMMARY ==="],
-      ["Metric", "Value"],
-      ["Total Tags", String(stats.totalTags)],
-      ["Total Rungs", String(stats.totalRungs)],
-      ["Tag References", String(stats.totalReferences)],
-      ["Unused Tags", String(stats.unusedTags)],
-      ["Comment Coverage", `${stats.commentCoverage}%`],
-      [],
-    );
+    // Sheet 1: Summary
+    exportSheets.push({
+      name: "Summary",
+      data: [
+        ["Metric", "Value"],
+        ["Total Tags", String(stats.totalTags)],
+        ["Total Rungs", String(stats.totalRungs)],
+        ["Tag References", String(stats.totalReferences)],
+        ["Unused Tags", String(stats.unusedTags)],
+        ["Comment Coverage", `${stats.commentCoverage}%`],
+      ],
+    });
 
-    // Section 2: Tag Cross-Reference
-    exportData.push(
-      ["=== TAG CROSS-REFERENCE ==="],
-      ["Tag Name", "Program", "Routine", "Rung", "Usage Type"],
-      ...references.map((ref) => [
-        ref.tag_name,
-        ref.program_name,
-        ref.routine_name,
-        String(ref.rung_number),
-        ref.usage_type,
-      ]),
-      [],
-    );
-
-    // Section 3: Unused Tags
-    exportData.push(
-      ["=== UNUSED TAGS ==="],
-      ["Name", "Data Type", "Scope", "Usage", "Description"],
-      ...unusedTags
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((tag) => [
-          tag.name,
-          tag.data_type,
-          tag.scope,
-          tag.usage || "",
-          tag.description || "",
+    // Sheet 2: Tag Cross-Reference
+    exportSheets.push({
+      name: "Tag Cross-Reference",
+      data: [
+        ["Tag Name", "Program", "Routine", "Rung", "Usage Type"],
+        ...references.map((ref) => [
+          ref.tag_name,
+          ref.program_name,
+          ref.routine_name,
+          String(ref.rung_number),
+          ref.usage_type,
         ]),
-      [],
-    );
+      ],
+    });
 
-    // Section 4: Comment Coverage by Routine
+    // Sheet 3: Unused Tags
+    exportSheets.push({
+      name: "Unused Tags",
+      data: [
+        ["Name", "Data Type", "Scope", "Usage", "Description"],
+        ...unusedTags
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((tag) => [
+            tag.name,
+            tag.data_type,
+            tag.scope,
+            tag.usage || "",
+            tag.description || "",
+          ]),
+      ],
+    });
+
+    // Sheet 4: Comment Coverage
     const routineCoverage = new Map<string, { program: string; total: number; commented: number }>();
     rungs.forEach((rung) => {
       const key = `${rung.program_name}::${rung.routine_name}`;
@@ -156,14 +159,15 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       })
       .sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
 
-    exportData.push(
-      ["=== COMMENT COVERAGE ==="],
-      ["Program", "Routine", "Total Rungs", "Commented Rungs", "Coverage"],
-      ...coverageRows,
-      [],
-    );
+    exportSheets.push({
+      name: "Comment Coverage",
+      data: [
+        ["Program", "Routine", "Total Rungs", "Commented Rungs", "Coverage"],
+        ...coverageRows,
+      ],
+    });
 
-    // Section 5: Naming Violations
+    // Sheet 5: Naming Violations (only if rules exist)
     if (namingRules.length > 0) {
       const violations: string[][] = [];
       for (const tag of allTags) {
@@ -184,11 +188,13 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         }
       }
 
-      exportData.push(
-        ["=== NAMING VIOLATIONS ==="],
-        ["Severity", "Tag Name", "Scope", "Rule"],
-        ...violations,
-      );
+      exportSheets.push({
+        name: "Naming Violations",
+        data: [
+          ["Severity", "Tag Name", "Scope", "Rule"],
+          ...violations,
+        ],
+      });
     }
   }
 
@@ -241,9 +247,9 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         </div>
         {fileIds.length > 0 && (
           <div className="flex flex-col items-end gap-1">
-            <ExportCSVButton
-              filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`}
-              data={exportData}
+            <ExportXLSXButton
+              filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`}
+              sheets={exportSheets}
             />
             <p className="text-xs text-muted-foreground">
               Exports all analysis results
