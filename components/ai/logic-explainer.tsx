@@ -184,11 +184,26 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
 
     const addWrappedText = (text: string, x: number, fontSize: number, indent = 0) => {
       doc.setFontSize(fontSize);
-      const lines = doc.splitTextToSize(text, maxWidth - indent);
-      for (const line of lines) {
-        addPageIfNeeded(fontSize * 0.5);
+      const availWidth = maxWidth - indent;
+      const lineHeight = fontSize * 0.5;
+      const words = text.split(" ");
+      let line = "";
+
+      for (const word of words) {
+        const testLine = line ? `${line} ${word}` : word;
+        if (doc.getTextWidth(testLine) > availWidth && line) {
+          addPageIfNeeded(lineHeight);
+          doc.text(line, x + indent, y);
+          y += lineHeight;
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) {
+        addPageIfNeeded(lineHeight);
         doc.text(line, x + indent, y);
-        y += fontSize * 0.5;
+        y += lineHeight;
       }
     };
 
