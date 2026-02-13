@@ -21,7 +21,7 @@ export default async function ProjectsPage() {
       is_favorite,
       is_archived,
       created_by,
-      project_files(count)
+      project_files(id, file_name)
     `)
     .order("updated_at", { ascending: false });
 

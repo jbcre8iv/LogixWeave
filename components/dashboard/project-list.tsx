@@ -62,7 +62,7 @@ interface Project {
   is_favorite: boolean;
   is_archived?: boolean;
   created_by?: string;
-  project_files: { count: number } | Array<unknown>;
+  project_files: Array<{ id: string; file_name: string }> | { count: number };
 }
 
 interface ProjectListProps {
@@ -309,13 +309,17 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
   const { favoriteProjects, regularProjects, sharedProjects, filteredAndSortedProjects } = useMemo(() => {
     let result = [...effectiveProjects];
 
-    // Filter by search query
+    // Filter by search query (projects and file names)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
-          (p.description && p.description.toLowerCase().includes(query))
+          (p.description && p.description.toLowerCase().includes(query)) ||
+          (Array.isArray(p.project_files) &&
+            p.project_files.some((f) =>
+              "file_name" in f && f.file_name.toLowerCase().includes(query)
+            ))
       );
     }
 
@@ -539,7 +543,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search projects..."
+            placeholder="Search projects and files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -659,9 +663,9 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+            <h3 className="text-lg font-semibold mb-2">No results found</h3>
             <p className="text-muted-foreground mb-4 text-center">
-              No projects match "{searchQuery}"
+              No projects or files match "{searchQuery}"
             </p>
             <Button variant="outline" onClick={() => setSearchQuery("")}>
               Clear search
