@@ -76,11 +76,17 @@ function FileBrowserPanel({
   projects,
   selectedFileId,
   onSelectFile,
+  selectedVersion,
+  onSelectVersion,
+  versionCount,
   label,
 }: {
   projects: Project[];
   selectedFileId: string;
-  onSelectFile: (fileId: string) => void;
+  onSelectFile: (fileId: string, versionCount: number) => void;
+  selectedVersion: number | null;
+  onSelectVersion: (version: number | null) => void;
+  versionCount: number;
   label: string;
 }) {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
@@ -128,12 +134,34 @@ function FileBrowserPanel({
           {/* Selected file display */}
           <div className="px-3 py-2 border-b bg-muted/30 min-h-[52px] flex items-center">
             {selectedInfo ? (
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 w-full">
                 <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{selectedInfo.file.file_name}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">
+                    {selectedInfo.file.file_name}
+                    {selectedVersion != null && (
+                      <span className="text-muted-foreground font-normal"> (v{selectedVersion})</span>
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground truncate">{selectedInfo.projectName}</p>
                 </div>
+                {versionCount > 1 && (
+                  <select
+                    value={selectedVersion ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onSelectVersion(val === "" ? null : parseInt(val));
+                    }}
+                    className="text-xs border rounded px-1.5 py-1 bg-background flex-shrink-0"
+                  >
+                    <option value="">Latest (v{selectedInfo.file.current_version ?? versionCount})</option>
+                    {Array.from({ length: versionCount }, (_, i) => versionCount - i).map((v) => (
+                      <option key={v} value={v}>
+                        v{v}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Click a file below to select</p>
@@ -197,7 +225,7 @@ function FileBrowserPanel({
                                   {filesInFolder.map((file) => (
                                     <button
                                       key={file.id}
-                                      onClick={() => onSelectFile(file.id)}
+                                      onClick={() => onSelectFile(file.id, file.version_count ?? 1)}
                                       className={cn(
                                         "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-sm",
                                         selectedFileId === file.id
@@ -207,6 +235,11 @@ function FileBrowserPanel({
                                     >
                                       <FileText className="h-4 w-4 flex-shrink-0" />
                                       <span className="truncate flex-1">{file.file_name}</span>
+                                      {(file.version_count ?? 1) > 1 && (
+                                        <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 flex-shrink-0">
+                                          v{file.version_count}
+                                        </Badge>
+                                      )}
                                       {selectedFileId === file.id && (
                                         <Check className="h-4 w-4 flex-shrink-0" />
                                       )}
@@ -222,7 +255,7 @@ function FileBrowserPanel({
                         {rootFiles.map((file) => (
                           <button
                             key={file.id}
-                            onClick={() => onSelectFile(file.id)}
+                            onClick={() => onSelectFile(file.id, file.version_count ?? 1)}
                             className={cn(
                               "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-sm",
                               selectedFileId === file.id
@@ -232,6 +265,11 @@ function FileBrowserPanel({
                           >
                             <FileText className="h-4 w-4 flex-shrink-0" />
                             <span className="truncate flex-1">{file.file_name}</span>
+                            {(file.version_count ?? 1) > 1 && (
+                              <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 flex-shrink-0">
+                                v{file.version_count}
+                              </Badge>
+                            )}
                             {selectedFileId === file.id && (
                               <Check className="h-4 w-4 flex-shrink-0" />
                             )}
@@ -317,6 +355,10 @@ function exportComparisonCSV(
 export function CompareSelector({ projects }: CompareSelectorProps) {
   const [file1, setFile1] = useState<string>("");
   const [file2, setFile2] = useState<string>("");
+  const [version1, setVersion1] = useState<number | null>(null);
+  const [version2, setVersion2] = useState<number | null>(null);
+  const [versionCount1, setVersionCount1] = useState(1);
+  const [versionCount2, setVersionCount2] = useState(1);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -329,10 +371,22 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
     }))
   );
 
+  const handleSelectFile1 = (fileId: string, versionCount: number) => {
+    setFile1(fileId);
+    setVersion1(null);
+    setVersionCount1(versionCount);
+  };
+
+  const handleSelectFile2 = (fileId: string, versionCount: number) => {
+    setFile2(fileId);
+    setVersion2(null);
+    setVersionCount2(versionCount);
+  };
+
   const handleCompare = async () => {
     if (!file1 || !file2) return;
-    if (file1 === file2) {
-      setError("Please select two different files to compare");
+    if (file1 === file2 && version1 === version2) {
+      setError("Please select two different files or versions to compare");
       return;
     }
 
@@ -341,7 +395,12 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
     setResult(null);
 
     try {
-      const response = await fetch(`/api/compare?file1=${file1}&file2=${file2}`);
+      const params = new URLSearchParams({ file1, file2 });
+      if (file1 === file2 && version1 != null && version2 != null) {
+        params.set("v1", String(version1));
+        params.set("v2", String(version2));
+      }
+      const response = await fetch(`/api/compare?${params.toString()}`);
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to compare files");
@@ -387,7 +446,10 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
             <FileBrowserPanel
               projects={projects}
               selectedFileId={file1}
-              onSelectFile={setFile1}
+              onSelectFile={handleSelectFile1}
+              selectedVersion={version1}
+              onSelectVersion={setVersion1}
+              versionCount={versionCount1}
               label="Base File (Original)"
             />
 
@@ -396,7 +458,7 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
                 <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
                 <Button
                   onClick={handleCompare}
-                  disabled={!file1 || !file2 || loading}
+                  disabled={!file1 || !file2 || loading || (file1 === file2 && version1 === version2)}
                   size="lg"
                 >
                   {loading ? (
@@ -417,7 +479,10 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
             <FileBrowserPanel
               projects={projects}
               selectedFileId={file2}
-              onSelectFile={setFile2}
+              onSelectFile={handleSelectFile2}
+              selectedVersion={version2}
+              onSelectVersion={setVersion2}
+              versionCount={versionCount2}
               label="Compare File (Modified)"
             />
           </div>
@@ -435,7 +500,7 @@ export function CompareSelector({ projects }: CompareSelectorProps) {
               <div>
                 <CardTitle>Comparison Results</CardTitle>
                 <CardDescription>
-                  {getFile1Info()?.file_name} → {getFile2Info()?.file_name}
+                  {getFile1Info()?.file_name}{version1 != null ? ` (v${version1})` : ""} → {getFile2Info()?.file_name}{version2 != null ? ` (v${version2})` : ""}
                 </CardDescription>
               </div>
               <div className="flex gap-2 flex-wrap items-center">
