@@ -214,7 +214,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               {projectId && currentProject ? (
-                <button className="mx-3 mb-3 w-[calc(100%-1.5rem)] flex items-center gap-2 px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors text-left">
+                <button className="mb-3 w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors text-left">
                   <FolderIcon className="h-4 w-4 text-primary flex-shrink-0" />
                   <span className="text-xs font-medium text-primary truncate flex-1">
                     {currentProject.name}
@@ -222,7 +222,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
                   <ChevronDown className="h-3 w-3 text-primary flex-shrink-0" />
                 </button>
               ) : (
-                <button className="mx-3 mb-3 w-[calc(100%-1.5rem)] flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20 hover:bg-muted hover:border-muted-foreground/40 transition-colors text-left">
+                <button className="mb-3 w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/50 border border-dashed border-muted-foreground/20 hover:bg-muted hover:border-muted-foreground/40 transition-colors text-left">
                   <FolderIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-xs text-muted-foreground truncate flex-1">
                     Select a project
