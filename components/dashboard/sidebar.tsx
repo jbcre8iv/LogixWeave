@@ -145,7 +145,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
     };
 
     fetchData();
-  }, [projectId, supabase]);
+  }, [projectId, pathname, supabase]);
 
   const handleProjectSwitch = (newProjectId: string) => {
     if (newProjectId === projectId) {
