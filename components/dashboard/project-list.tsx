@@ -81,6 +81,15 @@ interface ProjectGridCardProps {
   onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
   getFileCount: (project: Project) => number;
   currentUserId?: string;
+  searchQuery?: string;
+}
+
+function getMatchingFiles(project: Project, query: string): string[] {
+  if (!query.trim() || !Array.isArray(project.project_files)) return [];
+  const q = query.toLowerCase();
+  return project.project_files
+    .filter((f) => "file_name" in f && f.file_name.toLowerCase().includes(q))
+    .map((f) => f.file_name);
 }
 
 function ProjectGridCard({
@@ -90,9 +99,11 @@ function ProjectGridCard({
   onToggleFavorite,
   getFileCount,
   currentUserId,
+  searchQuery = "",
 }: ProjectGridCardProps) {
   const fileCount = getFileCount(project);
   const isOwner = !currentUserId || !project.created_by || project.created_by === currentUserId;
+  const matchingFiles = getMatchingFiles(project, searchQuery);
 
   return (
     <div className="relative group">
@@ -132,6 +143,16 @@ function ProjectGridCard({
                 {new Date(project.updated_at).toLocaleDateString()}
               </div>
             </div>
+            {matchingFiles.length > 0 && (
+              <div className="mt-3 pl-6 space-y-1">
+                {matchingFiles.map((name) => (
+                  <div key={name} className="flex items-center gap-1.5 text-xs text-primary">
+                    <FileText className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </Link>
@@ -164,6 +185,7 @@ interface ProjectListTableProps {
   ownerMap?: Record<string, string>;
   showOwner?: boolean;
   currentUserId?: string;
+  searchQuery?: string;
 }
 
 function ProjectListTable({
@@ -176,6 +198,7 @@ function ProjectListTable({
   ownerMap = {},
   showOwner = false,
   currentUserId,
+  searchQuery = "",
 }: ProjectListTableProps) {
   return (
     <div className="rounded-md border">
@@ -204,6 +227,7 @@ function ProjectListTable({
           {projects.map((project) => {
             const fileCount = getFileCount(project);
             const isSelected = selectedIds.has(project.id);
+            const matchingFiles = getMatchingFiles(project, searchQuery);
 
             return (
               <TableRow
@@ -229,6 +253,16 @@ function ProjectListTable({
                     <FolderOpen className="h-4 w-4 text-primary shrink-0" />
                     <span className="font-medium truncate">{project.name}</span>
                   </div>
+                  {matchingFiles.length > 0 && (
+                    <div className="ml-6 mt-1 space-y-0.5">
+                      {matchingFiles.map((name) => (
+                        <div key={name} className="flex items-center gap-1.5 text-xs text-primary">
+                          <FileText className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <span className="text-muted-foreground line-clamp-1">
@@ -696,6 +730,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     onToggleFavorite={toggleSingleFavorite}
                     getFileCount={getFileCount}
                     currentUserId={currentUserId}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </div>
@@ -720,6 +755,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     onToggleFavorite={toggleSingleFavorite}
                     getFileCount={getFileCount}
                     currentUserId={currentUserId}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </div>
@@ -745,6 +781,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     onToggleFavorite={toggleSingleFavorite}
                     getFileCount={getFileCount}
                     currentUserId={currentUserId}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </div>
@@ -775,6 +812,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 showOwner={hasAnySharedProject}
                 ownerMap={ownerMap}
                 currentUserId={currentUserId}
+                searchQuery={searchQuery}
               />
             </div>
           )}
@@ -796,6 +834,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 router={router}
                 showOwner={hasAnySharedProject}
                 currentUserId={currentUserId}
+                searchQuery={searchQuery}
               />
             </div>
           )}
@@ -819,6 +858,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 showOwner={hasAnySharedProject}
                 ownerMap={ownerMap}
                 currentUserId={currentUserId}
+                searchQuery={searchQuery}
               />
             </div>
           )}
