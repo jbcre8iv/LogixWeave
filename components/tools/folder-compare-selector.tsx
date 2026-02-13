@@ -92,27 +92,32 @@ interface FolderComparisonResult {
   };
 }
 
+interface Selection {
+  type: "project" | "folder";
+  id: string;
+  name: string;
+}
+
 interface FolderCompareSelectorProps {
   projects: Project[];
 }
 
 function FolderBrowserPanel({
   projects,
-  selectedFolderId,
-  onSelectFolder,
+  selection,
+  onSelect,
   label,
 }: {
   projects: Project[];
-  selectedFolderId: string | null;
-  onSelectFolder: (folderId: string, folderName: string) => void;
+  selection: Selection | null;
+  onSelect: (sel: Selection) => void;
   label: string;
 }) {
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
-    new Set(projects.map((p) => p.id))
-  );
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
-  const toggleProject = (projectId: string) => {
+  const toggleProject = (e: React.MouseEvent, projectId: string) => {
+    e.stopPropagation();
     const newExpanded = new Set(expandedProjects);
     if (newExpanded.has(projectId)) {
       newExpanded.delete(projectId);
@@ -133,43 +138,54 @@ function FolderBrowserPanel({
     setExpandedFolders(newExpanded);
   };
 
-  const getSelectedFolderInfo = () => {
-    for (const project of projects) {
-      const folder = (project.project_folders || []).find((f) => f.id === selectedFolderId);
-      if (folder) {
-        const fileCount = project.project_files.filter((f) => f.folder_id === folder.id).length;
-        return { folder, projectName: project.name, fileCount };
+  const isSelected = (type: "project" | "folder", id: string) =>
+    selection?.type === type && selection?.id === id;
+
+  const getSelectedInfo = () => {
+    if (!selection) return null;
+    if (selection.type === "project") {
+      const project = projects.find((p) => p.id === selection.id);
+      if (project) return { name: selection.name, detail: `${project.project_files.length} files` };
+    } else {
+      for (const project of projects) {
+        const folder = (project.project_folders || []).find((f) => f.id === selection.id);
+        if (folder) {
+          const fileCount = project.project_files.filter((f) => f.folder_id === folder.id).length;
+          return { name: folder.name, detail: `${fileCount} files`, projectName: project.name };
+        }
       }
     }
     return null;
   };
 
-  const selectedInfo = getSelectedFolderInfo();
+  const selectedInfo = getSelectedInfo();
 
   return (
     <div className="flex-1 min-w-0">
       <label className="text-sm font-medium mb-2 block">{label}</label>
       <Card className="border-2">
         <CardContent className="p-0">
-          {/* Selected folder display */}
+          {/* Selected display */}
           <div className="px-3 py-2 border-b bg-muted/30 min-h-[52px] flex items-center">
             {selectedInfo ? (
               <div className="flex items-center gap-2 min-w-0 w-full">
                 <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{selectedInfo.folder.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{selectedInfo.projectName}</p>
+                  <p className="text-sm font-medium truncate">{selectedInfo.name}</p>
+                  {selectedInfo.projectName && (
+                    <p className="text-xs text-muted-foreground truncate">{selectedInfo.projectName}</p>
+                  )}
                 </div>
                 <Badge variant="secondary" className="text-xs flex-shrink-0">
-                  {selectedInfo.fileCount} files
+                  {selectedInfo.detail}
                 </Badge>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Click a folder below to select</p>
+              <p className="text-sm text-muted-foreground">Click a project or folder to select</p>
             )}
           </div>
 
-          {/* Folder tree */}
+          {/* Tree */}
           <ScrollArea className="h-[280px]">
             <div className="p-2">
               {projects.map((project) => {
@@ -179,24 +195,38 @@ function FolderBrowserPanel({
                 const folderFiles = (folderId: string) =>
                   project.project_files.filter((f) => f.folder_id === folderId);
                 const rootFiles = project.project_files.filter((f) => !f.folder_id || !folderIds.has(f.folder_id));
+                const hasFolders = folders.some((f) => folderFiles(f.id).length > 0);
 
                 return (
                   <div key={project.id} className="mb-1">
-                    {/* Project header */}
+                    {/* Project header — selectable */}
                     <button
-                      onClick={() => toggleProject(project.id)}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left"
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      onClick={() => onSelect({ type: "project", id: project.id, name: project.name })}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 rounded text-left",
+                        isSelected("project", project.id)
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted"
                       )}
+                    >
+                      <span
+                        onClick={(e) => toggleProject(e, project.id)}
+                        className="flex-shrink-0 p-0.5 -ml-0.5 rounded hover:bg-muted-foreground/10"
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </span>
                       <FolderOpen className="h-4 w-4 text-amber-500" />
                       <span className="text-sm font-medium truncate">{project.name}</span>
                       <Badge variant="secondary" className="ml-auto text-xs">
                         {project.project_files.length}
                       </Badge>
+                      {isSelected("project", project.id) && (
+                        <Check className="h-4 w-4 flex-shrink-0" />
+                      )}
                     </button>
 
                     {/* Project contents */}
@@ -211,10 +241,10 @@ function FolderBrowserPanel({
                           return (
                             <div key={folder.id} className="mb-1">
                               <button
-                                onClick={() => onSelectFolder(folder.id, folder.name)}
+                                onClick={() => onSelect({ type: "folder", id: folder.id, name: folder.name })}
                                 className={cn(
                                   "w-full flex items-center gap-2 px-2 py-1 rounded text-left",
-                                  selectedFolderId === folder.id
+                                  isSelected("folder", folder.id)
                                     ? "bg-primary/10 text-primary"
                                     : "hover:bg-muted"
                                 )}
@@ -234,7 +264,7 @@ function FolderBrowserPanel({
                                 <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 flex-shrink-0">
                                   {filesInFolder.length}
                                 </Badge>
-                                {selectedFolderId === folder.id && (
+                                {isSelected("folder", folder.id) && (
                                   <Check className="h-4 w-4 flex-shrink-0" />
                                 )}
                               </button>
@@ -255,7 +285,7 @@ function FolderBrowserPanel({
                           );
                         })}
 
-                        {/* Root files — shown as non-interactive (not in any folder) */}
+                        {/* Root files — shown as non-interactive preview */}
                         {rootFiles.map((file) => (
                           <div
                             key={file.id}
@@ -582,29 +612,33 @@ function FolderComparisonResults({ result }: { result: FolderComparisonResult })
 }
 
 export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) {
-  const [folder1, setFolder1] = useState<{ id: string; name: string } | null>(null);
-  const [folder2, setFolder2] = useState<{ id: string; name: string } | null>(null);
+  const [selection1, setSelection1] = useState<Selection | null>(null);
+  const [selection2, setSelection2] = useState<Selection | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FolderComparisonResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const isSameSelection = selection1 && selection2 &&
+    selection1.type === selection2.type && selection1.id === selection2.id;
+
   const handleCompare = async () => {
-    if (!folder1 || !folder2) return;
-    if (folder1.id === folder2.id) {
-      setError("Please select two different folders to compare");
-      return;
-    }
+    if (!selection1 || !selection2 || isSameSelection) return;
 
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const params = new URLSearchParams({ folder1: folder1.id, folder2: folder2.id });
+      const params = new URLSearchParams();
+      if (selection1.type === "project") params.set("project1", selection1.id);
+      else params.set("folder1", selection1.id);
+      if (selection2.type === "project") params.set("project2", selection2.id);
+      else params.set("folder2", selection2.id);
+
       const response = await fetch(`/api/compare?${params.toString()}`);
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Failed to compare folders");
+        throw new Error(data.error || "Failed to compare");
       }
       const data = await response.json();
       setResult(data);
@@ -634,18 +668,18 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Select Folders to Compare</CardTitle>
+          <CardTitle>Select Projects or Folders to Compare</CardTitle>
           <CardDescription>
-            Browse your projects and select a folder from each panel to compare all matched files
+            Click a project or folder from each panel to compare all matched files between them
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col lg:flex-row gap-4">
             <FolderBrowserPanel
               projects={projects}
-              selectedFolderId={folder1?.id ?? null}
-              onSelectFolder={(id, name) => setFolder1({ id, name })}
-              label="Base Folder (Original)"
+              selection={selection1}
+              onSelect={setSelection1}
+              label="Base (Original)"
             />
 
             <div className="flex items-center justify-center py-4 lg:py-0">
@@ -653,7 +687,7 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
                 <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
                 <Button
                   onClick={handleCompare}
-                  disabled={!folder1 || !folder2 || loading || folder1.id === folder2.id}
+                  disabled={!selection1 || !selection2 || loading || !!isSameSelection}
                   size="lg"
                 >
                   {loading ? (
@@ -664,7 +698,7 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
                   ) : (
                     <>
                       <GitCompare className="mr-2 h-4 w-4" />
-                      Compare Folders
+                      Compare
                     </>
                   )}
                 </Button>
@@ -673,9 +707,9 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
 
             <FolderBrowserPanel
               projects={projects}
-              selectedFolderId={folder2?.id ?? null}
-              onSelectFolder={(id, name) => setFolder2({ id, name })}
-              label="Compare Folder (Modified)"
+              selection={selection2}
+              onSelect={setSelection2}
+              label="Compare (Modified)"
             />
           </div>
 

@@ -77,10 +77,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const folder1Id = searchParams.get("folder1");
     const folder2Id = searchParams.get("folder2");
+    const project1Id = searchParams.get("project1");
+    const project2Id = searchParams.get("project2");
 
-    // Folder comparison mode
-    if (folder1Id && folder2Id) {
-      return handleFolderComparison(supabase, folder1Id, folder2Id);
+    // Bulk comparison mode (project or folder on each side)
+    if (folder1Id || folder2Id || project1Id || project2Id) {
+      return handleBulkComparison(supabase, { folder1Id, folder2Id, project1Id, project2Id });
     }
 
     // File comparison mode
@@ -131,41 +133,69 @@ export async function GET(request: Request) {
   }
 }
 
-async function handleFolderComparison(
+async function resolveFilesAndName(
   supabase: SupabaseClient,
-  folder1Id: string,
-  folder2Id: string
-) {
-  // Fetch folder metadata
-  const [folder1Result, folder2Result] = await Promise.all([
-    supabase.from("project_folders").select("id, name, project_id").eq("id", folder1Id).single(),
-    supabase.from("project_folders").select("id, name, project_id").eq("id", folder2Id).single(),
-  ]);
+  opts: { folderId?: string | null; projectId?: string | null }
+): Promise<{ name: string; files: Array<{ id: string; file_name: string }> } | null> {
+  if (opts.folderId) {
+    const { data: folder, error } = await supabase
+      .from("project_folders")
+      .select("id, name")
+      .eq("id", opts.folderId)
+      .single();
+    if (error || !folder) return null;
 
-  if (folder1Result.error || folder2Result.error) {
-    return NextResponse.json({ error: "One or both folders not found" }, { status: 404 });
+    const { data: files } = await supabase
+      .from("project_files")
+      .select("id, file_name")
+      .eq("folder_id", opts.folderId)
+      .eq("parsing_status", "completed");
+
+    return { name: folder.name, files: files || [] };
   }
 
-  // Fetch all completed files in both folders
-  const { data: allFiles } = await supabase
-    .from("project_files")
-    .select("id, file_name, folder_id")
-    .in("folder_id", [folder1Id, folder2Id])
-    .eq("parsing_status", "completed");
+  if (opts.projectId) {
+    const { data: project, error } = await supabase
+      .from("projects")
+      .select("id, name")
+      .eq("id", opts.projectId)
+      .single();
+    if (error || !project) return null;
 
-  const files = allFiles || [];
-  const folder1Files = files.filter((f) => f.folder_id === folder1Id);
-  const folder2Files = files.filter((f) => f.folder_id === folder2Id);
+    const { data: files } = await supabase
+      .from("project_files")
+      .select("id, file_name")
+      .eq("project_id", opts.projectId)
+      .eq("parsing_status", "completed");
+
+    return { name: project.name, files: files || [] };
+  }
+
+  return null;
+}
+
+async function handleBulkComparison(
+  supabase: SupabaseClient,
+  params: { folder1Id: string | null; folder2Id: string | null; project1Id: string | null; project2Id: string | null }
+) {
+  const [side1, side2] = await Promise.all([
+    resolveFilesAndName(supabase, { folderId: params.folder1Id, projectId: params.project1Id }),
+    resolveFilesAndName(supabase, { folderId: params.folder2Id, projectId: params.project2Id }),
+  ]);
+
+  if (!side1 || !side2) {
+    return NextResponse.json({ error: "One or both selections not found" }, { status: 404 });
+  }
 
   // Match files by file_name
-  const folder1Map = new Map(folder1Files.map((f) => [f.file_name, f]));
-  const folder2Map = new Map(folder2Files.map((f) => [f.file_name, f]));
+  const side1Map = new Map(side1.files.map((f) => [f.file_name, f]));
+  const side2Map = new Map(side2.files.map((f) => [f.file_name, f]));
 
   const matchedPairs: Array<{ fileName: string; file1Id: string; file2Id: string }> = [];
   const unmatchedFiles: Array<{ fileName: string; fileId: string; side: "left" | "right" }> = [];
 
-  for (const [name, file] of folder1Map) {
-    const match = folder2Map.get(name);
+  for (const [name, file] of side1Map) {
+    const match = side2Map.get(name);
     if (match) {
       matchedPairs.push({ fileName: name, file1Id: file.id, file2Id: match.id });
     } else {
@@ -173,8 +203,8 @@ async function handleFolderComparison(
     }
   }
 
-  for (const [name, file] of folder2Map) {
-    if (!folder1Map.has(name)) {
+  for (const [name, file] of side2Map) {
+    if (!side1Map.has(name)) {
       unmatchedFiles.push({ fileName: name, fileId: file.id, side: "right" });
     }
   }
@@ -194,12 +224,12 @@ async function handleFolderComparison(
 
   return NextResponse.json({
     type: "folder",
-    folder1Name: folder1Result.data.name,
-    folder2Name: folder2Result.data.name,
+    folder1Name: side1.name,
+    folder2Name: side2.name,
     comparisons,
     unmatchedFiles,
     summary: {
-      totalFiles: folder1Files.length + folder2Files.length,
+      totalFiles: side1.files.length + side2.files.length,
       matchedFiles: matchedPairs.length,
       unmatchedLeft: unmatchedFiles.filter((f) => f.side === "left").length,
       unmatchedRight: unmatchedFiles.filter((f) => f.side === "right").length,

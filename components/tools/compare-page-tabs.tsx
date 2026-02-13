@@ -30,15 +30,15 @@ export function ComparePageTabs({ projects }: { projects: Project[] }) {
           <FileText className="h-4 w-4" />
           Compare Files
         </TabsTrigger>
-        <TabsTrigger value="folders" className="gap-2">
+        <TabsTrigger value="projects" className="gap-2">
           <FolderOpen className="h-4 w-4" />
-          Compare Folders
+          Compare Projects
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="files" className="mt-4">
+      <TabsContent value="files" forceMount className="mt-4 data-[state=inactive]:hidden">
         <CompareSelector projects={projects} />
       </TabsContent>
-      <TabsContent value="folders" className="mt-4">
+      <TabsContent value="projects" forceMount className="mt-4 data-[state=inactive]:hidden">
         <FolderCompareSelector projects={projects} />
       </TabsContent>
     </Tabs>
