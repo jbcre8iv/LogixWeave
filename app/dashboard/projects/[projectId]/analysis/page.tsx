@@ -8,10 +8,17 @@ import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-but
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{
+    from?: string;
+  }>;
 }
 
-export default async function AnalysisPage({ params }: AnalysisPageProps) {
+export default async function AnalysisPage({ params, searchParams }: AnalysisPageProps) {
   const { projectId } = await params;
+  const { from } = await searchParams;
+  const backHref = from === "tools"
+    ? "/dashboard/tools/analysis"
+    : `/dashboard/projects/${projectId}`;
 
   const supabase = await createClient();
 
@@ -265,7 +272,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}`}>
+            <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

@@ -55,7 +55,8 @@ export function IOFilters({ catalogNumbers, parentModules }: IOFiltersProps) {
   };
 
   const clearFilters = () => {
-    router.push(pathname);
+    const fromParam = searchParams.get("from");
+    router.push(fromParam ? `${pathname}?from=${fromParam}` : pathname);
   };
 
   const hasFilters = search || catalogNumber || parentModule;

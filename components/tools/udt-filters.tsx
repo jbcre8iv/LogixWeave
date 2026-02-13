@@ -53,7 +53,8 @@ export function UDTFilters({ familyTypes }: UDTFiltersProps) {
   };
 
   const clearFilters = () => {
-    router.push(pathname);
+    const fromParam = searchParams.get("from");
+    router.push(fromParam ? `${pathname}?from=${fromParam}` : pathname);
   };
 
   const hasFilters = search || familyType;

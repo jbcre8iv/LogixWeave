@@ -54,7 +54,7 @@ export default async function GlobalUDTsPage() {
       {projectsWithUDTs.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projectsWithUDTs.map((project) => (
-            <Link key={project.id} href={`/dashboard/projects/${project.id}/udts`}>
+            <Link key={project.id} href={`/dashboard/projects/${project.id}/udts?from=tools`}>
               <Card className="h-full transition-colors hover:bg-accent/50">
                 <CardHeader>
                   <div className="flex items-center gap-2">

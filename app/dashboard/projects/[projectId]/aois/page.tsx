@@ -13,6 +13,7 @@ interface AOIsPageProps {
     search?: string;
     vendor?: string;
     page?: string;
+    from?: string;
   }>;
 }
 
@@ -20,7 +21,10 @@ const PAGE_SIZE = 25;
 
 export default async function AOIsPage({ params, searchParams }: AOIsPageProps) {
   const { projectId } = await params;
-  const { search, vendor, page: pageParam } = await searchParams;
+  const { search, vendor, page: pageParam, from: fromParam } = await searchParams;
+  const backHref = fromParam === "tools"
+    ? "/dashboard/tools/aois"
+    : `/dashboard/projects/${projectId}`;
   const page = Math.max(1, parseInt(pageParam || "1", 10));
 
   const supabase = await createClient();
@@ -43,7 +47,7 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}`}>
+            <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -111,7 +115,7 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}`}>
+            <Link href={backHref}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>

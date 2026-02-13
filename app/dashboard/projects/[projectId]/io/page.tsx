@@ -4,26 +4,27 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Download } from "lucide-react";
-import { UDTFilters } from "@/components/tools/udt-filters";
-import { UDTTable } from "@/components/tools/udt-table";
+import { IOFilters } from "@/components/tools/io-filters";
+import { IOTable } from "@/components/tools/io-table";
 
-interface UDTsPageProps {
+interface IOPageProps {
   params: Promise<{ projectId: string }>;
   searchParams: Promise<{
     search?: string;
-    familyType?: string;
+    catalogNumber?: string;
+    parentModule?: string;
     page?: string;
     from?: string;
   }>;
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 
-export default async function UDTsPage({ params, searchParams }: UDTsPageProps) {
+export default async function IOPage({ params, searchParams }: IOPageProps) {
   const { projectId } = await params;
-  const { search, familyType, page: pageParam, from: fromParam } = await searchParams;
+  const { search, catalogNumber, parentModule, page: pageParam, from: fromParam } = await searchParams;
   const backHref = fromParam === "tools"
-    ? "/dashboard/tools/udts"
+    ? "/dashboard/tools/io"
     : `/dashboard/projects/${projectId}`;
   const page = Math.max(1, parseInt(pageParam || "1", 10));
 
@@ -32,7 +33,7 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, project_files(id)")
+    .select("id, name, project_files(id, original_name)")
     .eq("id", projectId)
     .single();
 
@@ -52,7 +53,7 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">User Defined Types</h1>
+            <h1 className="text-3xl font-bold">I/O Mapping</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -72,27 +73,46 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
     );
   }
 
-  // Get unique family types for filters
-  const { data: familyTypesData } = await supabase
-    .from("parsed_udts")
-    .select("family_type")
-    .in("file_id", fileIds)
-    .not("family_type", "is", null);
+  // Get unique catalog numbers and parent modules for filters
+  const [catalogNumbersResult, parentModulesResult] = await Promise.all([
+    supabase
+      .from("parsed_io_modules")
+      .select("catalog_number")
+      .in("file_id", fileIds)
+      .not("catalog_number", "is", null)
+      .order("catalog_number"),
+    supabase
+      .from("parsed_io_modules")
+      .select("parent_module")
+      .in("file_id", fileIds)
+      .not("parent_module", "is", null)
+      .order("parent_module"),
+  ]);
 
-  const familyTypes = [...new Set(familyTypesData?.map((u) => u.family_type).filter(Boolean) || [])].sort() as string[];
+  const catalogNumbers = [...new Set(catalogNumbersResult.data?.map((m) => m.catalog_number).filter(Boolean) || [])] as string[];
+  const parentModules = [...new Set(parentModulesResult.data?.map((m) => m.parent_module).filter(Boolean) || [])] as string[];
 
-  // Build query for UDTs
+  // Create file ID to name mapping
+  const fileMap = new Map(
+    project.project_files?.map((f: { id: string; original_name: string }) => [f.id, f.original_name]) || []
+  );
+
+  // Build query for modules
   let query = supabase
-    .from("parsed_udts")
-    .select("id, name, description, family_type, parsed_udt_members(id, name, data_type, dimension, description)", { count: "exact" })
+    .from("parsed_io_modules")
+    .select("id, name, catalog_number, parent_module, slot, connection_info, file_id", { count: "exact" })
     .in("file_id", fileIds);
 
   if (search) {
     query = query.ilike("name", `%${search}%`);
   }
 
-  if (familyType && familyType !== "all") {
-    query = query.eq("family_type", familyType);
+  if (catalogNumber) {
+    query = query.eq("catalog_number", catalogNumber);
+  }
+
+  if (parentModule) {
+    query = query.eq("parent_module", parentModule);
   }
 
   // Add pagination
@@ -101,9 +121,15 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
 
   query = query.order("name").range(from, to);
 
-  const { data: udts, count } = await query;
+  const { data: modules, count } = await query;
 
-  const exportUrl = `/api/export/udts?projectId=${projectId}${search ? `&search=${search}` : ""}${familyType ? `&familyType=${familyType}` : ""}`;
+  // Add file names to modules
+  const modulesWithFileNames = (modules || []).map((m) => ({
+    ...m,
+    file_name: fileMap.get(m.file_id) || undefined,
+  }));
+
+  const exportUrl = `/api/export/io?projectId=${projectId}${search ? `&search=${search}` : ""}${catalogNumber ? `&catalogNumber=${catalogNumber}` : ""}${parentModule ? `&parentModule=${parentModule}` : ""}`;
 
   return (
     <div className="space-y-6">
@@ -115,7 +141,7 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">User Defined Types</h1>
+            <h1 className="text-3xl font-bold">I/O Mapping</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -131,16 +157,16 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
         <CardHeader>
           <CardTitle>Search & Filter</CardTitle>
           <CardDescription>
-            {count || 0} UDTs found
+            {count || 0} I/O modules found
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <UDTFilters familyTypes={familyTypes} />
+          <IOFilters catalogNumbers={catalogNumbers} parentModules={parentModules} />
         </CardContent>
       </Card>
 
-      <UDTTable
-        udts={udts || []}
+      <IOTable
+        modules={modulesWithFileNames}
         totalCount={count || 0}
         page={page}
         pageSize={PAGE_SIZE}

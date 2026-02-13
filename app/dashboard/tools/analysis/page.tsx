@@ -43,7 +43,7 @@ export default async function GlobalAnalysisPage() {
       {projectsWithData.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projectsWithData.map((project) => (
-            <Link key={project.id} href={`/dashboard/projects/${project.id}/analysis`}>
+            <Link key={project.id} href={`/dashboard/projects/${project.id}/analysis?from=tools`}>
               <Card className="h-full transition-colors hover:bg-accent/50">
                 <CardHeader>
                   <div className="flex items-center gap-2">
