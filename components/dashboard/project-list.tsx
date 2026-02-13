@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useMemo } from "react";
+import { useState, useEffect, useTransition, useMemo, useRef, Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -200,6 +200,17 @@ function ProjectListTable({
   currentUserId,
   searchQuery = "",
 }: ProjectListTableProps) {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="rounded-md border">
       <Table className="table-fixed">
@@ -228,10 +239,12 @@ function ProjectListTable({
             const fileCount = getFileCount(project);
             const isSelected = selectedIds.has(project.id);
             const matchingFiles = getMatchingFiles(project, searchQuery);
+            const isExpanded = expandedIds.has(project.id);
+            const hasFiles = fileCount > 0;
 
             return (
+              <Fragment key={project.id}>
               <TableRow
-                key={project.id}
                 className={cn(
                   "cursor-pointer",
                   isSelected && "bg-accent/50"
@@ -247,6 +260,23 @@ function ProjectListTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    {hasFiles ? (
+                      <button
+                        className="p-0.5 -ml-1 rounded hover:bg-accent shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(project.id);
+                        }}
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    ) : (
+                      <span className="w-5 shrink-0" />
+                    )}
                     {project.is_favorite && (
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 shrink-0" />
                     )}
@@ -254,7 +284,7 @@ function ProjectListTable({
                     <span className="font-medium truncate">{project.name}</span>
                   </div>
                   {matchingFiles.length > 0 && (
-                    <div className="ml-6 mt-1 space-y-0.5">
+                    <div className="ml-11 mt-1 space-y-0.5">
                       {matchingFiles.map((name) => (
                         <div key={name} className="flex items-center gap-1.5 text-xs text-primary">
                           <FileText className="h-3 w-3 shrink-0" />
@@ -288,6 +318,27 @@ function ProjectListTable({
                   />
                 </TableCell>
               </TableRow>
+              {isExpanded && Array.isArray(project.project_files) && project.project_files.map((file) => (
+                <TableRow
+                  key={`file-${file.id}`}
+                  className="cursor-pointer bg-muted/30 hover:bg-muted/50"
+                  onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                >
+                  <TableCell />
+                  <TableCell>
+                    <div className="flex items-center gap-2 ml-7 text-sm text-muted-foreground">
+                      <FileText className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{file.file_name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell" />
+                  {showOwner && <TableCell className="hidden sm:table-cell" />}
+                  <TableCell />
+                  <TableCell />
+                  <TableCell />
+                </TableRow>
+              ))}
+              </Fragment>
             );
           })}
         </TableBody>
@@ -315,9 +366,25 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [sortDesc, setSortDesc] = useState(true);
+  const preSearchViewMode = useRef<"grid" | "list" | null>(null);
+
+  const handleSearchChange = (query: string) => {
+    // Auto-switch to list when starting a search from grid view
+    if (query.trim() && !searchQuery.trim() && viewMode === "grid") {
+      preSearchViewMode.current = viewMode;
+      setViewMode("list");
+    }
+    // Restore view mode when search is cleared
+    if (!query.trim() && searchQuery.trim() && preSearchViewMode.current !== null) {
+      setViewMode(preSearchViewMode.current);
+      preSearchViewMode.current = null;
+    }
+    setSearchQuery(query);
+  };
 
   const handleViewModeChange = (mode: "grid" | "list") => {
     setViewMode(mode);
+    preSearchViewMode.current = null;
     localStorage.setItem("projectViewMode", mode);
   };
 
@@ -579,7 +646,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
           <Input
             placeholder="Search projects and files..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -701,7 +768,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
             <p className="text-muted-foreground mb-4 text-center">
               No projects or files match "{searchQuery}"
             </p>
-            <Button variant="outline" onClick={() => setSearchQuery("")}>
+            <Button variant="outline" onClick={() => handleSearchChange("")}>
               Clear search
             </Button>
           </CardContent>
