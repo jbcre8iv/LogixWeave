@@ -20,7 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, ArrowUpDown, ExternalLink } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, ArrowUpDown, ExternalLink, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
 
 interface ProjectData {
   id: string;
@@ -43,6 +60,8 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("created");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [deleteProject, setDeleteProject] = useState<ProjectData | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Poll for updates every 30 seconds
   useEffect(() => {
@@ -98,6 +117,28 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
     } else {
       setSortField(field);
       setSortDirection("asc");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteProject) return;
+    setDeleteLoading(true);
+    try {
+      const response = await fetch(`/api/admin/projects?projectId=${deleteProject.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to delete project");
+      }
+    } catch {
+      alert("Failed to delete project");
+    } finally {
+      setDeleteLoading(false);
+      setDeleteProject(null);
     }
   };
 
@@ -188,18 +229,64 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
                   {new Date(project.created_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/dashboard/projects/${project.id}`}>
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      View
-                    </Link>
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/projects/${project.id}`}>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => setDeleteProject(project)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
       </Table>
+
+      <AlertDialog open={!!deleteProject} onOpenChange={(open) => { if (!open) setDeleteProject(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &quot;{deleteProject?.name}&quot;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this project and all associated files and parsed data.
+              <p className="mt-2 font-medium text-destructive">This action cannot be undone.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Project"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ export type AdminAction =
   | "user_disabled"
   | "user_enabled"
   | "user_deleted"
+  | "project_deleted"
   | "ip_unblocked";
 
 interface LogAdminActionParams {
