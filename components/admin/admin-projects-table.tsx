@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,9 +38,21 @@ type SortField = "name" | "organization" | "files" | "created";
 type SortDirection = "asc" | "desc";
 
 export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("created");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Poll for updates every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [router, startTransition]);
 
   const filteredAndSortedProjects = useMemo(() => {
     let result = [...projects];
