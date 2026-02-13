@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { CompareSelector } from "@/components/tools/compare-selector";
+import { ComparePageTabs } from "@/components/tools/compare-page-tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileCode2, GitCompare, History } from "lucide-react";
+import { FileCode2, FolderOpen, GitCompare, History } from "lucide-react";
 
 export default async function FileComparePage() {
   const supabase = await createClient();
@@ -39,7 +39,7 @@ export default async function FileComparePage() {
       </div>
 
       {/* How it works section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-muted/30">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
@@ -50,6 +50,22 @@ export default async function FileComparePage() {
                 <h3 className="font-medium text-sm">Compare Files</h3>
                 <p className="text-xs text-muted-foreground mt-1">
                   Select any two L5X files from your projects to see what changed between them.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-muted/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FolderOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium text-sm">Compare Folders</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Compare entire folders to see per-file differences across all matched files.
                 </p>
               </div>
             </div>
@@ -89,7 +105,7 @@ export default async function FileComparePage() {
         </Card>
       </div>
 
-      <CompareSelector projects={projectsWithFiles} />
+      <ComparePageTabs projects={projectsWithFiles} />
     </div>
   );
 }

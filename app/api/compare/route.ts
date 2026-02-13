@@ -1,5 +1,66 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { SupabaseClient } from "@supabase/supabase-js";
+
+interface ComparisonResult {
+  tags: ReturnType<typeof compareTags>;
+  routines: ReturnType<typeof compareRoutines>;
+  modules: ReturnType<typeof compareModules>;
+  summary: {
+    totalChanges: number;
+    tagsChanged: number;
+    routinesChanged: number;
+    modulesChanged: number;
+  };
+}
+
+async function compareFiles(
+  supabase: SupabaseClient,
+  file1Id: string,
+  file2Id: string,
+  version1Id?: string | null,
+  version2Id?: string | null
+): Promise<ComparisonResult> {
+  const [tags1, tags2, routines1, routines2, modules1, modules2] = await Promise.all([
+    version1Id
+      ? supabase.from("parsed_tags").select("name, data_type, scope, description").eq("version_id", version1Id)
+      : supabase.from("parsed_tags").select("name, data_type, scope, description").eq("file_id", file1Id),
+    version2Id
+      ? supabase.from("parsed_tags").select("name, data_type, scope, description").eq("version_id", version2Id)
+      : supabase.from("parsed_tags").select("name, data_type, scope, description").eq("file_id", file2Id),
+    version1Id
+      ? supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("version_id", version1Id)
+      : supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("file_id", file1Id),
+    version2Id
+      ? supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("version_id", version2Id)
+      : supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("file_id", file2Id),
+    version1Id
+      ? supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("version_id", version1Id)
+      : supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("file_id", file1Id),
+    version2Id
+      ? supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("version_id", version2Id)
+      : supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("file_id", file2Id),
+  ]);
+
+  const tagComparison = compareTags(tags1.data || [], tags2.data || []);
+  const routineComparison = compareRoutines(routines1.data || [], routines2.data || []);
+  const moduleComparison = compareModules(modules1.data || [], modules2.data || []);
+
+  return {
+    tags: tagComparison,
+    routines: routineComparison,
+    modules: moduleComparison,
+    summary: {
+      totalChanges:
+        tagComparison.added.length + tagComparison.removed.length + tagComparison.modified.length +
+        routineComparison.added.length + routineComparison.removed.length + routineComparison.modified.length +
+        moduleComparison.added.length + moduleComparison.removed.length + moduleComparison.modified.length,
+      tagsChanged: tagComparison.added.length + tagComparison.removed.length + tagComparison.modified.length,
+      routinesChanged: routineComparison.added.length + routineComparison.removed.length + routineComparison.modified.length,
+      modulesChanged: moduleComparison.added.length + moduleComparison.removed.length + moduleComparison.modified.length,
+    },
+  };
+}
 
 export async function GET(request: Request) {
   try {
@@ -14,6 +75,15 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
+    const folder1Id = searchParams.get("folder1");
+    const folder2Id = searchParams.get("folder2");
+
+    // Folder comparison mode
+    if (folder1Id && folder2Id) {
+      return handleFolderComparison(supabase, folder1Id, folder2Id);
+    }
+
+    // File comparison mode
     const file1Id = searchParams.get("file1");
     const file2Id = searchParams.get("file2");
     const version1 = searchParams.get("v1");
@@ -31,7 +101,6 @@ export async function GET(request: Request) {
     let version2Id: string | null = null;
 
     if (version1 && version2 && file1Id === file2Id) {
-      // Get version IDs for version comparison
       const [v1Result, v2Result] = await Promise.all([
         supabase
           .from("file_versions")
@@ -51,53 +120,7 @@ export async function GET(request: Request) {
       version2Id = v2Result.data?.id || null;
     }
 
-    // Fetch data from both files/versions in parallel
-    // Use version_id if available for version comparison, otherwise file_id
-    const [tags1, tags2, routines1, routines2, modules1, modules2] = await Promise.all([
-      version1Id
-        ? supabase.from("parsed_tags").select("name, data_type, scope, description").eq("version_id", version1Id)
-        : supabase.from("parsed_tags").select("name, data_type, scope, description").eq("file_id", file1Id),
-      version2Id
-        ? supabase.from("parsed_tags").select("name, data_type, scope, description").eq("version_id", version2Id)
-        : supabase.from("parsed_tags").select("name, data_type, scope, description").eq("file_id", file2Id),
-      version1Id
-        ? supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("version_id", version1Id)
-        : supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("file_id", file1Id),
-      version2Id
-        ? supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("version_id", version2Id)
-        : supabase.from("parsed_routines").select("name, program_name, type, description, rung_count").eq("file_id", file2Id),
-      version1Id
-        ? supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("version_id", version1Id)
-        : supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("file_id", file1Id),
-      version2Id
-        ? supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("version_id", version2Id)
-        : supabase.from("parsed_io_modules").select("name, catalog_number, parent_module, slot").eq("file_id", file2Id),
-    ]);
-
-    // Compare tags
-    const tagComparison = compareTags(tags1.data || [], tags2.data || []);
-
-    // Compare routines
-    const routineComparison = compareRoutines(routines1.data || [], routines2.data || []);
-
-    // Compare modules
-    const moduleComparison = compareModules(modules1.data || [], modules2.data || []);
-
-    const result = {
-      tags: tagComparison,
-      routines: routineComparison,
-      modules: moduleComparison,
-      summary: {
-        totalChanges:
-          tagComparison.added.length + tagComparison.removed.length + tagComparison.modified.length +
-          routineComparison.added.length + routineComparison.removed.length + routineComparison.modified.length +
-          moduleComparison.added.length + moduleComparison.removed.length + moduleComparison.modified.length,
-        tagsChanged: tagComparison.added.length + tagComparison.removed.length + tagComparison.modified.length,
-        routinesChanged: routineComparison.added.length + routineComparison.removed.length + routineComparison.modified.length,
-        modulesChanged: moduleComparison.added.length + moduleComparison.removed.length + moduleComparison.modified.length,
-      },
-    };
-
+    const result = await compareFiles(supabase, file1Id, file2Id, version1Id, version2Id);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Compare error:", error);
@@ -106,6 +129,84 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function handleFolderComparison(
+  supabase: SupabaseClient,
+  folder1Id: string,
+  folder2Id: string
+) {
+  // Fetch folder metadata
+  const [folder1Result, folder2Result] = await Promise.all([
+    supabase.from("project_folders").select("id, name, project_id").eq("id", folder1Id).single(),
+    supabase.from("project_folders").select("id, name, project_id").eq("id", folder2Id).single(),
+  ]);
+
+  if (folder1Result.error || folder2Result.error) {
+    return NextResponse.json({ error: "One or both folders not found" }, { status: 404 });
+  }
+
+  // Fetch all completed files in both folders
+  const { data: allFiles } = await supabase
+    .from("project_files")
+    .select("id, file_name, folder_id")
+    .in("folder_id", [folder1Id, folder2Id])
+    .eq("parsing_status", "completed");
+
+  const files = allFiles || [];
+  const folder1Files = files.filter((f) => f.folder_id === folder1Id);
+  const folder2Files = files.filter((f) => f.folder_id === folder2Id);
+
+  // Match files by file_name
+  const folder1Map = new Map(folder1Files.map((f) => [f.file_name, f]));
+  const folder2Map = new Map(folder2Files.map((f) => [f.file_name, f]));
+
+  const matchedPairs: Array<{ fileName: string; file1Id: string; file2Id: string }> = [];
+  const unmatchedFiles: Array<{ fileName: string; fileId: string; side: "left" | "right" }> = [];
+
+  for (const [name, file] of folder1Map) {
+    const match = folder2Map.get(name);
+    if (match) {
+      matchedPairs.push({ fileName: name, file1Id: file.id, file2Id: match.id });
+    } else {
+      unmatchedFiles.push({ fileName: name, fileId: file.id, side: "left" });
+    }
+  }
+
+  for (const [name, file] of folder2Map) {
+    if (!folder1Map.has(name)) {
+      unmatchedFiles.push({ fileName: name, fileId: file.id, side: "right" });
+    }
+  }
+
+  // Compare all matched pairs in parallel
+  const comparisons = await Promise.all(
+    matchedPairs.map(async (pair) => ({
+      fileName: pair.fileName,
+      file1Id: pair.file1Id,
+      file2Id: pair.file2Id,
+      result: await compareFiles(supabase, pair.file1Id, pair.file2Id),
+    }))
+  );
+
+  const filesWithChanges = comparisons.filter((c) => c.result.summary.totalChanges > 0).length;
+  const totalChanges = comparisons.reduce((sum, c) => sum + c.result.summary.totalChanges, 0);
+
+  return NextResponse.json({
+    type: "folder",
+    folder1Name: folder1Result.data.name,
+    folder2Name: folder2Result.data.name,
+    comparisons,
+    unmatchedFiles,
+    summary: {
+      totalFiles: folder1Files.length + folder2Files.length,
+      matchedFiles: matchedPairs.length,
+      unmatchedLeft: unmatchedFiles.filter((f) => f.side === "left").length,
+      unmatchedRight: unmatchedFiles.filter((f) => f.side === "right").length,
+      filesWithChanges,
+      totalChanges,
+    },
+  });
 }
 
 interface Tag {

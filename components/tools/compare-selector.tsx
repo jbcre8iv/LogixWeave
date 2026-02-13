@@ -174,7 +174,8 @@ function FileBrowserPanel({
               {projects.map((project) => {
                 const isExpanded = expandedProjects.has(project.id);
                 const folders = project.project_folders || [];
-                const rootFiles = project.project_files.filter((f) => !f.folder_id);
+                const folderIds = new Set(folders.map((f) => f.id));
+                const rootFiles = project.project_files.filter((f) => !f.folder_id || !folderIds.has(f.folder_id));
                 const folderFiles = (folderId: string) =>
                   project.project_files.filter((f) => f.folder_id === folderId);
 
