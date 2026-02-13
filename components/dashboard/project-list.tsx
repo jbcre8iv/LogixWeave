@@ -831,7 +831,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
 
           {/* Shared with me section */}
           {sharedProjects.length > 0 && (
-            <div className="space-y-3">
+            <div id="shared-with-me" className="space-y-3 scroll-mt-6">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -908,7 +908,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
 
           {/* Shared with me section */}
           {sharedProjects.length > 0 && (
-            <div className="space-y-3">
+            <div id="shared-with-me" className="space-y-3 scroll-mt-6">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">

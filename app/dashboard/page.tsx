@@ -7,7 +7,13 @@ import { FolderOpen, Plus, ArrowRight, Users, Mail } from "lucide-react";
 import { PendingInvites } from "@/components/dashboard/pending-invites";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const { page: pageParam } = await searchParams;
+  const activityPage = Math.max(1, parseInt(pageParam || "1", 10));
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -56,37 +62,37 @@ export default async function DashboardPage() {
       </div>
 
       <div className={`grid gap-4 md:grid-cols-2 ${pendingInvitesCount ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
-        {/* Blue - Total Projects */}
-        <Card className="border-l-4 border-l-[#3B82F6] bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-            <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2">
-              <FolderOpen className="h-4 w-4 text-[#3B82F6]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{projectCount || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Active projects in workspace
-            </p>
-          </CardContent>
-        </Card>
+        {/* Total Projects */}
+        <Link href="/dashboard/projects">
+          <Card className="h-full transition-colors hover:bg-accent/50 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{projectCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Active projects in workspace
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        {/* Indigo - Shared with Me */}
-        <Card className="border-l-4 border-l-[#6366F1] bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-950/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Shared with Me</CardTitle>
-            <div className="rounded-full bg-indigo-100 dark:bg-indigo-900/30 p-2">
-              <Users className="h-4 w-4 text-[#6366F1]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sharedCount || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Shared projects
-            </p>
-          </CardContent>
-        </Card>
+        {/* Shared with Me */}
+        <Link href="/dashboard/projects#shared-with-me">
+          <Card className="h-full transition-colors hover:bg-accent/50 cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Shared with Me</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{sharedCount || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Shared projects
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Amber - Pending Invites (only shown if count > 0) */}
         {pendingInvitesCount ? (
@@ -109,9 +115,6 @@ export default async function DashboardPage() {
 
       {/* Pending Invites - shows if user has any */}
       <PendingInvites />
-
-      {/* Recent Activity - shows if there's any activity */}
-      <RecentActivity />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -249,6 +252,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Activity - shows if there's any activity */}
+      <RecentActivity page={activityPage} />
     </div>
   );
 }

@@ -90,7 +90,9 @@ function formatTime(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-export async function RecentActivity() {
+const PAGE_SIZE = 25;
+
+export async function RecentActivity({ page = 1 }: { page?: number }) {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -121,7 +123,8 @@ export async function RecentActivity() {
   }
 
   // Get recent activity across all accessible projects
-  const { data: rawActivities } = await supabase
+  const offset = (page - 1) * PAGE_SIZE;
+  const { data: rawActivities, count: totalCount } = await supabase
     .from("project_activity_log")
     .select(`
       id,
@@ -132,14 +135,16 @@ export async function RecentActivity() {
       target_name,
       created_at,
       projects:project_id(name)
-    `)
+    `, { count: "exact" })
     .in("project_id", projectIds)
     .order("created_at", { ascending: false })
-    .limit(10);
+    .range(offset, offset + PAGE_SIZE - 1);
 
-  if (!rawActivities || rawActivities.length === 0) {
+  if (!rawActivities || (rawActivities.length === 0 && page === 1)) {
     return null;
   }
+
+  const totalPages = Math.ceil((totalCount || 0) / PAGE_SIZE);
 
   // Look up display names for unique user IDs
   const userIds = [...new Set(rawActivities.map(a => a.user_id).filter(Boolean))] as string[];
@@ -176,7 +181,7 @@ export async function RecentActivity() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => {
+          {(activities || []).map((activity) => {
             const typedActivity = activity as unknown as ActivityItem;
             const projectName = typedActivity.projects?.name || "Unknown Project";
 
@@ -210,6 +215,29 @@ export async function RecentActivity() {
             );
           })}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t mt-4">
+            <p className="text-sm text-muted-foreground">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex gap-2">
+              {page > 1 ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/dashboard?page=${page - 1}`}>Previous</Link>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" disabled>Previous</Button>
+              )}
+              {page < totalPages ? (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/dashboard?page=${page + 1}`}>Next</Link>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" disabled>Next</Button>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
