@@ -456,34 +456,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </div>
               </div>
             )}
-            {(tagCount > 0 || routineCount > 0 || moduleCount > 0) && (
-              <div className="pt-4 space-y-2">
-                {tagCount > 0 && (
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href={`/dashboard/projects/${projectId}/tags`}>
-                      <Tags className="mr-2 h-4 w-4" />
-                      Browse Tags
-                    </Link>
-                  </Button>
-                )}
-                {routineCount > 0 && (
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href={`/dashboard/projects/${projectId}/routines`}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Browse Routines
-                    </Link>
-                  </Button>
-                )}
-                {moduleCount > 0 && (
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href={`/dashboard/projects/${projectId}/io-mapping`}>
-                      <HardDrive className="mr-2 h-4 w-4" />
-                      Explore I/O
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
