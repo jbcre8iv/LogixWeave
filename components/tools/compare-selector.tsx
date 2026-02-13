@@ -237,7 +237,7 @@ function FileBrowserPanel({
                                       <span className="truncate flex-1">{file.file_name}</span>
                                       {(file.version_count ?? 1) > 1 && (
                                         <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 flex-shrink-0">
-                                          v{file.version_count}
+                                          v{selectedFileId === file.id && selectedVersion != null ? selectedVersion : file.version_count}
                                         </Badge>
                                       )}
                                       {selectedFileId === file.id && (
@@ -267,7 +267,7 @@ function FileBrowserPanel({
                             <span className="truncate flex-1">{file.file_name}</span>
                             {(file.version_count ?? 1) > 1 && (
                               <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 flex-shrink-0">
-                                v{file.version_count}
+                                v{selectedFileId === file.id && selectedVersion != null ? selectedVersion : file.version_count}
                               </Badge>
                             )}
                             {selectedFileId === file.id && (
