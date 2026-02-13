@@ -24,7 +24,10 @@ interface ExplainChatProps {
   projectId: string;
   routineName: string;
   analysisContext: ExplanationResult;
+  onMessagesChange?: (messages: ChatMessage[]) => void;
 }
+
+export type { ChatMessage };
 
 function generateSuggestions(context: ExplanationResult): string[] {
   const suggestions: string[] = [];
@@ -47,6 +50,7 @@ export function ExplainChat({
   projectId,
   routineName,
   analysisContext,
+  onMessagesChange,
 }: ExplainChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -60,7 +64,8 @@ export function ExplainChat({
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+    onMessagesChange?.(messages);
+  }, [messages, onMessagesChange]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;

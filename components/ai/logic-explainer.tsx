@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Loader2, Sparkles, CheckCircle, AlertCircle, Download, ChevronDown, FileText, FileType } from "lucide-react";
 import { jsPDF } from "jspdf";
-import { ExplainChat } from "@/components/ai/explain-chat";
+import { ExplainChat, type ChatMessage } from "@/components/ai/explain-chat";
 import { AILoading } from "@/components/ai/ai-loading";
 
 interface Routine {
@@ -125,6 +125,11 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
   const [result, setResult] = useState<ExplanationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  const handleChatMessagesChange = useCallback((messages: ChatMessage[]) => {
+    setChatMessages(messages);
+  }, []);
 
   const analyzeRoutine = async () => {
     if (!selectedRoutine) return;
@@ -211,6 +216,18 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
       lines.push("");
     }
 
+    if (chatMessages.length > 0) {
+      lines.push("## Follow-up Q&A");
+      chatMessages.forEach((msg) => {
+        if (msg.role === "user") {
+          lines.push(`**Q:** ${msg.content}`);
+        } else {
+          lines.push(`**A:** ${msg.content}`);
+        }
+        lines.push("");
+      });
+    }
+
     const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
     downloadBlob(blob, `${selectedRoutine}-analysis.md`);
   };
@@ -237,6 +254,12 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
     if (result.potentialIssues?.length) {
       result.potentialIssues.forEach((issue) => {
         rows.push(["Issue", "", issue]);
+      });
+    }
+
+    if (chatMessages.length > 0) {
+      chatMessages.forEach((msg) => {
+        rows.push(["Follow-up", msg.role === "user" ? "Question" : "Answer", msg.content]);
       });
     }
 
@@ -347,6 +370,27 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
       result.potentialIssues.forEach((issue) => {
         addWrappedText(`• ${issue}`, margin, 11);
         y += 3;
+      });
+    }
+
+    // Follow-up Q&A
+    if (chatMessages.length > 0) {
+      addPageIfNeeded(20);
+      y += 3;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text("Follow-up Q&A", margin, y);
+      y += 8;
+      chatMessages.forEach((msg) => {
+        addPageIfNeeded(14);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        const label = msg.role === "user" ? "Q: " : "A: ";
+        doc.text(label, margin, y);
+        const labelWidth = doc.getTextWidth(label);
+        doc.setFont("helvetica", "normal");
+        addWrappedText(msg.content, margin, 11, labelWidth);
+        y += 4;
       });
     }
 
@@ -523,6 +567,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
             projectId={projectId}
             routineName={selectedRoutine}
             analysisContext={result}
+            onMessagesChange={handleChatMessagesChange}
           />
         </div>
       )}
