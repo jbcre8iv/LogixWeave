@@ -20,6 +20,8 @@ interface IOPageProps {
 
 const PAGE_SIZE = 50;
 
+export const dynamic = "force-dynamic";
+
 export default async function IOPage({ params, searchParams }: IOPageProps) {
   const { projectId } = await params;
   const { search, catalogNumber, parentModule, page: pageParam, from: fromParam } = await searchParams;
