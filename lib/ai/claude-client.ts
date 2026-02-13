@@ -219,6 +219,7 @@ function extractPartialSearch(text: string): SearchResult | null {
 
 /**
  * Strip markdown artifacts from a raw response for use as a plain-text fallback.
+ * If the response looks like JSON, extract string values to produce readable prose.
  */
 function stripMarkdownArtifacts(text: string): string {
   const cleaned = text
@@ -226,11 +227,28 @@ function stripMarkdownArtifacts(text: string): string {
     .replace(/```/g, "")
     .trim();
 
-  // If the entire response is a JSON blob, strip JSON syntax to get readable text
-  if (cleaned.startsWith("{")) {
+  // If the entire response is a JSON blob, extract string values as readable text
+  if (cleaned.startsWith("{") || cleaned.startsWith("[")) {
+    // Pull all JSON string values (skip keys) to build readable text
+    const values: string[] = [];
+    const valuePattern = /:\s*"((?:[^"\\]|\\.)*)"/g;
+    let m;
+    while ((m = valuePattern.exec(cleaned)) !== null) {
+      const val = m[1]
+        .replace(/\\"/g, '"')
+        .replace(/\\n/g, "\n")
+        .replace(/\\\\/g, "\\")
+        .trim();
+      if (val.length > 5) values.push(val);
+    }
+    if (values.length > 0) {
+      return values.join("\n\n");
+    }
+    // Fallback: strip all JSON syntax
     return cleaned
       .replace(/"[a-zA-Z]+"\s*:/g, "")
-      .replace(/[{}[\]",]/g, " ")
+      .replace(/[{}[\]"]/g, "")
+      .replace(/,\s*/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -324,13 +342,7 @@ Provide your analysis as JSON with this structure:
     if (partial) return partial;
 
     return {
-      summary: textContent.text
-        .replace(/```(?:json)?\s*/g, "")
-        .replace(/```/g, "")
-        .replace(/"[a-zA-Z]+"\s*:/g, "")
-        .replace(/[{}[\]",]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim(),
+      summary: stripMarkdownArtifacts(textContent.text),
       stepByStep: [],
       tagsPurpose: {},
     };

@@ -41,6 +41,84 @@ interface LogicExplainerProps {
   routines: Routine[];
 }
 
+/** Re-parse a cached result whose summary contains raw JSON from a failed extraction. */
+function sanitizeResult(raw: ExplanationResult): ExplanationResult {
+  const s = raw.summary;
+  // Detect raw JSON in the summary field
+  if (!s || (!s.trimStart().startsWith("```") && !s.includes('"summary":'))) {
+    return raw;
+  }
+
+  // Strip code fences
+  const cleaned = s.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+
+  // Try to parse the whole thing as a valid ExplanationResult
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (parsed && typeof parsed.summary === "string") {
+      return {
+        summary: parsed.summary,
+        stepByStep: Array.isArray(parsed.stepByStep) ? parsed.stepByStep : raw.stepByStep,
+        tagsPurpose: parsed.tagsPurpose && typeof parsed.tagsPurpose === "object" ? parsed.tagsPurpose : raw.tagsPurpose,
+        potentialIssues: Array.isArray(parsed.potentialIssues) ? parsed.potentialIssues : raw.potentialIssues,
+      };
+    }
+  } catch {
+    // continue
+  }
+
+  // Try brace scanning
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const parsed = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+      if (parsed && typeof parsed.summary === "string") {
+        return {
+          summary: parsed.summary,
+          stepByStep: Array.isArray(parsed.stepByStep) ? parsed.stepByStep : raw.stepByStep,
+          tagsPurpose: parsed.tagsPurpose && typeof parsed.tagsPurpose === "object" ? parsed.tagsPurpose : raw.tagsPurpose,
+          potentialIssues: Array.isArray(parsed.potentialIssues) ? parsed.potentialIssues : raw.potentialIssues,
+        };
+      }
+    } catch {
+      // continue
+    }
+  }
+
+  // Last resort: strip JSON syntax to get readable prose
+  const prose = cleaned
+    .replace(/"[a-zA-Z]+"\s*:/g, "")
+    .replace(/[{}[\]"]/g, "")
+    .replace(/,\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return { ...raw, summary: prose || raw.summary };
+}
+
+/** Renders plain text with paragraph and line-break support. */
+function FormattedText({ text, className }: { text: string; className?: string }) {
+  const paragraphs = text.split(/\n\n+/);
+  return (
+    <div className={`space-y-2 ${className ?? ""}`}>
+      {paragraphs.map((para, i) => {
+        const lines = para.split(/\n/);
+        return (
+          <p key={i}>
+            {lines.map((line, j) => (
+              <span key={j}>
+                {j > 0 && <br />}
+                {line}
+              </span>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
   const [selectedRoutine, setSelectedRoutine] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -71,7 +149,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
         throw new Error(data.error || "Failed to analyze routine");
       }
 
-      setResult(data.result);
+      setResult(sanitizeResult(data.result));
       setCached(data.cached);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -379,7 +457,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
               <CardTitle className="text-lg">Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>{result.summary}</p>
+              <FormattedText text={result.summary} className="text-sm" />
             </CardContent>
           </Card>
 
@@ -392,7 +470,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
                 <ol className="list-decimal list-inside space-y-2">
                   {result.stepByStep.map((step, idx) => (
                     <li key={idx} className="text-sm">
-                      {step}
+                      <FormattedText text={step} className="inline" />
                     </li>
                   ))}
                 </ol>
@@ -412,7 +490,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
                       <Badge variant="outline" className="font-mono shrink-0">
                         {tag}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">{purpose}</span>
+                      <FormattedText text={purpose} className="text-sm text-muted-foreground" />
                     </div>
                   ))}
                 </div>
@@ -432,7 +510,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
                 <ul className="list-disc list-inside space-y-1">
                   {result.potentialIssues.map((issue, idx) => (
                     <li key={idx} className="text-sm text-yellow-600 dark:text-yellow-400">
-                      {issue}
+                      <FormattedText text={issue} className="inline" />
                     </li>
                   ))}
                 </ul>
