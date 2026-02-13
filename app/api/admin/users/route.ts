@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logSecurityEvent } from "@/lib/security/monitor";
+import { logAdminAction } from "@/lib/audit";
+import { getClientIp } from "@/lib/security/get-client-ip";
 
 // DELETE - Delete a user and all their data
 export async function DELETE(request: Request) {
@@ -19,6 +22,14 @@ export async function DELETE(request: Request) {
       .single();
 
     if (!adminProfile?.is_platform_admin) {
+      logSecurityEvent({
+        eventType: "unauthorized_access",
+        severity: "high",
+        ip: getClientIp(request),
+        userId: user.id,
+        userEmail: user.email,
+        description: "Non-admin attempted DELETE on admin users endpoint",
+      });
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
@@ -84,6 +95,16 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Failed to delete user authentication" }, { status: 500 });
     }
 
+    logAdminAction({
+      adminId: user.id,
+      adminEmail: user.email || "",
+      action: "user_deleted",
+      targetId: userId,
+      metadata: {
+        orgsCleaned: (memberships || []).filter(m => m.role === "owner").length,
+      },
+    });
+
     return NextResponse.json({ success: true, message: "User deleted successfully" });
   } catch (error) {
     console.error("Delete user error:", error);
@@ -109,6 +130,14 @@ export async function PATCH(request: Request) {
       .single();
 
     if (!adminProfile?.is_platform_admin) {
+      logSecurityEvent({
+        eventType: "unauthorized_access",
+        severity: "high",
+        ip: getClientIp(request),
+        userId: user.id,
+        userEmail: user.email,
+        description: "Non-admin attempted PATCH on admin users endpoint",
+      });
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
@@ -142,6 +171,13 @@ export async function PATCH(request: Request) {
       .from("profiles")
       .update({ is_disabled: disabled })
       .eq("id", userId);
+
+    logAdminAction({
+      adminId: user.id,
+      adminEmail: user.email || "",
+      action: disabled ? "user_disabled" : "user_enabled",
+      targetId: userId,
+    });
 
     return NextResponse.json({
       success: true,

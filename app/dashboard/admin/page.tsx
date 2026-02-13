@@ -7,9 +7,11 @@ import {
   FolderOpen,
   FileText,
   Shield,
+  ShieldAlert,
   Building2,
   MessageSquare,
 } from "lucide-react";
+import Link from "next/link";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AdminProjectsTable } from "@/components/admin/admin-projects-table";
 import { AdminFeedbackTable } from "@/components/admin/admin-feedback-table";
@@ -218,6 +220,21 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Security Dashboard Link */}
+      <Link href="/dashboard/admin/security">
+        <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-primary" />
+              Security Dashboard
+            </CardTitle>
+            <CardDescription>
+              Monitor security events, blocked IPs, and admin audit logs
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </Link>
 
       {/* Users Table */}
       <Card>

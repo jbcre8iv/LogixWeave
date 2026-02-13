@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /auth/
+Allow: /
+
+Sitemap: https://logixweave.com/sitemap.xml

@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://vercel.live",
+              "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://vercel.live",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://vercel.live",
               "frame-src https://challenges.cloudflare.com https://vercel.live",
@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
               "img-src 'self' blob: data: https://*.supabase.co",
               "font-src 'self' https://fonts.gstatic.com",
+              "object-src 'none'",
+              "base-uri 'self'",
             ].join("; "),
           },
         ],

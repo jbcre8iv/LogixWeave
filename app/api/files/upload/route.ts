@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity-log";
+import { logSecurityEvent } from "@/lib/security/monitor";
+import { getClientIp } from "@/lib/security/get-client-ip";
 
 // Security: Allowed file types and max size
 const ALLOWED_EXTENSIONS = ["l5x", "l5k"];
@@ -55,6 +57,15 @@ export async function POST(request: Request) {
     if (extension === "l5x") {
       // L5X files should be XML
       if (!fileStart.includes("<?xml") && !fileStart.includes("<RSLogix5000Content")) {
+        logSecurityEvent({
+          eventType: "invalid_file_upload",
+          severity: "medium",
+          ip: getClientIp(request),
+          userId: user.id,
+          userEmail: user.email,
+          description: `Invalid L5X file content: ${file.name}`,
+          metadata: { fileName: file.name, fileSize: file.size },
+        });
         return NextResponse.json(
           { error: "Invalid L5X file format - file must be a valid Studio 5000 export" },
           { status: 400 }
@@ -64,6 +75,15 @@ export async function POST(request: Request) {
       // L5K files are text-based and should start with IE_VER or CONTROLLER
       const trimmedStart = fileStart.trimStart();
       if (!trimmedStart.startsWith("IE_VER") && !trimmedStart.startsWith("CONTROLLER")) {
+        logSecurityEvent({
+          eventType: "invalid_file_upload",
+          severity: "medium",
+          ip: getClientIp(request),
+          userId: user.id,
+          userEmail: user.email,
+          description: `Invalid L5K file content: ${file.name}`,
+          metadata: { fileName: file.name, fileSize: file.size },
+        });
         return NextResponse.json(
           { error: "Invalid L5K file format - file must be a valid Studio 5000 text export" },
           { status: 400 }

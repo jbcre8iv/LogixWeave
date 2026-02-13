@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 
 export type ActivityAction =
   | "project_created"
@@ -40,7 +40,7 @@ export async function logActivity({
   metadata,
 }: LogActivityParams): Promise<void> {
   try {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // If we have a userId but no email, try to fetch the email
     let email = userEmail;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeSearchInput } from "@/lib/security/sanitize";
 
 export async function GET(request: Request) {
   try {
@@ -58,7 +59,10 @@ export async function GET(request: Request) {
       .in("file_id", fileIds);
 
     if (search) {
-      query = query.ilike("name", `%${search}%`);
+      const sanitized = sanitizeSearchInput(search);
+      if (sanitized) {
+        query = query.ilike("name", `%${sanitized}%`);
+      }
     }
 
     if (scope) {

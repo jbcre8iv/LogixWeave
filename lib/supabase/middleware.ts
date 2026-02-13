@@ -1,18 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getAuthLimiter, getApiLimiter, getAiLimiter, checkRateLimit } from "@/lib/rate-limit";
-
-function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  return request.headers.get("x-real-ip") ?? "127.0.0.1";
-}
+import { getClientIp } from "@/lib/security/get-client-ip";
+import { isIpBlocked } from "@/lib/security/ip-blocklist";
+import { logSecurityEvent } from "@/lib/security/monitor";
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const ip = getClientIp(request);
+
+  // --- IP Blocklist Check (first operation, before everything else) ---
+  if (isIpBlocked(ip)) {
+    return NextResponse.json(
+      { error: "Access denied" },
+      { status: 403 }
+    );
+  }
 
   // --- Rate Limiting ---
   const authPaths = ["/login", "/signup", "/forgot-password", "/auth/callback"];
@@ -23,6 +26,13 @@ export async function updateSession(request: NextRequest) {
   if (isAuthPath) {
     const { success } = await checkRateLimit(getAuthLimiter(), `auth:${ip}`);
     if (!success) {
+      logSecurityEvent({
+        eventType: "rate_limit_exceeded",
+        severity: "medium",
+        ip,
+        description: `Auth rate limit exceeded for ${pathname}`,
+        metadata: { path: pathname },
+      });
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 }
@@ -31,6 +41,13 @@ export async function updateSession(request: NextRequest) {
   } else if (isAiApi) {
     const { success } = await checkRateLimit(getAiLimiter(), `ai:${ip}`);
     if (!success) {
+      logSecurityEvent({
+        eventType: "rate_limit_exceeded",
+        severity: "medium",
+        ip,
+        description: `AI API rate limit exceeded for ${pathname}`,
+        metadata: { path: pathname },
+      });
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 }
@@ -39,6 +56,13 @@ export async function updateSession(request: NextRequest) {
   } else if (isApi) {
     const { success } = await checkRateLimit(getApiLimiter(), `api:${ip}`);
     if (!success) {
+      logSecurityEvent({
+        eventType: "rate_limit_exceeded",
+        severity: "medium",
+        ip,
+        description: `API rate limit exceeded for ${pathname}`,
+        metadata: { path: pathname },
+      });
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 }
