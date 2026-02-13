@@ -366,22 +366,24 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         </p>
                       </div>
                     </div>
-                    {(file.current_version ?? 1) > 1 && (
-                      <Badge variant="outline" className="text-xs">
-                        v{file.current_version}
+                    <div className="flex items-center gap-2">
+                      {(file.current_version ?? 1) > 1 && (
+                        <Badge variant="outline" className="text-xs">
+                          v{file.current_version}
+                        </Badge>
+                      )}
+                      <Badge
+                        variant={
+                          file.parsing_status === "completed"
+                            ? "default"
+                            : file.parsing_status === "failed"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {file.parsing_status}
                       </Badge>
-                    )}
-                    <Badge
-                      variant={
-                        file.parsing_status === "completed"
-                          ? "default"
-                          : file.parsing_status === "failed"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {file.parsing_status}
-                    </Badge>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -7,9 +7,10 @@ import { Download, Loader2 } from "lucide-react";
 interface DownloadFileButtonProps {
   fileId: string;
   fileName: string;
+  currentVersion?: number;
 }
 
-export function DownloadFileButton({ fileId, fileName }: DownloadFileButtonProps) {
+export function DownloadFileButton({ fileId, fileName, currentVersion }: DownloadFileButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -25,7 +26,15 @@ export function DownloadFileButton({ fileId, fileName }: DownloadFileButtonProps
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileName;
+      // Add version suffix for multi-version files
+      let downloadName = fileName;
+      if (currentVersion && currentVersion > 1) {
+        const nameParts = fileName.split(".");
+        const extension = nameParts.pop();
+        const baseName = nameParts.join(".");
+        downloadName = `${baseName}_v${currentVersion}.${extension}`;
+      }
+      a.download = downloadName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

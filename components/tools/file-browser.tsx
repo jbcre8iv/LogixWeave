@@ -435,7 +435,7 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
                   versionCount={file.version_count || 1}
                   projectId={projectId}
                 />
-                <DownloadFileButton fileId={file.id} fileName={file.file_name} />
+                <DownloadFileButton fileId={file.id} fileName={file.file_name} currentVersion={file.current_version} />
                 <DeleteFileButton fileId={file.id} fileName={file.file_name} />
               </div>
             </div>
