@@ -110,6 +110,7 @@ function FolderBrowserPanel({
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
     new Set(projects.map((p) => p.id))
   );
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   const toggleProject = (projectId: string) => {
     const newExpanded = new Set(expandedProjects);
@@ -121,27 +122,29 @@ function FolderBrowserPanel({
     setExpandedProjects(newExpanded);
   };
 
+  const toggleFolder = (e: React.MouseEvent, folderId: string) => {
+    e.stopPropagation();
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(folderId)) {
+      newExpanded.delete(folderId);
+    } else {
+      newExpanded.add(folderId);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
   const getSelectedFolderInfo = () => {
     for (const project of projects) {
       const folder = (project.project_folders || []).find((f) => f.id === selectedFolderId);
       if (folder) {
-        return { folder, projectName: project.name };
+        const fileCount = project.project_files.filter((f) => f.folder_id === folder.id).length;
+        return { folder, projectName: project.name, fileCount };
       }
     }
     return null;
   };
 
   const selectedInfo = getSelectedFolderInfo();
-
-  // Count completed files per folder
-  const fileCountByFolder = new Map<string, number>();
-  for (const project of projects) {
-    for (const file of project.project_files) {
-      if (file.folder_id) {
-        fileCountByFolder.set(file.folder_id, (fileCountByFolder.get(file.folder_id) || 0) + 1);
-      }
-    }
-  }
 
   return (
     <div className="flex-1 min-w-0">
@@ -158,7 +161,7 @@ function FolderBrowserPanel({
                   <p className="text-xs text-muted-foreground truncate">{selectedInfo.projectName}</p>
                 </div>
                 <Badge variant="secondary" className="text-xs flex-shrink-0">
-                  {fileCountByFolder.get(selectedInfo.folder.id) || 0} files
+                  {selectedInfo.fileCount} files
                 </Badge>
               </div>
             ) : (
@@ -171,14 +174,15 @@ function FolderBrowserPanel({
             <div className="p-2">
               {projects.map((project) => {
                 const isExpanded = expandedProjects.has(project.id);
-                const folders = (project.project_folders || []).filter(
-                  (folder) => (fileCountByFolder.get(folder.id) || 0) > 0
-                );
-
-                if (folders.length === 0) return null;
+                const folders = project.project_folders || [];
+                const folderIds = new Set(folders.map((f) => f.id));
+                const folderFiles = (folderId: string) =>
+                  project.project_files.filter((f) => f.folder_id === folderId);
+                const rootFiles = project.project_files.filter((f) => !f.folder_id || !folderIds.has(f.folder_id));
 
                 return (
                   <div key={project.id} className="mb-1">
+                    {/* Project header */}
                     <button
                       onClick={() => toggleProject(project.id)}
                       className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-left"
@@ -191,36 +195,76 @@ function FolderBrowserPanel({
                       <FolderOpen className="h-4 w-4 text-amber-500" />
                       <span className="text-sm font-medium truncate">{project.name}</span>
                       <Badge variant="secondary" className="ml-auto text-xs">
-                        {folders.length} folders
+                        {project.project_files.length}
                       </Badge>
                     </button>
 
+                    {/* Project contents */}
                     {isExpanded && (
                       <div className="ml-4 border-l pl-2">
+                        {/* Folders — clickable to select, expandable to preview files */}
                         {folders.map((folder) => {
-                          const fileCount = fileCountByFolder.get(folder.id) || 0;
+                          const isFolderExpanded = expandedFolders.has(folder.id);
+                          const filesInFolder = folderFiles(folder.id);
+                          if (filesInFolder.length === 0) return null;
+
                           return (
-                            <button
-                              key={folder.id}
-                              onClick={() => onSelectFolder(folder.id, folder.name)}
-                              className={cn(
-                                "w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm",
-                                selectedFolderId === folder.id
-                                  ? "bg-primary/10 text-primary"
-                                  : "hover:bg-muted"
+                            <div key={folder.id} className="mb-1">
+                              <button
+                                onClick={() => onSelectFolder(folder.id, folder.name)}
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-2 py-1 rounded text-left",
+                                  selectedFolderId === folder.id
+                                    ? "bg-primary/10 text-primary"
+                                    : "hover:bg-muted"
+                                )}
+                              >
+                                <span
+                                  onClick={(e) => toggleFolder(e, folder.id)}
+                                  className="flex-shrink-0 p-0.5 -ml-0.5 rounded hover:bg-muted-foreground/10"
+                                >
+                                  {isFolderExpanded ? (
+                                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                  )}
+                                </span>
+                                <FolderOpen className="h-4 w-4 text-amber-500" />
+                                <span className="text-sm truncate flex-1">{folder.name}</span>
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 flex-shrink-0">
+                                  {filesInFolder.length}
+                                </Badge>
+                                {selectedFolderId === folder.id && (
+                                  <Check className="h-4 w-4 flex-shrink-0" />
+                                )}
+                              </button>
+                              {isFolderExpanded && (
+                                <div className="ml-5">
+                                  {filesInFolder.map((file) => (
+                                    <div
+                                      key={file.id}
+                                      className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground"
+                                    >
+                                      <FileText className="h-4 w-4 flex-shrink-0" />
+                                      <span className="truncate flex-1">{file.file_name}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               )}
-                            >
-                              <FolderOpen className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                              <span className="truncate flex-1">{folder.name}</span>
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
-                                {fileCount}
-                              </Badge>
-                              {selectedFolderId === folder.id && (
-                                <Check className="h-4 w-4 flex-shrink-0" />
-                              )}
-                            </button>
+                            </div>
                           );
                         })}
+
+                        {/* Root files — shown as non-interactive (not in any folder) */}
+                        {rootFiles.map((file) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground"
+                          >
+                            <FileText className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate flex-1">{file.file_name}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -544,14 +588,6 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
   const [result, setResult] = useState<FolderComparisonResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter to projects that have folders with files
-  const projectsWithFolders = projects.filter((p) => {
-    const folders = p.project_folders || [];
-    return folders.some((folder) =>
-      p.project_files.some((f) => f.folder_id === folder.id)
-    );
-  });
-
   const handleCompare = async () => {
     if (!folder1 || !folder2) return;
     if (folder1.id === folder2.id) {
@@ -579,14 +615,15 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
     }
   };
 
-  if (projectsWithFolders.length === 0) {
+  if (projects.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <FolderOpen className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No folders to compare</h3>
+          <GitCompare className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No files to compare</h3>
           <p className="text-muted-foreground mb-4 text-center max-w-md">
-            Create folders in your projects and add parsed L5X/L5K files to them to use folder comparison.
+            Upload L5X/L5K files to your projects first. Files need to be fully parsed
+            before they can be compared.
           </p>
         </CardContent>
       </Card>
@@ -599,13 +636,13 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
         <CardHeader>
           <CardTitle>Select Folders to Compare</CardTitle>
           <CardDescription>
-            Choose a folder from each panel to compare all matched files across them
+            Browse your projects and select a folder from each panel to compare all matched files
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col lg:flex-row gap-4">
             <FolderBrowserPanel
-              projects={projectsWithFolders}
+              projects={projects}
               selectedFolderId={folder1?.id ?? null}
               onSelectFolder={(id, name) => setFolder1({ id, name })}
               label="Base Folder (Original)"
@@ -635,7 +672,7 @@ export function FolderCompareSelector({ projects }: FolderCompareSelectorProps) 
             </div>
 
             <FolderBrowserPanel
-              projects={projectsWithFolders}
+              projects={projects}
               selectedFolderId={folder2?.id ?? null}
               onSelectFolder={(id, name) => setFolder2({ id, name })}
               label="Compare Folder (Modified)"
