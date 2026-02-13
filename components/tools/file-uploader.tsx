@@ -2,31 +2,32 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, FileText, X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface FileUploaderProps {
   projectId: string;
+  folderId?: string | null;
 }
 
 interface UploadingFile {
   file: File;
   status: "uploading" | "processing" | "completed" | "error";
   error?: string;
+  isNewVersion?: boolean;
+  version?: number;
 }
 
 // Allowed file types and max size (50MB)
 const ALLOWED_EXTENSIONS = ["l5x", "l5k"];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-export function FileUploader({ projectId }: FileUploaderProps) {
+export function FileUploader({ projectId, folderId }: FileUploaderProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [rejectionError, setRejectionError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -50,54 +51,40 @@ export function FileUploader({ projectId }: FileUploaderProps) {
     }
 
     try {
-      // Get user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return { error: "Not authenticated" };
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("projectId", projectId);
+      if (folderId) {
+        formData.append("folderId", folderId);
       }
 
-      // Upload to storage
-      const storagePath = `${projectId}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("project-files")
-        .upload(storagePath, file);
+      const response = await fetch("/api/files/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (uploadError) {
-        return { error: uploadError.message };
-      }
+      const data = await response.json();
 
-      // Create file record
-      const { data: fileRecord, error: dbError } = await supabase
-        .from("project_files")
-        .insert({
-          project_id: projectId,
-          file_name: file.name,
-          file_type: extension as "l5x" | "l5k",
-          file_size: file.size,
-          storage_path: storagePath,
-          uploaded_by: user.id,
-          parsing_status: "pending",
-        })
-        .select()
-        .single();
-
-      if (dbError) {
-        return { error: dbError.message };
+      if (!response.ok) {
+        return { error: data.error || "Upload failed" };
       }
 
       // Trigger parsing via API
       const parseResponse = await fetch("/api/files/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId: fileRecord.id }),
+        body: JSON.stringify({ fileId: data.file.id }),
       });
 
       if (!parseResponse.ok) {
-        // Parsing failed but file was uploaded
         console.error("Parsing request failed");
       }
 
-      return { success: true };
+      return {
+        success: true,
+        isNewVersion: data.isNewVersion,
+        version: data.version,
+      };
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Upload failed" };
     }
@@ -156,6 +143,8 @@ export function FileUploader({ projectId }: FileUploaderProps) {
                 ...uf,
                 status: result.error ? "error" : "completed",
                 error: result.error,
+                isNewVersion: result.isNewVersion,
+                version: result.version,
               }
             : uf
         )
@@ -235,6 +224,11 @@ export function FileUploader({ projectId }: FileUploaderProps) {
                   <p className="font-medium">{uf.file.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {(uf.file.size / 1024).toFixed(1)} KB
+                    {uf.isNewVersion && uf.version && (
+                      <span className="ml-1 text-primary">
+                        — updated to v{uf.version}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>

@@ -2,11 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
-import { FileUploader } from "@/components/tools/file-uploader";
-import { DownloadAllButton } from "@/components/tools/download-all-button";
-import { FileBrowser } from "@/components/tools/file-browser";
+import { FileManagementClient } from "@/components/tools/file-management-client";
 
 interface FilesPageProps {
   params: Promise<{ projectId: string }>;
@@ -57,44 +54,12 @@ export default async function FilesPage({ params }: FilesPageProps) {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Files</CardTitle>
-          <CardDescription>
-            Upload L5X or L5K files exported from Studio 5000. Files will be automatically
-            parsed after upload. To convert an .ACD project, open it in Studio 5000 and
-            use File &rarr; Export.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FileUploader projectId={projectId} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Uploaded Files</CardTitle>
-              <CardDescription>
-                {files.length} file{files.length !== 1 ? "s" : ""}{folders.length > 0 ? ` in ${folders.length} folder${folders.length !== 1 ? "s" : ""}` : ""} in this project
-              </CardDescription>
-            </div>
-            <DownloadAllButton
-              projectId={projectId}
-              projectName={project.name}
-              fileCount={files.length}
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <FileBrowser
-            projectId={projectId}
-            files={files}
-            folders={folders}
-          />
-        </CardContent>
-      </Card>
+      <FileManagementClient
+        projectId={projectId}
+        projectName={project.name}
+        files={files}
+        folders={folders}
+      />
     </div>
   );
 }

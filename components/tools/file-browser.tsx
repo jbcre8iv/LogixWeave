@@ -59,11 +59,16 @@ interface FileBrowserProps {
   projectId: string;
   files: FileItem[];
   folders: FolderItem[];
+  onFolderChange?: (folderId: string | null) => void;
 }
 
-export function FileBrowser({ projectId, files, folders }: FileBrowserProps) {
+export function FileBrowser({ projectId, files, folders, onFolderChange }: FileBrowserProps) {
   const router = useRouter();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const navigateToFolder = useCallback((folderId: string | null) => {
+    setCurrentFolderId(folderId);
+    onFolderChange?.(folderId);
+  }, [onFolderChange]);
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const [dragOverRoot, setDragOverRoot] = useState(false);
@@ -247,7 +252,7 @@ export function FileBrowser({ projectId, files, folders }: FileBrowserProps) {
       setSelectedFolder(null);
       // If we're inside the deleted folder, go back to root
       if (currentFolderId === selectedFolder.id) {
-        setCurrentFolderId(null);
+        navigateToFolder(null);
       }
       router.refresh();
     } catch (err) {
@@ -279,7 +284,7 @@ export function FileBrowser({ projectId, files, folders }: FileBrowserProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
           <button
-            onClick={() => setCurrentFolderId(null)}
+            onClick={() => navigateToFolder(null)}
             className={`flex items-center gap-1 hover:text-primary transition-colors ${
               !currentFolderId ? "text-foreground font-medium" : "text-muted-foreground"
             }`}
@@ -323,7 +328,7 @@ export function FileBrowser({ projectId, files, folders }: FileBrowserProps) {
               className={`group relative flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
                 dragOverFolderId === folder.id ? "border-primary bg-primary/10" : ""
               }`}
-              onClick={() => setCurrentFolderId(folder.id)}
+              onClick={() => navigateToFolder(folder.id)}
               onDragOver={(e) => handleDragOverFolder(e, folder.id)}
               onDragLeave={handleDragLeaveFolder}
               onDrop={(e) => handleDropOnFolder(e, folder.id)}

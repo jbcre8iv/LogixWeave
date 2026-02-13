@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     const file = formData.get("file") as File;
     const projectId = formData.get("projectId") as string;
     const versionComment = formData.get("comment") as string | null;
+    const folderId = formData.get("folderId") as string | null;
 
     if (!file || !projectId) {
       return NextResponse.json(
@@ -102,13 +103,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Check if a file with the same name already exists in this project
-    const { data: existingFile } = await supabase
+    // Check if a file with the same name already exists in this project (scoped to folder)
+    let existingFileQuery = supabase
       .from("project_files")
       .select("id, version_count, current_version")
       .eq("project_id", projectId)
-      .eq("file_name", file.name)
-      .single();
+      .eq("file_name", file.name);
+
+    if (folderId) {
+      existingFileQuery = existingFileQuery.eq("folder_id", folderId);
+    } else {
+      existingFileQuery = existingFileQuery.is("folder_id", null);
+    }
+
+    const { data: existingFile } = await existingFileQuery.single();
 
     // Upload to storage (with version number in path for uniqueness)
     const versionNum = existingFile ? (existingFile.version_count || 1) + 1 : 1;
@@ -198,6 +206,7 @@ export async function POST(request: Request) {
           parsing_status: "pending",
           current_version: 1,
           version_count: 1,
+          folder_id: folderId,
         })
         .select()
         .single();

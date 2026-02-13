@@ -63,6 +63,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         file_type,
         file_size,
         parsing_status,
+        current_version,
         created_at
       )
     `)
@@ -352,6 +353,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   file_type: string;
                   file_size: number;
                   parsing_status: string;
+                  current_version: number | null;
                   created_at: string;
                 }) => (
                   <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -364,6 +366,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         </p>
                       </div>
                     </div>
+                    {(file.current_version ?? 1) > 1 && (
+                      <Badge variant="outline" className="text-xs">
+                        v{file.current_version}
+                      </Badge>
+                    )}
                     <Badge
                       variant={
                         file.parsing_status === "completed"
