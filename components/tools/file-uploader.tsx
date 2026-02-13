@@ -155,11 +155,11 @@ export function FileUploader({ projectId, folderId }: FileUploaderProps) {
     router.refresh();
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     handleFiles(e.dataTransfer.files);
-  }, []);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
