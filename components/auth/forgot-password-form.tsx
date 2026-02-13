@@ -40,6 +40,11 @@ export function ForgotPasswordForm() {
       setError(error.message);
       setIsLoading(false);
       setCaptchaToken(null);
+      fetch("/api/auth/track-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "password_reset_failed", email, error: error.message }),
+      }).catch(() => {});
       return;
     }
 

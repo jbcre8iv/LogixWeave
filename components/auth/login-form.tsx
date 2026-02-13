@@ -54,6 +54,11 @@ export function LoginForm() {
       setError(error.message);
       setIsLoading(false);
       setCaptchaToken(null);
+      fetch("/api/auth/track-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login_failed", email, error: error.message }),
+      }).catch(() => {});
       return;
     }
 

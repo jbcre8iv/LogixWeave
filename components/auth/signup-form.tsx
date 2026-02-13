@@ -48,6 +48,7 @@ export function SignupForm() {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           full_name: fullName,
           first_name: firstName,
@@ -62,6 +63,11 @@ export function SignupForm() {
       setError(error.message);
       setIsLoading(false);
       setCaptchaToken(null);
+      fetch("/api/auth/track-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "signup_failed", email, error: error.message }),
+      }).catch(() => {});
       return;
     }
 
