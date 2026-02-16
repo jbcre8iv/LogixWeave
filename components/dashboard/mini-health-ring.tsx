@@ -45,7 +45,8 @@ export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
         />
       </svg>
       <span
-        className={`absolute text-[10px] font-bold leading-none ${color.text}`}
+        className={`absolute font-bold leading-none ${color.text}`}
+        style={{ fontSize: Math.round(size * 0.28) }}
       >
         {score}
       </span>

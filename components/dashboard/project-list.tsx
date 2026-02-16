@@ -155,7 +155,7 @@ function ProjectGridCard({
               </div>
               <div className="ml-auto">
                 {healthScore != null ? (
-                  <MiniHealthRing score={healthScore} />
+                  <MiniHealthRing score={healthScore} size={56} />
                 ) : (
                   <span className="text-[10px] text-muted-foreground/60">No Data</span>
                 )}
