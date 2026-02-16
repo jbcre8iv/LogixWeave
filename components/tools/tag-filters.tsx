@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,11 @@ export function TagFilters({ scopes, dataTypes }: TagFiltersProps) {
   const search = searchParams.get("search") || "";
   const scope = searchParams.get("scope") || "";
   const dataType = searchParams.get("dataType") || "";
+  const [searchValue, setSearchValue] = useState(search);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync local state when URL param changes externally
+  useEffect(() => { setSearchValue(search); }, [search]);
 
   const createQueryString = useCallback(
     (params: Record<string, string | null>) => {
@@ -54,6 +59,20 @@ export function TagFilters({ scopes, dataTypes }: TagFiltersProps) {
     router.push(`${pathname}?${queryString}`);
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateParam("search", value || null);
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setSearchValue("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    updateParam("search", null);
+  };
+
   const clearFilters = () => {
     const fromParam = searchParams.get("from");
     router.push(fromParam ? `${pathname}?from=${fromParam}` : pathname);
@@ -67,10 +86,19 @@ export function TagFilters({ scopes, dataTypes }: TagFiltersProps) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search tag names..."
-          value={search}
-          onChange={(e) => updateParam("search", e.target.value || null)}
-          className="pl-9"
+          value={searchValue}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="pl-9 pr-9"
         />
+        {searchValue && (
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <Select value={scope} onValueChange={(value) => updateParam("scope", value === "all" ? null : value)}>

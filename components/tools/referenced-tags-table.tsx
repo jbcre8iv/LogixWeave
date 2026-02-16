@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   Table,
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -66,6 +66,9 @@ export function ReferencedTagsTable({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(search || "");
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => { setSearchValue(search || ""); }, [search]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (page - 1) * pageSize + 1;
@@ -82,17 +85,30 @@ export function ReferencedTagsTable({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const pushSearch = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", "references");
     params.delete("page");
-    if (searchValue) {
-      params.set("search", searchValue);
+    if (value) {
+      params.set("search", value);
     } else {
       params.delete("search");
     }
     router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      pushSearch(value);
+    }, 300);
+  };
+
+  const clearSearch = () => {
+    setSearchValue("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    pushSearch("");
   };
 
   const handleUsageFilter = (value: string) => {
@@ -117,15 +133,24 @@ export function ReferencedTagsTable({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search tag names..."
                 value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                className="pl-9"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 pr-9"
               />
+              {searchValue && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <Select value={usage || "all"} onValueChange={handleUsageFilter}>
               <SelectTrigger className="w-[140px]">
@@ -138,8 +163,7 @@ export function ReferencedTagsTable({
                 <SelectItem value="read/write">Read/Write</SelectItem>
               </SelectContent>
             </Select>
-            <Button type="submit" variant="secondary">Search</Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
 
