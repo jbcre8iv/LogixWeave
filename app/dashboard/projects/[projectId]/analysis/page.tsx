@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, GitCompare, TagsIcon, MessageSquare, AlertTriangle, ArrowRight, FileCheck } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
+import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -54,6 +55,13 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
   };
 
   let exportSheets: ExportSheet[] = [];
+  let usageBreakdown = [
+    { name: "Read", value: 0 },
+    { name: "Write", value: 0 },
+    { name: "Both", value: 0 },
+  ];
+  let routineCoverageChart: Array<{ routine: string; coverage: number; commented: number; total: number }> = [];
+  let topTags: Array<{ name: string; count: number }> = [];
 
   if (fileIds.length > 0) {
     // Resolve effective rule set for naming rules
@@ -232,6 +240,43 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
         ],
       });
     }
+
+    // --- Compute chart data from already-fetched references and routineCoverage ---
+
+    // Tag usage breakdown (Read / Write / Both)
+    const usageCounts: Record<string, number> = { Read: 0, Write: 0, Both: 0 };
+    for (const ref of references) {
+      const type = ref.usage_type;
+      if (type === "Read" || type === "Write" || type === "Both") {
+        usageCounts[type]++;
+      } else {
+        usageCounts["Read"]++;
+      }
+    }
+    usageBreakdown = [
+      { name: "Read", value: usageCounts["Read"] },
+      { name: "Write", value: usageCounts["Write"] },
+      { name: "Both", value: usageCounts["Both"] },
+    ];
+
+    // Comment coverage by routine (reuse routineCoverage map already computed above)
+    routineCoverageChart = Array.from(routineCoverage.entries())
+      .map(([key, s]) => {
+        const routineName = key.split("::")[1] || key;
+        const pct = s.total > 0 ? Math.round((s.commented / s.total) * 100) : 0;
+        return { routine: routineName, coverage: pct, commented: s.commented, total: s.total };
+      })
+      .sort((a, b) => a.routine.localeCompare(b.routine));
+
+    // Top referenced tags (top 10 by frequency)
+    const tagRefCounts = new Map<string, number>();
+    for (const ref of references) {
+      tagRefCounts.set(ref.tag_name, (tagRefCounts.get(ref.tag_name) || 0) + 1);
+    }
+    topTags = Array.from(tagRefCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }));
   }
 
   const analysisTools = [
@@ -330,6 +375,13 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               </CardHeader>
             </Card>
           </div>
+
+          {/* Visual Charts */}
+          <AnalysisCharts
+            usageBreakdown={usageBreakdown}
+            routineCoverage={routineCoverageChart}
+            topTags={topTags}
+          />
 
           {/* Analysis Tools */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
