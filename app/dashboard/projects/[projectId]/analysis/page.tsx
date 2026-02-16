@@ -346,24 +346,30 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
 
           {/* Summary Stats */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Tags</CardDescription>
-                <CardTitle className="text-3xl">{stats.totalTags.toLocaleString()}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Total Rungs</CardDescription>
-                <CardTitle className="text-3xl">{stats.totalRungs.toLocaleString()}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Tag References</CardDescription>
-                <CardTitle className="text-3xl">{stats.totalReferences.toLocaleString()}</CardTitle>
-              </CardHeader>
-            </Card>
+            <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
+              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardDescription>Total Tags</CardDescription>
+                  <CardTitle className="text-3xl">{stats.totalTags.toLocaleString()}</CardTitle>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
+              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardDescription>Total Rungs</CardDescription>
+                  <CardTitle className="text-3xl">{stats.totalRungs.toLocaleString()}</CardTitle>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
+              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardDescription>Tag References</CardDescription>
+                  <CardTitle className="text-3xl">{stats.totalReferences.toLocaleString()}</CardTitle>
+                </CardHeader>
+              </Card>
+            </Link>
             <Link href={`/dashboard/projects/${projectId}/analysis/unused-tags`}>
               <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
                 <CardHeader className="pb-2">
