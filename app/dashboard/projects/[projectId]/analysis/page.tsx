@@ -7,6 +7,7 @@ import { ArrowLeft, GitCompare, ArrowRight, FileCheck } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
+import { AnimatedCount } from "@/components/analysis/animated-count";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -350,7 +351,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardHeader className="pb-2">
                   <CardDescription>Total Tags</CardDescription>
-                  <CardTitle className="text-3xl">{stats.totalTags.toLocaleString()}</CardTitle>
+                  <CardTitle className="text-3xl"><AnimatedCount value={stats.totalTags} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
@@ -358,7 +359,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardHeader className="pb-2">
                   <CardDescription>Total Rungs</CardDescription>
-                  <CardTitle className="text-3xl">{stats.totalRungs.toLocaleString()}</CardTitle>
+                  <CardTitle className="text-3xl"><AnimatedCount value={stats.totalRungs} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
@@ -366,7 +367,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
                 <CardHeader className="pb-2">
                   <CardDescription>Tag References</CardDescription>
-                  <CardTitle className="text-3xl">{stats.totalReferences.toLocaleString()}</CardTitle>
+                  <CardTitle className="text-3xl"><AnimatedCount value={stats.totalReferences} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
@@ -374,7 +375,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
                 <CardHeader className="pb-2">
                   <CardDescription>Unused Tags</CardDescription>
-                  <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}>{stats.unusedTags.toLocaleString()}</CardTitle>
+                  <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.unusedTags} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
@@ -382,7 +383,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
                 <CardHeader className="pb-2">
                   <CardDescription>Comment Coverage</CardDescription>
-                  <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}>{stats.commentCoverage}%</CardTitle>
+                  <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.commentCoverage} suffix="%" /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
