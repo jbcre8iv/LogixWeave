@@ -65,36 +65,38 @@ export function HealthScore({ stats }: HealthScoreProps) {
       <CardContent className="p-6">
         <div className="flex flex-col sm:flex-row items-center gap-8">
           {/* Circular progress ring */}
-          <div className="relative flex-shrink-0">
-            <svg width="140" height="140" viewBox="0 0 128 128">
-              <circle
-                cx="64"
-                cy="64"
-                r={radius}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="8"
-                className="text-muted/30"
-              />
-              <circle
-                cx="64"
-                cy="64"
-                r={radius}
-                fill="none"
-                strokeWidth="8"
-                strokeLinecap="round"
-                className={color.ring}
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                transform="rotate(-90 64 64)"
-                style={{ transition: "stroke-dashoffset 0.6s ease" }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`text-3xl font-bold ${color.text}`}>{overall}</span>
-              <span className={`text-sm font-semibold ${color.text}`}>{grade}</span>
+          <div className="flex flex-col items-center flex-shrink-0">
+            <div className="relative">
+              <svg width="140" height="140" viewBox="0 0 128 128">
+                <circle
+                  cx="64"
+                  cy="64"
+                  r={radius}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="8"
+                  className="text-muted/30"
+                />
+                <circle
+                  cx="64"
+                  cy="64"
+                  r={radius}
+                  fill="none"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  className={color.ring}
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                  transform="rotate(-90 64 64)"
+                  style={{ transition: "stroke-dashoffset 0.6s ease" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={`text-3xl font-bold ${color.text}`}>{overall}</span>
+                <span className={`text-sm font-semibold ${color.text}`}>{grade}</span>
+              </div>
             </div>
-            <p className={`text-xs text-center mt-1 ${color.text}`}>{feedback}</p>
+            <p className={`text-xs text-center mt-1 max-w-[160px] ${color.text}`}>{feedback}</p>
           </div>
 
           {/* Sub-metrics */}
