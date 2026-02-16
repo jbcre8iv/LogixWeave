@@ -55,9 +55,9 @@ export function HealthScore({ stats }: HealthScoreProps) {
   const offset = circumference - (overall / 100) * circumference;
 
   const metrics = [
-    { label: "Tag Efficiency", value: tagEfficiency, weight: "40%" },
-    { label: "Documentation", value: documentation, weight: "35%" },
-    { label: "Tag Usage", value: tagUsage, weight: "25%" },
+    { label: "Tag Efficiency", value: tagEfficiency },
+    { label: "Documentation", value: documentation },
+    { label: "Tag Usage", value: tagUsage },
   ];
 
   return (
@@ -111,7 +111,6 @@ export function HealthScore({ stats }: HealthScoreProps) {
                     <span className="text-muted-foreground">
                       <span className={`font-semibold ${metricColor.text}`}>{m.value}</span>
                       <span className="text-xs ml-1">/ 100</span>
-                      <span className="text-xs text-muted-foreground/60 ml-1.5">({m.weight})</span>
                     </span>
                   </div>
                   <Progress value={m.value} className={`h-2 ${metricColor.progress}`} />
