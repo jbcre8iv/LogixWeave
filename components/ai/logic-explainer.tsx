@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Loader2, Sparkles, CheckCircle, AlertCircle, Download, ChevronDown, FileText, FileType, Info } from "lucide-react";
 import { jsPDF } from "jspdf";
+import { addPdfBranding } from "@/lib/pdf-branding";
 import { ExplainChat, type ChatMessage } from "@/components/ai/explain-chat";
 import { AILoading } from "@/components/ai/ai-loading";
 
@@ -276,7 +277,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
     downloadBlob(blob, `${selectedRoutine}-analysis.csv`);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (!result) return;
 
     const doc = new jsPDF();
@@ -402,6 +403,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
       });
     }
 
+    await addPdfBranding(doc);
     doc.save(`${selectedRoutine}-analysis.pdf`);
   };
 

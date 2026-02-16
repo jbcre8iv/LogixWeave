@@ -20,6 +20,7 @@ import {
   Eye,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
+import { addPdfBranding } from "@/lib/pdf-branding";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -385,7 +386,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
     }
   }, [loading, result, fetchHistory]);
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (!result) return;
 
     const doc = new jsPDF();
@@ -600,6 +601,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
       }
     }
 
+    await addPdfBranding(doc);
     doc.save(`health-report-${projectName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.pdf`);
   };
 
