@@ -149,12 +149,25 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
   }
 
   const referencedTags = Array.from(refTagMap.entries())
-    .map(([name, info]) => ({
-      name,
-      referenceCount: info.count,
-      usageTypes: Array.from(info.usageTypes),
-      routines: Array.from(info.routines),
-    }))
+    .map(([name, info]) => {
+      const types = info.usageTypes;
+      // Collapse: if tag has both Read and Write (or explicit Both), show only "Both"
+      const hasRead = types.has("Read");
+      const hasWrite = types.has("Write");
+      const hasBoth = types.has("Both");
+      let resolvedTypes: string[];
+      if (hasBoth || (hasRead && hasWrite)) {
+        resolvedTypes = ["Read/Write"];
+      } else {
+        resolvedTypes = Array.from(types).filter((t) => t !== "Both");
+      }
+      return {
+        name,
+        referenceCount: info.count,
+        usageTypes: resolvedTypes,
+        routines: Array.from(info.routines),
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 
   // Paginate referenced tags
