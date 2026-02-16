@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, GitCompare, TagsIcon, MessageSquare, AlertTriangle, ArrowRight, FileCheck } from "lucide-react";
+import { ArrowLeft, GitCompare, ArrowRight, FileCheck } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
@@ -291,22 +291,6 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
       stat: `${stats.totalReferences.toLocaleString()} references`,
     },
     {
-      title: "Unused Tags",
-      description: "Find tags with no references in the ladder logic",
-      href: `/dashboard/projects/${projectId}/analysis/unused-tags`,
-      icon: TagsIcon,
-      stat: `${stats.unusedTags.toLocaleString()} unused`,
-      highlight: stats.unusedTags > 0,
-    },
-    {
-      title: "Comment Coverage",
-      description: "Check which rungs have comments and documentation",
-      href: `/dashboard/projects/${projectId}/analysis/comment-coverage`,
-      icon: MessageSquare,
-      stat: `${stats.commentCoverage}% coverage`,
-      highlight: stats.commentCoverage < 50,
-    },
-    {
       title: "Naming Validation",
       description: "Check tag names against organization naming rules",
       href: `/dashboard/projects/${projectId}/analysis/naming`,
@@ -380,18 +364,22 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
                 <CardTitle className="text-3xl">{stats.totalReferences.toLocaleString()}</CardTitle>
               </CardHeader>
             </Card>
-            <Card className={stats.unusedTags > 0 ? "border-yellow-500/50" : ""}>
-              <CardHeader className="pb-2">
-                <CardDescription>Unused Tags</CardDescription>
-                <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}>{stats.unusedTags.toLocaleString()}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card className={stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}>
-              <CardHeader className="pb-2">
-                <CardDescription>Comment Coverage</CardDescription>
-                <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}>{stats.commentCoverage}%</CardTitle>
-              </CardHeader>
-            </Card>
+            <Link href={`/dashboard/projects/${projectId}/analysis/unused-tags`}>
+              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
+                <CardHeader className="pb-2">
+                  <CardDescription>Unused Tags</CardDescription>
+                  <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}>{stats.unusedTags.toLocaleString()}</CardTitle>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
+              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
+                <CardHeader className="pb-2">
+                  <CardDescription>Comment Coverage</CardDescription>
+                  <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}>{stats.commentCoverage}%</CardTitle>
+                </CardHeader>
+              </Card>
+            </Link>
           </div>
 
           {/* Visual Charts */}
@@ -403,29 +391,20 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
           />
 
           {/* Analysis Tools */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             {analysisTools.map((tool) => (
               <Link key={tool.href} href={tool.href}>
-                <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${
-                  tool.highlight ? "border-yellow-500/50" : ""
-                }`}>
+                <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <tool.icon className="h-5 w-5 text-muted-foreground" />
-                        <CardTitle className="text-lg">{tool.title}</CardTitle>
-                      </div>
-                      {tool.highlight && (
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                      )}
+                    <div className="flex items-center gap-2">
+                      <tool.icon className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle className="text-lg">{tool.title}</CardTitle>
                     </div>
                     <CardDescription>{tool.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${
-                        tool.highlight ? "text-yellow-500" : "text-muted-foreground"
-                      }`}>
+                      <span className="text-sm font-medium text-muted-foreground">
                         {tool.stat}
                       </span>
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
