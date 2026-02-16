@@ -9,7 +9,7 @@ function getColor(score: number) {
   return { stroke: "stroke-red-500", text: "text-red-600 dark:text-red-400" };
 }
 
-export function MiniHealthRing({ score, size = 28 }: MiniHealthRingProps) {
+export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
   const color = getColor(score);
   const radius = 10;
   const circumference = 2 * Math.PI * radius;
@@ -45,7 +45,7 @@ export function MiniHealthRing({ score, size = 28 }: MiniHealthRingProps) {
         />
       </svg>
       <span
-        className={`absolute text-[8px] font-bold leading-none ${color.text}`}
+        className={`absolute text-[10px] font-bold leading-none ${color.text}`}
       >
         {score}
       </span>

@@ -240,7 +240,7 @@ function ProjectListTable({
           <col className="hidden md:table-column w-[30%]" />
           {showOwner && <col className="hidden sm:table-column w-[140px]" />}
           <col className="w-[70px]" />
-          <col className="w-[60px]" />
+          <col className="w-[70px]" />
           <col className="w-[100px]" />
           <col className="w-[50px]" />
         </colgroup>
@@ -331,7 +331,7 @@ function ProjectListTable({
                 <TableCell>{fileCount}</TableCell>
                 <TableCell>
                   {healthScoreMap[project.id] ? (
-                    <MiniHealthRing score={healthScoreMap[project.id].overall} size={24} />
+                    <MiniHealthRing score={healthScoreMap[project.id].overall} size={32} />
                   ) : (
                     <span className="text-[10px] text-muted-foreground/60">No Data</span>
                   )}
