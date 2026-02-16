@@ -49,12 +49,6 @@ export default async function AIPage({ params }: AIPageProps) {
       href: `/dashboard/projects/${projectId}/ai/search`,
       icon: Search,
     },
-    {
-      title: "Health Coach",
-      description: "Get AI recommendations to improve your project's health score",
-      href: `/dashboard/projects/${projectId}/ai/health`,
-      icon: HeartPulse,
-    },
   ];
 
   return (
@@ -105,7 +99,30 @@ export default async function AIPage({ params }: AIPageProps) {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* Featured: Health Coach */}
+          <Link href={`/dashboard/projects/${projectId}/ai/health`}>
+            <Card className="group bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border-amber-500/30 hover:border-amber-500/50 hover:shadow-md hover:shadow-amber-500/5 transition-all cursor-pointer">
+              <CardContent className="py-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15">
+                      <HeartPulse className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Health Coach</CardTitle>
+                      <CardDescription className="mt-0.5">
+                        Get a comprehensive health score with AI-powered recommendations to improve your project
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-amber-500 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 ml-4" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Other AI tools */}
+          <div className="grid gap-4 md:grid-cols-3">
             {aiTools.map((tool) => (
               <Link key={tool.href} href={tool.href}>
                 <Card className="h-full hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors cursor-pointer">

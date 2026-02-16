@@ -15,7 +15,9 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Download,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ import type {
 
 interface HealthCoachProps {
   projectId: string;
+  projectName: string;
 }
 
 interface HistoryEntry {
@@ -288,7 +291,7 @@ function ScoreBadge({ label, score }: { label: string; score: number }) {
   );
 }
 
-export function HealthCoach({ projectId }: HealthCoachProps) {
+export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
   const router = useRouter();
   const [result, setResult] = useState<HealthRecommendationResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -356,14 +359,243 @@ export function HealthCoach({ projectId }: HealthCoachProps) {
     }
   }, [loading, result, fetchHistory]);
 
+  const exportPDF = () => {
+    if (!result) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 20;
+
+    const addPageIfNeeded = (height: number) => {
+      if (y + height > doc.internal.pageSize.getHeight() - 20) {
+        doc.addPage();
+        y = 20;
+      }
+    };
+
+    const addWrappedText = (text: string, x: number, fontSize: number, indent = 0) => {
+      doc.setFontSize(fontSize);
+      const availWidth = maxWidth - indent;
+      const lineHeight = fontSize * 0.5;
+      const words = text.split(" ");
+      let line = "";
+
+      for (const word of words) {
+        const testLine = line ? `${line} ${word}` : word;
+        if (doc.getTextWidth(testLine) > availWidth && line) {
+          addPageIfNeeded(lineHeight);
+          doc.text(line, x + indent, y);
+          y += lineHeight;
+          line = word;
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) {
+        addPageIfNeeded(lineHeight);
+        doc.text(line, x + indent, y);
+        y += lineHeight;
+      }
+    };
+
+    const weightLabels: Record<string, string> = {
+      tagEfficiency: "40%",
+      documentation: "35%",
+      tagUsage: "25%",
+    };
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Project Health Report: ${projectName}`, margin, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      `Generated ${new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,
+      margin,
+      y
+    );
+    doc.setTextColor(0, 0, 0);
+    y += 10;
+
+    // Health Scores
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("Health Scores", margin, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const overallScore = result.sections.reduce((sum, s) => {
+      const pct = parseFloat(s.weight) / 100;
+      return sum + s.currentScore * pct;
+    }, 0);
+    doc.text(`Overall: ${Math.round(overallScore)}/100`, margin, y);
+    y += 5;
+    for (const section of result.sections) {
+      const label = metricLabels[section.metric] || section.metric;
+      const weight = weightLabels[section.metric] || section.weight;
+      doc.text(`${label} (${weight}): ${section.currentScore}/100`, margin, y);
+      y += 5;
+    }
+    y += 4;
+
+    // Summary
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("Summary", margin, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    addWrappedText(result.summary, margin, 10);
+    y += 4;
+
+    // Quick Wins
+    if (result.quickWins.length > 0) {
+      addPageIfNeeded(20);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text("Quick Wins", margin, y);
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      result.quickWins.forEach((win, i) => {
+        addWrappedText(`${i + 1}. ${win}`, margin, 10);
+        y += 2;
+      });
+      y += 2;
+    }
+
+    // Metric Sections
+    for (const section of result.sections) {
+      addPageIfNeeded(25);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+
+      const label = metricLabels[section.metric] || section.metric;
+      const weight = weightLabels[section.metric] || section.weight;
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label} — ${section.currentScore}/100 (${weight} weight)`, margin, y);
+      y += 8;
+
+      for (const rec of section.recommendations) {
+        addPageIfNeeded(20);
+        const priorityTag = rec.priority.toUpperCase();
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        addWrappedText(`[${priorityTag}] ${rec.title}`, margin, 10);
+        y += 1;
+
+        doc.setFont("helvetica", "normal");
+        addWrappedText(rec.description, margin, 9, 4);
+        y += 1;
+
+        doc.setFont("helvetica", "italic");
+        addWrappedText(`Impact: ${rec.impact}`, margin, 9, 4);
+        doc.setFont("helvetica", "normal");
+        y += 1;
+
+        if (rec.specificItems && rec.specificItems.length > 0) {
+          addWrappedText(`Specific items: ${rec.specificItems.join(", ")}`, margin, 9, 4);
+          y += 1;
+        }
+        y += 3;
+      }
+      y += 2;
+    }
+
+    // Score History
+    if (history.length > 0) {
+      addPageIfNeeded(30);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text("Score History", margin, y);
+      y += 8;
+
+      // Table header
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      const cols = [margin, margin + 35, margin + 55, margin + 75, margin + 95, margin + 115];
+      doc.text("Date", cols[0], y);
+      doc.text("Overall", cols[1], y);
+      doc.text("Tag Eff", cols[2], y);
+      doc.text("Docs", cols[3], y);
+      doc.text("Usage", cols[4], y);
+      doc.text("Change", cols[5], y);
+      y += 2;
+      doc.setDrawColor(180, 180, 180);
+      doc.line(margin, y, margin + 140, y);
+      y += 4;
+
+      doc.setFont("helvetica", "normal");
+      for (let i = 0; i < history.length; i++) {
+        addPageIfNeeded(6);
+        const entry = history[i];
+        const prev = history[i + 1];
+        const date = new Date(entry.created_at);
+        const dateStr = date.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        const scores = entry.health_scores;
+
+        doc.text(dateStr, cols[0], y);
+        if (scores) {
+          doc.text(String(scores.overall), cols[1], y);
+          doc.text(String(scores.tagEfficiency), cols[2], y);
+          doc.text(String(scores.documentation), cols[3], y);
+          doc.text(String(scores.tagUsage), cols[4], y);
+          if (prev?.health_scores) {
+            const diff = scores.overall - prev.health_scores.overall;
+            doc.text(diff > 0 ? `+${diff}` : String(diff), cols[5], y);
+          } else {
+            doc.text("—", cols[5], y);
+          }
+        }
+        y += 5;
+      }
+    }
+
+    doc.save(`health-report-${projectName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.pdf`);
+  };
+
   const handleNavigate = (path: string) => {
     router.push(path);
   };
 
   return (
     <div className="space-y-6">
-      {/* Run Analysis button */}
-      <div className="flex justify-end">
+      {/* Action buttons */}
+      <div className="flex justify-end gap-2">
+        {result && !loading && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            onClick={exportPDF}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"

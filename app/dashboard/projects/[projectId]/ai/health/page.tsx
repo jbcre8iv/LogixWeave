@@ -61,7 +61,7 @@ export default async function HealthPage({ params }: HealthPageProps) {
           </CardContent>
         </Card>
       ) : (
-        <HealthCoach projectId={projectId} />
+        <HealthCoach projectId={projectId} projectName={project.name} />
       )}
     </div>
   );
