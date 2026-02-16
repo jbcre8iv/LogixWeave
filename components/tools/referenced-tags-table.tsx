@@ -33,13 +33,15 @@ interface ReferencedTagsTableProps {
 }
 
 function UsageBadge({ type }: { type: string }) {
-  const variant = type === "Write"
-    ? "destructive"
-    : type === "Read"
-    ? "secondary"
-    : "default";
+  const label = type.toLowerCase();
+  const className =
+    label === "write"
+      ? "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30"
+      : label === "read"
+        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+        : "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30";
 
-  return <Badge variant={variant} className="text-xs">{type}</Badge>;
+  return <Badge variant="outline" className={`text-xs ${className}`}>{type}</Badge>;
 }
 
 export function ReferencedTagsTable({

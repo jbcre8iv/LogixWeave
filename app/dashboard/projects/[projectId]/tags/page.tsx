@@ -150,16 +150,20 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
 
   const referencedTags = Array.from(refTagMap.entries())
     .map(([name, info]) => {
-      const types = info.usageTypes;
-      // Collapse: if tag has both Read and Write (or explicit Both), show only "Both"
-      const hasRead = types.has("Read");
-      const hasWrite = types.has("Write");
-      const hasBoth = types.has("Both");
+      // Normalize to lowercase for comparison
+      const lowered = new Set(Array.from(info.usageTypes).map((t) => t.toLowerCase()));
+      const hasRead = lowered.has("read");
+      const hasWrite = lowered.has("write");
+      const hasBoth = lowered.has("both");
       let resolvedTypes: string[];
       if (hasBoth || (hasRead && hasWrite)) {
         resolvedTypes = ["Read/Write"];
+      } else if (hasRead) {
+        resolvedTypes = ["Read"];
+      } else if (hasWrite) {
+        resolvedTypes = ["Write"];
       } else {
-        resolvedTypes = Array.from(types).filter((t) => t !== "Both");
+        resolvedTypes = Array.from(info.usageTypes);
       }
       return {
         name,
