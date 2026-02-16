@@ -344,11 +344,10 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
     }
   }, [projectId]);
 
-  // Auto-trigger on mount
+  // Fetch history on mount (non-destructive), but don't auto-run analysis
   useEffect(() => {
-    fetchRecommendations();
     fetchHistory();
-  }, [fetchRecommendations, fetchHistory]);
+  }, [fetchHistory]);
 
   // Refresh history after analysis completes
   useEffect(() => {
@@ -583,30 +582,52 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
 
   return (
     <div className="space-y-6">
-      {/* Action buttons */}
-      <div className="flex justify-end gap-2">
-        {result && !loading && (
+      {/* Begin state — shown before first analysis */}
+      {!result && !loading && !error && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Sparkles className="h-10 w-10 text-amber-500 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">AI Health Analysis</h3>
+            <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
+              Analyze your project for unused tags, documentation gaps, and optimization opportunities.
+            </p>
+            <Button
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={fetchRecommendations}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Begin Analysis
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action buttons — shown after analysis */}
+      {(result || loading) && (
+        <div className="flex justify-end gap-2">
+          {result && !loading && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+              onClick={exportPDF}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
             className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-            onClick={exportPDF}
+            onClick={fetchRecommendations}
+            disabled={loading}
           >
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "Analyzing..." : "Run Analysis"}
           </Button>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-          onClick={fetchRecommendations}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          {loading ? "Analyzing..." : "Run Analysis"}
-        </Button>
-      </div>
+        </div>
+      )}
 
       {/* Loading */}
       {loading && <AILoading variant="health" />}

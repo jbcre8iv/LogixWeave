@@ -34,7 +34,7 @@ export default async function HealthPage({ params }: HealthPageProps) {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/projects/${projectId}/ai`}>
+          <Link href={`/dashboard/projects/${projectId}/analysis`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
