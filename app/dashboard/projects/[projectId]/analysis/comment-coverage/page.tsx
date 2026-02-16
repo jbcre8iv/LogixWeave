@@ -2,19 +2,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, AlertCircle, CheckCircle } from "lucide-react";
 import { ExportCSVButton } from "@/components/export-csv-button";
+import { CommentCoverageTable } from "@/components/analysis/comment-coverage-table";
 
 interface CommentCoveragePageProps {
   params: Promise<{ projectId: string }>;
@@ -71,7 +63,7 @@ export default async function CommentCoveragePage({ params }: CommentCoveragePag
   // Get all rungs
   const { data: rungs } = await supabase
     .from("parsed_rungs")
-    .select("program_name, routine_name, comment")
+    .select("program_name, routine_name, number, comment")
     .in("file_id", fileIds);
 
   if (!rungs || rungs.length === 0) {
@@ -158,16 +150,22 @@ export default async function CommentCoveragePage({ params }: CommentCoveragePag
       return a.routineName.localeCompare(b.routineName);
     });
 
+  // Build rung detail map for drill-down
+  const routineRungs: Record<string, { number: number; comment: string | null }[]> = {};
+  rungs.forEach((rung) => {
+    const key = `${rung.program_name}::${rung.routine_name}`;
+    if (!routineRungs[key]) {
+      routineRungs[key] = [];
+    }
+    routineRungs[key].push({ number: rung.number, comment: rung.comment });
+  });
+  // Sort rungs within each routine by rung number
+  Object.values(routineRungs).forEach((arr) => arr.sort((a, b) => a.number - b.number));
+
   const getCoverageColor = (percent: number) => {
     if (percent >= 80) return "text-green-500";
     if (percent >= 50) return "text-yellow-500";
     return "text-red-500";
-  };
-
-  const getCoverageBadge = (percent: number) => {
-    if (percent >= 80) return <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">{percent}%</Badge>;
-    if (percent >= 50) return <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20">{percent}%</Badge>;
-    return <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20">{percent}%</Badge>;
   };
 
   return (
@@ -241,79 +239,11 @@ export default async function CommentCoveragePage({ params }: CommentCoveragePag
         </CardContent>
       </Card>
 
-      {/* Coverage by Program */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Coverage by Program</CardTitle>
-          <CardDescription>
-            Comment coverage breakdown for each program
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Program</TableHead>
-                <TableHead className="text-right">Total Rungs</TableHead>
-                <TableHead className="text-right">Commented</TableHead>
-                <TableHead className="text-right">Coverage</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {byProgram.map((prog) => (
-                <TableRow key={prog.name}>
-                  <TableCell className="font-medium">{prog.name}</TableCell>
-                  <TableCell className="text-right">{prog.totalRungs}</TableCell>
-                  <TableCell className="text-right">{prog.commentedRungs}</TableCell>
-                  <TableCell className="text-right">
-                    {getCoverageBadge(prog.coveragePercent)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Coverage by Routine */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Coverage by Routine</CardTitle>
-          <CardDescription>
-            Detailed comment coverage for each routine
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="max-h-[500px] overflow-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Program</TableHead>
-                  <TableHead>Routine</TableHead>
-                  <TableHead className="text-right">Total Rungs</TableHead>
-                  <TableHead className="text-right">Commented</TableHead>
-                  <TableHead className="text-right">Coverage</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {byRoutine.map((routine) => (
-                  <TableRow key={`${routine.programName}::${routine.routineName}`}>
-                    <TableCell>
-                      <Badge variant="secondary">{routine.programName}</Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{routine.routineName}</TableCell>
-                    <TableCell className="text-right">{routine.totalRungs}</TableCell>
-                    <TableCell className="text-right">{routine.commentedRungs}</TableCell>
-                    <TableCell className="text-right">
-                      {getCoverageBadge(routine.coveragePercent)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <CommentCoverageTable
+        byProgram={byProgram}
+        byRoutine={byRoutine}
+        routineRungs={routineRungs}
+      />
     </div>
   );
 }
