@@ -224,14 +224,21 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags, proje
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value: string) => {
-                      const item = filteredUsage.find((d) => d.name === value);
-                      return (
-                        <span className="text-xs text-muted-foreground">
-                          {value} ({item?.value.toLocaleString() ?? 0})
-                        </span>
-                      );
-                    }}
+                    content={() => (
+                      <div className="flex items-center justify-center gap-4 mt-2">
+                        {["Read", "Write", "Read/Write"]
+                          .filter((name) => filteredUsage.some((d) => d.name === name))
+                          .map((name) => {
+                            const item = filteredUsage.find((d) => d.name === name);
+                            return (
+                              <div key={name} className="flex items-center gap-1.5">
+                                <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: USAGE_COLORS[name] }} />
+                                <span className="text-xs text-muted-foreground">{name} ({item?.value.toLocaleString() ?? 0})</span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -505,14 +512,21 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags, proje
                     <Legend
                       verticalAlign="bottom"
                       height={36}
-                      formatter={(value: string) => {
-                        const item = filteredUsage.find((d) => d.name === value);
-                        return (
-                          <span className="text-sm text-muted-foreground">
-                            {value} ({item?.value.toLocaleString() ?? 0})
-                          </span>
-                        );
-                      }}
+                      content={() => (
+                        <div className="flex items-center justify-center gap-4 mt-2">
+                          {["Read", "Write", "Read/Write"]
+                            .filter((name) => filteredUsage.some((d) => d.name === name))
+                            .map((name) => {
+                              const item = filteredUsage.find((d) => d.name === name);
+                              return (
+                                <div key={name} className="flex items-center gap-1.5">
+                                  <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: USAGE_COLORS[name] }} />
+                                  <span className="text-sm text-muted-foreground">{name} ({item?.value.toLocaleString() ?? 0})</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
                     />
                   </PieChart>
                 </ResponsiveContainer>
