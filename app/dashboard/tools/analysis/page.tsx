@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderOpen, BarChart3, ArrowRight } from "lucide-react";
+import { getProjectHealthScores } from "@/lib/health-scores";
+import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
 
 export default async function GlobalAnalysisPage() {
   const supabase = await createClient();
@@ -31,6 +33,10 @@ export default async function GlobalAnalysisPage() {
     })
     .filter((p) => p.completedFileCount > 0);
 
+  const healthScores = await getProjectHealthScores(
+    projectsWithData.map((p) => p.id)
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -46,9 +52,14 @@ export default async function GlobalAnalysisPage() {
             <Link key={project.id} href={`/dashboard/projects/${project.id}/analysis?from=tools`}>
               <Card className="h-full transition-colors hover:bg-accent/50">
                 <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                    </div>
+                    {healthScores.has(project.id) && (
+                      <MiniHealthRing score={healthScores.get(project.id)!.overall} />
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
