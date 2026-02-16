@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { HealthRecommendations } from "@/components/ai/health-recommendations";
 
 interface HealthScoreProps {
   projectId: string;
@@ -56,7 +55,6 @@ export function HealthScore({ projectId, stats }: HealthScoreProps) {
   const color = getColor(overall);
   const [animated, setAnimated] = useState(false);
   const [displayScore, setDisplayScore] = useState(0);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => setAnimated(true), 300);
@@ -151,25 +149,16 @@ export function HealthScore({ projectId, stats }: HealthScoreProps) {
                 </div>
               );
             })}
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mt-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-              onClick={() => setDialogOpen(true)}
+            <Link
+              href={`/dashboard/projects/${projectId}/ai/health`}
+              className="inline-flex items-center justify-center w-full mt-2 h-9 px-4 text-sm font-medium rounded-md border border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
             >
               <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
               Improve Score
-            </Button>
+            </Link>
           </div>
         </div>
       </CardContent>
-
-      <HealthRecommendations
-        projectId={projectId}
-        stats={stats}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
     </Card>
   );
 }

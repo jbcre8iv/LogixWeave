@@ -612,7 +612,13 @@ export async function recommendHealthImprovements(
       };
     }>;
   },
-  language: AILanguage = "en"
+  language: AILanguage = "en",
+  previousAnalyses?: Array<{
+    healthScores: { overall: number; tagEfficiency: number; documentation: number; tagUsage: number };
+    summary: string;
+    quickWins: string[];
+    analyzedAt: string;
+  }> | null,
 ): Promise<HealthRecommendationResult> {
   const client = getClient();
 
@@ -621,6 +627,24 @@ export async function recommendHealthImprovements(
   const limitedRoutines = routines.slice(0, 30);
 
   const languageInstruction = getLanguageInstruction(language);
+
+  const previousAnalysesSection = previousAnalyses && previousAnalyses.length > 0
+    ? `\nPrevious Health Analyses (${previousAnalyses.length} prior runs, most recent first):
+${previousAnalyses.map((a, i) => {
+  const scores = a.healthScores;
+  return `- Run ${previousAnalyses.length - i} (${a.analyzedAt}): Overall ${scores.overall}, TagEff ${scores.tagEfficiency}, Docs ${scores.documentation}, Usage ${scores.tagUsage}
+  Summary: ${a.summary.substring(0, 200)}${a.summary.length > 200 ? "..." : ""}
+  Quick wins: ${a.quickWins.slice(0, 3).join("; ")}`;
+}).join("\n")}
+
+When making recommendations, compare current scores to these previous runs:
+- Call out improvements by name (e.g., "Tag Efficiency improved from 65 to 78 since the last analysis")
+- Flag regressions (e.g., "Documentation score dropped from 72 to 60 — comment coverage has declined")
+- Note if previous quick wins appear addressed (e.g., "Previously recommended removing unused tag X — this has been done")
+- Flag negative trends (e.g., "Unused tags increased from 5 to 7 over the last 3 analyses")
+- Acknowledge positive trends to reinforce good behavior
+`
+    : "";
 
   const versionHistorySection = versionHistory && versionHistory.totalVersions > 1
     ? `\nFile Version History (${versionHistory.totalVersions} versions, currently v${versionHistory.latestVersion}):
@@ -663,7 +687,7 @@ ${topTags.slice(0, 10).map((t) => `- ${t.name}: ${t.count} references`).join("\n
 
 Routines (${routines.length} total, showing ${limitedRoutines.length}):
 ${limitedRoutines.map((r) => `- ${r.programName}/${r.name} (${r.type}, ${r.rungCount || 0} rungs)`).join("\n")}
-${versionHistorySection}
+${versionHistorySection}${previousAnalysesSection}
 Provide your analysis as JSON with this structure:
 {
   "summary": "2-3 sentence overall assessment of the project health",
@@ -705,7 +729,7 @@ Rules:
 - For tag efficiency issues, suggest "View Unused Tags" (tool: "unused-tags") or "Run Issue Finder" (tool: "issues")
 - For documentation issues, suggest "View Comment Coverage" (tool: "comment-coverage") or "Explain routine logic" (tool: "explainer")
 - For tag usage issues, suggest "View Tag Cross-Reference" (tool: "tag-xref")
-- Keep quickWins to truly easy, specific actions${versionHistory && versionHistory.totalVersions > 1 ? "\n- Include version trend observations in your summary and relevant section recommendations" : ""}
+- Keep quickWins to truly easy, specific actions${versionHistory && versionHistory.totalVersions > 1 ? "\n- Include version trend observations in your summary and relevant section recommendations" : ""}${previousAnalyses && previousAnalyses.length > 0 ? "\n- Include score trend comparisons in your summary and note which previous recommendations were addressed" : ""}
 - Limit to 2-4 recommendations per section${languageInstruction}`;
 
   const response = await client.messages.create({

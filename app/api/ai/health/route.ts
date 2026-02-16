@@ -291,7 +291,27 @@ export async function POST(request: Request) {
       };
     }
 
-    // Generate input hash
+    const serviceSupabase = await createServiceClient();
+
+    // Fetch previous health analyses for trend awareness
+    const { data: previousRuns } = await serviceSupabase
+      .from("ai_analysis_history")
+      .select("result, health_scores, created_at")
+      .eq("project_id", projectId)
+      .eq("analysis_type", "health")
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    const previousAnalyses = previousRuns && previousRuns.length > 0
+      ? previousRuns.map((run) => ({
+          healthScores: run.health_scores as { overall: number; tagEfficiency: number; documentation: number; tagUsage: number },
+          summary: (run.result as { summary?: string })?.summary || "",
+          quickWins: ((run.result as { quickWins?: string[] })?.quickWins || []),
+          analyzedAt: new Date(run.created_at).toLocaleDateString(),
+        }))
+      : null;
+
+    // Generate input hash (includes history count so cache invalidates when new history exists)
     const inputHash = generateHash(
       JSON.stringify(unusedTags.map((t) => t.name).slice(0, 50)) +
         JSON.stringify(
@@ -299,10 +319,9 @@ export async function POST(request: Request) {
         ) +
         JSON.stringify(usageCounts) +
         JSON.stringify(versionHistory?.versionSummaries?.length || 0) +
+        JSON.stringify(previousRuns?.length || 0) +
         language
     );
-
-    const serviceSupabase = await createServiceClient();
 
     // Cache check
     const fileId = fileIds[0];
@@ -319,7 +338,8 @@ export async function POST(request: Request) {
       .single();
 
     if (cached) {
-      await serviceSupabase.from("ai_usage_log").insert({
+      // Fire-and-forget: log usage + save to history
+      serviceSupabase.from("ai_usage_log").insert({
         user_id: user.id,
         organization_id: project.organization_id,
         analysis_type: "health",
@@ -327,7 +347,18 @@ export async function POST(request: Request) {
         output_tokens: 0,
         total_tokens: cached.tokens_used || 0,
         cached: true,
-      });
+      }).then(() => {});
+
+      serviceSupabase.from("ai_analysis_history").insert({
+        project_id: projectId,
+        file_id: fileId,
+        user_id: user.id,
+        analysis_type: "health",
+        target: "project-health",
+        result: cached.result,
+        health_scores: healthScores,
+        tokens_used: cached.tokens_used || 0,
+      }).then(() => {});
 
       return NextResponse.json({
         result: cached.result,
@@ -353,7 +384,8 @@ export async function POST(request: Request) {
         rungCount: r.rung_count || undefined,
       })),
       versionHistory,
-      language
+      language,
+      previousAnalyses
     );
 
     // Cache result (7-day TTL)
@@ -376,6 +408,18 @@ export async function POST(request: Request) {
       total_tokens: 2000,
       cached: false,
     });
+
+    // Save to history (fire-and-forget)
+    serviceSupabase.from("ai_analysis_history").insert({
+      project_id: projectId,
+      file_id: fileId,
+      user_id: user.id,
+      analysis_type: "health",
+      target: "project-health",
+      result: result as unknown as Record<string, unknown>,
+      health_scores: healthScores,
+      tokens_used: 2000,
+    }).then(() => {});
 
     return NextResponse.json({
       result,

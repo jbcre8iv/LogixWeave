@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Brain, Search, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowLeft, Brain, Search, AlertTriangle, Sparkles, ArrowRight, HeartPulse } from "lucide-react";
 
 interface AIPageProps {
   params: Promise<{ projectId: string }>;
@@ -48,6 +48,12 @@ export default async function AIPage({ params }: AIPageProps) {
       description: "Search your project using natural language queries",
       href: `/dashboard/projects/${projectId}/ai/search`,
       icon: Search,
+    },
+    {
+      title: "Health Coach",
+      description: "Get AI recommendations to improve your project's health score",
+      href: `/dashboard/projects/${projectId}/ai/health`,
+      icon: HeartPulse,
     },
   ];
 
@@ -99,7 +105,7 @@ export default async function AIPage({ params }: AIPageProps) {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {aiTools.map((tool) => (
               <Link key={tool.href} href={tool.href}>
                 <Card className="h-full hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors cursor-pointer">
