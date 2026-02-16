@@ -251,7 +251,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
+                  <Tooltip content={<CustomTooltip />} cursor={false} />
                   <Bar
                     dataKey="coverage"
                     radius={[0, 6, 6, 0]}
@@ -333,7 +333,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
+                  <Tooltip content={<CustomTooltip />} cursor={false} />
                   <Bar
                     dataKey="count"
                     radius={[0, 6, 6, 0]}
