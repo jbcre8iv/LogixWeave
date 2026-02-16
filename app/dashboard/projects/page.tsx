@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, FolderOpen } from "lucide-react";
@@ -32,7 +32,8 @@ export default async function ProjectsPage() {
   const activeProjectIds = activeProjects.map((p) => p.id);
   let healthScoreMap: Record<string, { overall: number; tagEfficiency: number; documentation: number; tagUsage: number }> = {};
   if (activeProjectIds.length > 0) {
-    const { data: healthRows } = await supabase
+    const serviceSupabase = await createServiceClient();
+    const { data: healthRows } = await serviceSupabase
       .from("ai_analysis_history")
       .select("project_id, health_scores")
       .eq("analysis_type", "health")
