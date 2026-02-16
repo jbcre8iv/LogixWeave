@@ -246,9 +246,11 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
     // Tag usage breakdown (Read / Write / Both)
     const usageCounts: Record<string, number> = { Read: 0, Write: 0, Both: 0 };
     for (const ref of references) {
-      const type = ref.usage_type;
-      if (type === "Read" || type === "Write" || type === "Both") {
-        usageCounts[type]++;
+      const type = ref.usage_type?.toLowerCase();
+      if (type === "write") {
+        usageCounts["Write"]++;
+      } else if (type === "both") {
+        usageCounts["Both"]++;
       } else {
         usageCounts["Read"]++;
       }
@@ -381,6 +383,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             usageBreakdown={usageBreakdown}
             routineCoverage={routineCoverageChart}
             topTags={topTags}
+            projectId={projectId}
           />
 
           {/* Analysis Tools */}

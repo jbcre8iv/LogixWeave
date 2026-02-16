@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -40,6 +41,7 @@ interface AnalysisChartsProps {
   usageBreakdown: UsageBreakdown[];
   routineCoverage: RoutineCoverage[];
   topTags: TopTag[];
+  projectId: string;
 }
 
 const COLLAPSED_LIMIT = 5;
@@ -110,9 +112,12 @@ function PieCenterLabel({ data }: { data: UsageBreakdown[] }) {
   );
 }
 
-export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: AnalysisChartsProps) {
+export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags, projectId }: AnalysisChartsProps) {
+  const router = useRouter();
   const [coverageExpanded, setCoverageExpanded] = useState(false);
   const [topTagsExpanded, setTopTagsExpanded] = useState(false);
+
+  const basePath = `/dashboard/projects/${projectId}/analysis`;
 
   const hasUsageData = usageBreakdown.some((d) => d.value > 0);
   const hasCoverageData = routineCoverage.length > 0;
@@ -156,6 +161,13 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     animationBegin={0}
                     animationDuration={800}
                     animationEasing="ease-out"
+                    style={{ cursor: "pointer" }}
+                    onClick={(_data, index) => {
+                      const segment = filteredUsage[index];
+                      if (segment) {
+                        router.push(`${basePath}/tag-xref?usageType=${segment.name.toLowerCase()}`);
+                      }
+                    }}
                     label={(props) => {
                       if (filteredUsage.length <= 1) return null;
                       const { value, cx: cxVal, cy: cyVal, midAngle: ma, outerRadius: or } = props as { value?: number; cx?: number; cy?: number; midAngle?: number; outerRadius?: number };
@@ -259,6 +271,10 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     animationBegin={0}
                     animationDuration={600}
                     animationEasing="ease-out"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      router.push(`${basePath}/comment-coverage`);
+                    }}
                   >
                     {visibleCoverage.map((entry) => (
                       <Cell key={entry.routine} fill={getCoverageColor(entry.coverage)} />
@@ -341,6 +357,13 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     animationBegin={0}
                     animationDuration={600}
                     animationEasing="ease-out"
+                    style={{ cursor: "pointer" }}
+                    onClick={(_data, index) => {
+                      const tag = visibleTopTags[index];
+                      if (tag) {
+                        router.push(`${basePath}/tag-xref?search=${encodeURIComponent(tag.name)}`);
+                      }
+                    }}
                   >
                     {visibleTopTags.map((_, i) => (
                       <Cell key={i} fill={TOP_TAG_COLORS[i % TOP_TAG_COLORS.length]} />
