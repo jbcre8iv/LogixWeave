@@ -45,7 +45,7 @@ export default async function AIPage({ params }: AIPageProps) {
     },
     {
       title: "Natural Language Search",
-      description: "Search your project using plain English queries",
+      description: "Search your project using natural language queries",
       href: `/dashboard/projects/${projectId}/ai/search`,
       icon: Search,
     },

@@ -96,7 +96,7 @@ export default function HomePage() {
                 <Sparkles className="h-10 w-10 text-amber-500 mb-2" />
                 <CardTitle>AI Assistant</CardTitle>
                 <CardDescription>
-                  Ask questions in plain English and get clear explanations of
+                  Ask questions in everyday language and get clear explanations of
                   ladder logic, potential issues, and program behavior.
                 </CardDescription>
               </CardHeader>
@@ -115,7 +115,7 @@ export default function HomePage() {
               </h2>
               <ul className="space-y-4">
                 {[
-                  "AI-powered logic explanations in plain English",
+                  "AI-powered logic explanations in everyday language",
                   "Find unused tags and potential issues automatically",
                   "Natural language search across your projects",
                   "Export documentation to CSV, PDF, or Markdown",

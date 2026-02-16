@@ -66,7 +66,7 @@ export default async function AISearchPage({ params }: SearchPageProps) {
           <CardHeader>
             <CardTitle>Natural Language Search</CardTitle>
             <CardDescription>
-              Search your project using plain English. For example: "Find tags related to pump control"
+              Search your project using natural language. For example: "Find tags related to pump control"
               or "Show me motor speed variables"
             </CardDescription>
           </CardHeader>
