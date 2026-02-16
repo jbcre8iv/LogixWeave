@@ -151,7 +151,7 @@ function RecommendationCard({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:hover:text-amber-300"
           onClick={() =>
             onNavigate(toolRoutes[rec.actionLink!.tool](projectId))
           }
@@ -219,7 +219,7 @@ export function HealthRecommendations({
       <DialogContent className="max-w-4xl max-h-[85vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="h-5 w-5 text-amber-500" />
             Improve Project Health
           </DialogTitle>
           <DialogDescription>

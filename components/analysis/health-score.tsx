@@ -154,10 +154,10 @@ export function HealthScore({ projectId, stats }: HealthScoreProps) {
             <Button
               variant="outline"
               size="sm"
-              className="w-full mt-2"
+              className="w-full mt-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
               onClick={() => setDialogOpen(true)}
             >
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
               Improve Score
             </Button>
           </div>

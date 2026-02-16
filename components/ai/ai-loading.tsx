@@ -52,8 +52,8 @@ export function AILoading({ variant }: AILoadingProps) {
         <div className="flex flex-col items-center gap-5">
           {/* Sparkle icon with glow */}
           <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ai-glow" />
-            <Sparkles className="h-8 w-8 text-primary animate-ai-glow relative" />
+            <div className="absolute inset-0 rounded-full bg-amber-500/20 animate-ai-glow" />
+            <Sparkles className="h-8 w-8 text-amber-500 animate-ai-glow relative" />
           </div>
 
           {/* Cycling status text */}
