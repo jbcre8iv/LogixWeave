@@ -350,7 +350,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                 <CardHeader className="pb-2 relative">
-                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Total Tags</CardDescription>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalTags} /></CardTitle>
                 </CardHeader>
@@ -359,7 +359,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                 <CardHeader className="pb-2 relative">
-                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Total Rungs</CardDescription>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalRungs} /></CardTitle>
                 </CardHeader>
@@ -368,7 +368,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                 <CardHeader className="pb-2 relative">
-                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Tag References</CardDescription>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalReferences} /></CardTitle>
                 </CardHeader>
@@ -377,7 +377,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             <Link href={`/dashboard/projects/${projectId}/analysis/unused-tags`}>
               <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
                 <CardHeader className="pb-2 relative">
-                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Unused Tags</CardDescription>
                   <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.unusedTags} /></CardTitle>
                 </CardHeader>
@@ -386,7 +386,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
               <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
                 <CardHeader className="pb-2 relative">
-                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Comment Coverage</CardDescription>
                   <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.commentCoverage} suffix="%" /></CardTitle>
                 </CardHeader>
@@ -409,8 +409,9 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
           <div className="grid gap-4 md:grid-cols-2 -mt-3">
             {analysisTools.map((tool) => (
               <Link key={tool.href} href={tool.href}>
-                <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
-                  <CardHeader>
+                <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                  <CardHeader className="relative">
+                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                     <div className="flex items-center gap-2">
                       <tool.icon className="h-5 w-5 text-muted-foreground" />
                       <CardTitle className="text-lg">{tool.title}</CardTitle>
@@ -418,12 +419,9 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
                     <CardDescription>{tool.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {tool.stat}
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {tool.stat}
+                    </span>
                   </CardContent>
                 </Card>
               </Link>
