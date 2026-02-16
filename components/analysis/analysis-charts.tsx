@@ -208,7 +208,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                 <BarChart
                   data={routineCoverage}
                   layout="vertical"
-                  margin={{ left: 0, right: 48, top: 4, bottom: 4 }}
+                  margin={{ left: 8, right: 48, top: 4, bottom: 4 }}
                 >
                   <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-muted/30" />
                   <XAxis
@@ -223,10 +223,10 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                   <YAxis
                     type="category"
                     dataKey="routine"
-                    width={130}
+                    width={150}
                     fontSize={11}
                     className="fill-muted-foreground"
-                    tickFormatter={(v: string) => v.length > 22 ? v.slice(0, 22) + "\u2026" : v}
+                    tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 20) + "\u2026" : v}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -269,7 +269,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                 <BarChart
                   data={topTags}
                   layout="vertical"
-                  margin={{ left: 0, right: 40, top: 4, bottom: 4 }}
+                  margin={{ left: 8, right: 40, top: 4, bottom: 4 }}
                 >
                   <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-muted/30" />
                   <XAxis
@@ -282,10 +282,10 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                   <YAxis
                     type="category"
                     dataKey="name"
-                    width={130}
+                    width={150}
                     fontSize={11}
                     className="fill-muted-foreground"
-                    tickFormatter={(v: string) => v.length > 22 ? v.slice(0, 22) + "\u2026" : v}
+                    tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 20) + "\u2026" : v}
                     axisLine={false}
                     tickLine={false}
                   />
