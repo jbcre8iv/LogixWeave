@@ -348,40 +348,45 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
           {/* Summary Stats */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
-              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
-                <CardHeader className="pb-2">
+              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                <CardHeader className="pb-2 relative">
+                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Total Tags</CardDescription>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalTags} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
             <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
-              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
-                <CardHeader className="pb-2">
+              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                <CardHeader className="pb-2 relative">
+                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Total Rungs</CardDescription>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalRungs} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
             <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
-              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
-                <CardHeader className="pb-2">
+              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                <CardHeader className="pb-2 relative">
+                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Tag References</CardDescription>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalReferences} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
             <Link href={`/dashboard/projects/${projectId}/analysis/unused-tags`}>
-              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
-                <CardHeader className="pb-2">
+              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
+                <CardHeader className="pb-2 relative">
+                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Unused Tags</CardDescription>
                   <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.unusedTags} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>
             <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
-              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
-                <CardHeader className="pb-2">
+              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
+                <CardHeader className="pb-2 relative">
+                  <ArrowRight className="absolute top-4 right-4 h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   <CardDescription>Comment Coverage</CardDescription>
                   <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.commentCoverage} suffix="%" /></CardTitle>
                 </CardHeader>
