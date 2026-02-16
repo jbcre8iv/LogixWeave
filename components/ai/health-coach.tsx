@@ -16,6 +16,7 @@ import {
   TrendingDown,
   Minus,
   Download,
+  Trash2,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { Card, CardContent } from "@/components/ui/card";
@@ -187,10 +188,12 @@ function HistoryEntryCard({
   entry,
   previousEntry,
   index,
+  onDelete,
 }: {
   entry: HistoryEntry;
   previousEntry?: HistoryEntry;
   index: number;
+  onDelete: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const scores = entry.health_scores;
@@ -243,6 +246,15 @@ function HistoryEntryCard({
                 )}
               </div>
             )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(entry.id);
+              }}
+              className="p-1 rounded-md text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
             {expanded ? (
               <ChevronUp className="h-4 w-4 text-muted-foreground" />
             ) : (
@@ -576,6 +588,19 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
     doc.save(`health-report-${projectName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.pdf`);
   };
 
+  const handleDeleteHistory = async (id: string) => {
+    try {
+      const res = await fetch(`/api/ai/health/history?id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setHistory((prev) => prev.filter((entry) => entry.id !== id));
+      }
+    } catch {
+      // Delete is non-critical
+    }
+  };
+
   const handleNavigate = (path: string) => {
     router.push(path);
   };
@@ -777,6 +802,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
                       entry={entry}
                       previousEntry={history[i + 1]}
                       index={i}
+                      onDelete={handleDeleteHistory}
                     />
                   ))}
                 </div>
