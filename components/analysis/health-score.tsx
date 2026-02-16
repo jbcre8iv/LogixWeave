@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
@@ -49,10 +50,32 @@ export function HealthScore({ stats }: HealthScoreProps) {
   const { overall, tagEfficiency, documentation, tagUsage } = computeScore(stats);
   const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
+  const [animated, setAnimated] = useState(false);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setAnimated(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    if (!animated) return;
+    const duration = 600;
+    const start = performance.now();
+    const step = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out curve
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayScore(Math.round(eased * overall));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [animated, overall]);
 
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (overall / 100) * circumference;
+  const offset = circumference - ((animated ? overall : 0) / 100) * circumference;
 
   const metrics = [
     { label: "Tag Efficiency (unused tags)", value: tagEfficiency },
@@ -92,7 +115,7 @@ export function HealthScore({ stats }: HealthScoreProps) {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className={`text-3xl font-bold ${color.text}`}>{overall}</span>
+                <span className={`text-3xl font-bold ${color.text}`}>{displayScore}</span>
                 <span className={`text-sm font-semibold ${color.text}`}>{grade}</span>
               </div>
             </div>
@@ -116,7 +139,7 @@ export function HealthScore({ stats }: HealthScoreProps) {
                       <span className="text-xs ml-1">/ 100</span>
                     </span>
                   </div>
-                  <Progress value={m.value} className={`h-2 ${metricColor.progress}`} />
+                  <Progress value={animated ? m.value : 0} className={`h-2 ${metricColor.progress}`} />
                 </div>
               );
             })}
