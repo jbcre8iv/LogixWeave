@@ -28,6 +28,27 @@ export default async function ProjectsPage() {
   const activeProjects = projects?.filter((p) => !p.is_archived) || [];
   const archivedProjects = projects?.filter((p) => p.is_archived) || [];
 
+  // Fetch latest health score per project
+  const activeProjectIds = activeProjects.map((p) => p.id);
+  let healthScoreMap: Record<string, { overall: number; tagEfficiency: number; documentation: number; tagUsage: number }> = {};
+  if (activeProjectIds.length > 0) {
+    const { data: healthRows } = await supabase
+      .from("ai_analysis_history")
+      .select("project_id, health_scores")
+      .eq("analysis_type", "health")
+      .in("project_id", activeProjectIds)
+      .order("created_at", { ascending: false });
+
+    if (healthRows) {
+      for (const row of healthRows) {
+        if (!healthScoreMap[row.project_id] && row.health_scores) {
+          const hs = row.health_scores as { overall: number; tagEfficiency: number; documentation: number; tagUsage: number };
+          healthScoreMap[row.project_id] = hs;
+        }
+      }
+    }
+  }
+
   // Fetch owner names for shared projects
   const sharedOwnerIds = projects
     ?.filter((p) => user && p.created_by && p.created_by !== user.id)
@@ -69,7 +90,7 @@ export default async function ProjectsPage() {
       </div>
 
       {activeProjects.length > 0 || archivedProjects.length > 0 ? (
-        <ProjectList projects={activeProjects} archivedProjects={archivedProjects} currentUserId={user?.id} ownerMap={ownerMap} />
+        <ProjectList projects={activeProjects} archivedProjects={archivedProjects} currentUserId={user?.id} ownerMap={ownerMap} healthScoreMap={healthScoreMap} />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

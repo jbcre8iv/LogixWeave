@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProjectCardMenu } from "@/components/dashboard/project-card-menu";
+import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
 
 interface Project {
   id: string;
@@ -65,11 +66,19 @@ interface Project {
   project_files: Array<{ id: string; file_name: string }> | { count: number };
 }
 
+interface HealthScores {
+  overall: number;
+  tagEfficiency: number;
+  documentation: number;
+  tagUsage: number;
+}
+
 interface ProjectListProps {
   projects: Project[];
   archivedProjects?: Project[];
   currentUserId?: string;
   ownerMap?: Record<string, string>;
+  healthScoreMap?: Record<string, HealthScores>;
 }
 
 type SortOption = "updated" | "created" | "name" | "files";
@@ -82,6 +91,7 @@ interface ProjectGridCardProps {
   getFileCount: (project: Project) => number;
   currentUserId?: string;
   searchQuery?: string;
+  healthScore?: number;
 }
 
 function getMatchingFiles(project: Project, query: string): string[] {
@@ -100,6 +110,7 @@ function ProjectGridCard({
   getFileCount,
   currentUserId,
   searchQuery = "",
+  healthScore,
 }: ProjectGridCardProps) {
   const fileCount = getFileCount(project);
   const isOwner = !currentUserId || !project.created_by || project.created_by === currentUserId;
@@ -142,6 +153,11 @@ function ProjectGridCard({
                 <Calendar className="h-4 w-4" />
                 {new Date(project.updated_at).toLocaleDateString()}
               </div>
+              {healthScore != null && (
+                <div className="ml-auto">
+                  <MiniHealthRing score={healthScore} />
+                </div>
+              )}
             </div>
             {matchingFiles.length > 0 && (
               <div className="mt-3 pl-6 space-y-1">
@@ -186,6 +202,7 @@ interface ProjectListTableProps {
   showOwner?: boolean;
   currentUserId?: string;
   searchQuery?: string;
+  healthScoreMap?: Record<string, HealthScores>;
 }
 
 function ProjectListTable({
@@ -199,6 +216,7 @@ function ProjectListTable({
   showOwner = false,
   currentUserId,
   searchQuery = "",
+  healthScoreMap = {},
 }: ProjectListTableProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -220,6 +238,7 @@ function ProjectListTable({
           <col className="hidden md:table-column w-[30%]" />
           {showOwner && <col className="hidden sm:table-column w-[140px]" />}
           <col className="w-[70px]" />
+          <col className="w-[60px]" />
           <col className="w-[100px]" />
           <col className="w-[50px]" />
         </colgroup>
@@ -230,6 +249,7 @@ function ProjectListTable({
             <TableHead className="hidden md:table-cell">Description</TableHead>
             {showOwner && <TableHead className="hidden sm:table-cell">Owner</TableHead>}
             <TableHead>Files</TableHead>
+            <TableHead>Health</TableHead>
             <TableHead>Updated</TableHead>
             <TableHead className="pr-4"></TableHead>
           </TableRow>
@@ -307,6 +327,11 @@ function ProjectListTable({
                   </TableCell>
                 )}
                 <TableCell>{fileCount}</TableCell>
+                <TableCell>
+                  {healthScoreMap[project.id] && (
+                    <MiniHealthRing score={healthScoreMap[project.id].overall} size={24} />
+                  )}
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(project.updated_at).toLocaleDateString()}
                 </TableCell>
@@ -336,6 +361,7 @@ function ProjectListTable({
                   <TableCell />
                   <TableCell />
                   <TableCell />
+                  <TableCell />
                 </TableRow>
               ))}
               </Fragment>
@@ -347,7 +373,7 @@ function ProjectListTable({
   );
 }
 
-export function ProjectList({ projects, archivedProjects = [], currentUserId, ownerMap = {} }: ProjectListProps) {
+export function ProjectList({ projects, archivedProjects = [], currentUserId, ownerMap = {}, healthScoreMap = {} }: ProjectListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -798,6 +824,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     getFileCount={getFileCount}
                     currentUserId={currentUserId}
                     searchQuery={searchQuery}
+                    healthScore={healthScoreMap[project.id]?.overall}
                   />
                 ))}
               </div>
@@ -823,6 +850,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     getFileCount={getFileCount}
                     currentUserId={currentUserId}
                     searchQuery={searchQuery}
+                    healthScore={healthScoreMap[project.id]?.overall}
                   />
                 ))}
               </div>
@@ -849,6 +877,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     getFileCount={getFileCount}
                     currentUserId={currentUserId}
                     searchQuery={searchQuery}
+                    healthScore={healthScoreMap[project.id]?.overall}
                   />
                 ))}
               </div>
@@ -880,6 +909,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 ownerMap={ownerMap}
                 currentUserId={currentUserId}
                 searchQuery={searchQuery}
+                healthScoreMap={healthScoreMap}
               />
             </div>
           )}
@@ -902,6 +932,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 showOwner={hasAnySharedProject}
                 currentUserId={currentUserId}
                 searchQuery={searchQuery}
+                healthScoreMap={healthScoreMap}
               />
             </div>
           )}
@@ -926,6 +957,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 ownerMap={ownerMap}
                 currentUserId={currentUserId}
                 searchQuery={searchQuery}
+                healthScoreMap={healthScoreMap}
               />
             </div>
           )}
