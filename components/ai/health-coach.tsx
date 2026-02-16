@@ -591,13 +591,27 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
             <p className="text-sm text-muted-foreground mb-6 text-center max-w-md">
               Analyze your project for unused tags, documentation gaps, and optimization opportunities.
             </p>
-            <Button
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-              onClick={fetchRecommendations}
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Begin Analysis
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+                onClick={fetchRecommendations}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Begin Analysis
+              </Button>
+              {history.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                  onClick={() => {
+                    setResult(history[0].result);
+                    setCached(true);
+                  }}
+                >
+                  View Results
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
