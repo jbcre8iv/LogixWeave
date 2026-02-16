@@ -101,12 +101,12 @@ export default async function AIPage({ params }: AIPageProps) {
 
           {/* Featured: Health Coach */}
           <Link href={`/dashboard/projects/${projectId}/ai/health`}>
-            <Card className="group bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border-amber-500/30 hover:border-amber-500/50 hover:shadow-md hover:shadow-amber-500/5 transition-all cursor-pointer">
+            <Card className="group border-l-4 border-l-amber-500 hover:border-amber-500/30 hover:shadow-md hover:shadow-amber-500/5 transition-all cursor-pointer">
               <CardContent className="py-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/15">
-                      <HeartPulse className="h-5 w-5 text-amber-500" />
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-500/10">
+                      <HeartPulse className="h-6 w-6 text-amber-500" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">Health Coach</CardTitle>
@@ -115,7 +115,10 @@ export default async function AIPage({ params }: AIPageProps) {
                       </CardDescription>
                     </div>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-amber-500 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 ml-4" />
+                  <div className="flex items-center gap-2 shrink-0 ml-4 text-amber-600 dark:text-amber-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                    Get Started
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
