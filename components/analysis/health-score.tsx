@@ -117,9 +117,8 @@ export function HealthScore({ projectId, stats }: HealthScoreProps) {
                   style={{ transition: "stroke-dashoffset 1.2s ease-out" }}
                 />
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <span className={`text-3xl font-bold ${color.text}`}>{displayScore}</span>
-                <span className={`text-sm font-semibold ${color.text}`}>{grade}</span>
               </div>
             </div>
             <p className={`text-xs text-center mt-1 max-w-[160px] ${color.text}`}>{feedback}</p>
