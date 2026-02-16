@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { HealthRecommendations } from "@/components/ai/health-recommendations";
 
 interface HealthScoreProps {
+  projectId: string;
   stats: {
     totalTags: number;
     unusedTags: number;
@@ -46,12 +50,13 @@ function getColor(score: number): { ring: string; text: string; bg: string; prog
   return { ring: "stroke-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", progress: "[&_[data-slot=progress-indicator]]:bg-red-500" };
 }
 
-export function HealthScore({ stats }: HealthScoreProps) {
+export function HealthScore({ projectId, stats }: HealthScoreProps) {
   const { overall, tagEfficiency, documentation, tagUsage } = computeScore(stats);
   const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
   const [animated, setAnimated] = useState(false);
   const [displayScore, setDisplayScore] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => setAnimated(true), 300);
@@ -146,9 +151,25 @@ export function HealthScore({ stats }: HealthScoreProps) {
                 </div>
               );
             })}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={() => setDialogOpen(true)}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Improve Score
+            </Button>
           </div>
         </div>
       </CardContent>
+
+      <HealthRecommendations
+        projectId={projectId}
+        stats={stats}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </Card>
   );
 }

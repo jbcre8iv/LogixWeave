@@ -343,7 +343,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
       ) : (
         <>
           {/* Health Score */}
-          <HealthScore stats={stats} />
+          <HealthScore projectId={projectId} stats={stats} />
 
           {/* Summary Stats */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">

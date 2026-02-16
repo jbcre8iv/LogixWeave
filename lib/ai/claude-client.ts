@@ -46,6 +46,29 @@ export interface SearchResult {
   summary: string;
 }
 
+export interface HealthRecommendation {
+  priority: "high" | "medium" | "low";
+  title: string;
+  description: string;
+  impact: string;
+  specificItems?: string[];
+  actionLink?: {
+    label: string;
+    tool: "issues" | "explainer" | "tag-xref" | "unused-tags" | "comment-coverage";
+  };
+}
+
+export interface HealthRecommendationResult {
+  summary: string;
+  quickWins: string[];
+  sections: Array<{
+    metric: "tagEfficiency" | "documentation" | "tagUsage";
+    currentScore: number;
+    weight: string;
+    recommendations: HealthRecommendation[];
+  }>;
+}
+
 /**
  * Extract JSON from Claude responses that may include markdown fences or prose.
  * Tries three strategies: direct parse, code-fence extraction, brace scanning.
@@ -529,6 +552,184 @@ Return up to 20 most relevant matches, sorted by relevance.${languageInstruction
     return {
       matches: [],
       summary: stripMarkdownArtifacts(textContent.text),
+    };
+  }
+}
+
+/**
+ * Try to extract partial health recommendation result from truncated/malformed JSON.
+ */
+function extractPartialHealth(text: string): HealthRecommendationResult | null {
+  const cleaned = text.replace(/```(?:json)?\s*/g, "").replace(/```/g, "").trim();
+
+  const summaryMatch = cleaned.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (!summaryMatch) return null;
+
+  const summary = summaryMatch[1]
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, "\n")
+    .replace(/\\\\/g, "\\");
+
+  const result: HealthRecommendationResult = { summary, quickWins: [], sections: [] };
+
+  // Try to extract quickWins array
+  const quickWinsMatch = cleaned.match(/"quickWins"\s*:\s*\[([\s\S]*?)(?:\]|$)/);
+  if (quickWinsMatch) {
+    const winStrings = [...quickWinsMatch[1].matchAll(/"((?:[^"\\]|\\.)*)"/g)];
+    result.quickWins = winStrings.map((m) =>
+      m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\\\/g, "\\")
+    );
+  }
+
+  return result;
+}
+
+export async function recommendHealthImprovements(
+  healthScores: {
+    overall: number;
+    tagEfficiency: number;
+    documentation: number;
+    tagUsage: number;
+  },
+  unusedTags: Array<{ name: string; dataType: string; scope: string }>,
+  routineCoverage: Array<{ routine: string; coverage: number; commented: number; total: number }>,
+  usageBreakdown: { read: number; write: number; both: number },
+  topTags: Array<{ name: string; count: number }>,
+  routines: Array<{ name: string; programName: string; type: string; rungCount?: number }>,
+  versionHistory?: {
+    totalVersions: number;
+    latestVersion: number;
+    versionSummaries: Array<{
+      versionNumber: number;
+      uploadedAt: string;
+      comment?: string;
+      stats?: {
+        totalTags: number;
+        unusedTags: number;
+        totalRungs: number;
+        commentedRungs: number;
+        totalReferences: number;
+      };
+    }>;
+  },
+  language: AILanguage = "en"
+): Promise<HealthRecommendationResult> {
+  const client = getClient();
+
+  const limitedUnusedTags = unusedTags.slice(0, 50);
+  const sortedCoverage = [...routineCoverage].sort((a, b) => a.coverage - b.coverage);
+  const limitedRoutines = routines.slice(0, 30);
+
+  const languageInstruction = getLanguageInstruction(language);
+
+  const versionHistorySection = versionHistory && versionHistory.totalVersions > 1
+    ? `\nFile Version History (${versionHistory.totalVersions} versions, currently v${versionHistory.latestVersion}):
+${versionHistory.versionSummaries.map((v) => {
+  const statsLine = v.stats
+    ? ` | Tags: ${v.stats.totalTags} (${v.stats.unusedTags} unused), Rungs: ${v.stats.totalRungs} (${v.stats.commentedRungs} commented), Refs: ${v.stats.totalReferences}`
+    : "";
+  return `- v${v.versionNumber} (${v.uploadedAt})${v.comment ? `: ${v.comment}` : ""}${statsLine}`;
+}).join("\n")}
+
+When making recommendations, reference trends you observe across versions. For example:
+- If unused tags have been increasing, flag that the project is accumulating dead code
+- If comment coverage has been declining, highlight the documentation regression
+- If tag references are growing without matching documentation, note the growing complexity
+- Acknowledge positive trends too (e.g., "Comment coverage improved from 30% to 45% between v2 and v3")
+`
+    : "";
+
+  const prompt = `Analyze this PLC project's health metrics and provide specific, actionable recommendations to improve the scores.
+
+Current Health Scores:
+- Overall: ${healthScores.overall}/100
+- Tag Efficiency (40% weight): ${healthScores.tagEfficiency}/100
+- Documentation (35% weight): ${healthScores.documentation}/100
+- Tag Usage (25% weight): ${healthScores.tagUsage}/100
+
+Unused Tags (${unusedTags.length} total, showing ${limitedUnusedTags.length}):
+${limitedUnusedTags.map((t) => `- ${t.name} (${t.dataType}, ${t.scope})`).join("\n") || "None"}
+
+Routine Comment Coverage (sorted worst-first, ${routineCoverage.length} routines):
+${sortedCoverage.slice(0, 20).map((r) => `- ${r.routine}: ${r.coverage}% (${r.commented}/${r.total} rungs commented)`).join("\n") || "No routines"}
+
+Tag Usage Breakdown:
+- Read: ${usageBreakdown.read}
+- Write: ${usageBreakdown.write}
+- Read/Write: ${usageBreakdown.both}
+
+Top Referenced Tags:
+${topTags.slice(0, 10).map((t) => `- ${t.name}: ${t.count} references`).join("\n") || "None"}
+
+Routines (${routines.length} total, showing ${limitedRoutines.length}):
+${limitedRoutines.map((r) => `- ${r.programName}/${r.name} (${r.type}, ${r.rungCount || 0} rungs)`).join("\n")}
+${versionHistorySection}
+Provide your analysis as JSON with this structure:
+{
+  "summary": "2-3 sentence overall assessment of the project health",
+  "quickWins": ["3-5 specific, easy actions the user can take immediately to improve their score"],
+  "sections": [
+    {
+      "metric": "tagEfficiency",
+      "currentScore": ${healthScores.tagEfficiency},
+      "weight": "40%",
+      "recommendations": [
+        {
+          "priority": "high|medium|low",
+          "title": "Short action title",
+          "description": "Detailed explanation naming specific tags/routines",
+          "impact": "Expected score improvement description",
+          "specificItems": ["Tag1", "Tag2"],
+          "actionLink": { "label": "Button text", "tool": "unused-tags|issues|explainer|tag-xref|comment-coverage" }
+        }
+      ]
+    },
+    {
+      "metric": "documentation",
+      "currentScore": ${healthScores.documentation},
+      "weight": "35%",
+      "recommendations": [...]
+    },
+    {
+      "metric": "tagUsage",
+      "currentScore": ${healthScores.tagUsage},
+      "weight": "25%",
+      "recommendations": [...]
+    }
+  ]
+}
+
+Rules:
+- Name specific tags and routines in your recommendations (e.g., "Remove unused tag Motor_Speed_SP")
+- Order recommendations by impact (highest first)
+- For tag efficiency issues, suggest "View Unused Tags" (tool: "unused-tags") or "Run Issue Finder" (tool: "issues")
+- For documentation issues, suggest "View Comment Coverage" (tool: "comment-coverage") or "Explain routine logic" (tool: "explainer")
+- For tag usage issues, suggest "View Tag Cross-Reference" (tool: "tag-xref")
+- Keep quickWins to truly easy, specific actions${versionHistory && versionHistory.totalVersions > 1 ? "\n- Include version trend observations in your summary and relevant section recommendations" : ""}
+- Limit to 2-4 recommendations per section${languageInstruction}`;
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-5-20250929",
+    max_tokens: 8192,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const textContent = response.content.find((c) => c.type === "text");
+  if (!textContent || textContent.type !== "text") {
+    throw new Error("No text response from Claude");
+  }
+
+  try {
+    return extractJSON<HealthRecommendationResult>(textContent.text);
+  } catch {
+    const partial = extractPartialHealth(textContent.text);
+    if (partial) return partial;
+
+    return {
+      summary: stripMarkdownArtifacts(textContent.text),
+      quickWins: [],
+      sections: [],
     };
   }
 }

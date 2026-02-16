@@ -23,10 +23,16 @@ const variantMessages: Record<string, string[]> = {
     "Ranking relevance…",
     "Preparing results…",
   ],
+  health: [
+    "Analyzing project health metrics…",
+    "Evaluating tag efficiency…",
+    "Reviewing documentation coverage…",
+    "Preparing recommendations…",
+  ],
 };
 
 interface AILoadingProps {
-  variant: "explain" | "issues" | "search";
+  variant: "explain" | "issues" | "search" | "health";
 }
 
 export function AILoading({ variant }: AILoadingProps) {
