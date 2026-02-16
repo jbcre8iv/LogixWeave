@@ -56,7 +56,7 @@ const COLLAPSED_LIMIT = 5;
 const USAGE_COLORS: Record<string, string> = {
   Read: "#3b82f6",
   Write: "#ef4444",
-  Both: "#a855f7",
+  "Read/Write": "#a855f7",
 };
 
 function getCoverageColor(pct: number): string {
@@ -153,7 +153,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags, proje
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-base">Tag Usage Breakdown</CardTitle>
-                <CardDescription>Read vs. Write vs. Both</CardDescription>
+                <CardDescription>Read vs. Write vs. Read/Write</CardDescription>
               </div>
               <Button
                 variant="ghost"
@@ -445,7 +445,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags, proje
             <>
               <DialogHeader>
                 <DialogTitle>Tag Usage Breakdown</DialogTitle>
-                <DialogDescription>Read vs. Write vs. Both</DialogDescription>
+                <DialogDescription>Read vs. Write vs. Read/Write</DialogDescription>
               </DialogHeader>
               <div className="h-[500px]">
                 <ResponsiveContainer width="100%" height="100%">

@@ -49,17 +49,11 @@ export function TagXrefTable({ references, totalCount, page, pageSize }: TagXref
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const getUsageBadgeVariant = (usage: string) => {
-    switch (usage) {
-      case "read":
-        return "secondary";
-      case "write":
-        return "default";
-      case "both":
-        return "outline";
-      default:
-        return "secondary";
-    }
+  const getUsageBadgeClass = (usage: string) => {
+    const label = usage.toLowerCase();
+    if (label === "write") return "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30";
+    if (label === "read") return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
+    return "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30";
   };
 
   return (
@@ -94,8 +88,8 @@ export function TagXrefTable({ references, totalCount, page, pageSize }: TagXref
                     {ref.rung_number}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getUsageBadgeVariant(ref.usage_type)}>
-                      {ref.usage_type}
+                    <Badge variant="outline" className={`text-xs ${getUsageBadgeClass(ref.usage_type)}`}>
+                      {ref.usage_type === "both" ? "Read/Write" : ref.usage_type}
                     </Badge>
                   </TableCell>
                 </TableRow>

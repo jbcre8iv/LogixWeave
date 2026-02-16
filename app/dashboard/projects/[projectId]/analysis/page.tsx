@@ -59,7 +59,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
   let usageBreakdown = [
     { name: "Read", value: 0 },
     { name: "Write", value: 0 },
-    { name: "Both", value: 0 },
+    { name: "Read/Write", value: 0 },
   ];
   let routineCoverageChart: Array<{ routine: string; coverage: number; commented: number; total: number }> = [];
   let topTags: Array<{ name: string; count: number }> = [];
@@ -244,14 +244,14 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
 
     // --- Compute chart data from already-fetched references and routineCoverage ---
 
-    // Tag usage breakdown (Read / Write / Both)
-    const usageCounts: Record<string, number> = { Read: 0, Write: 0, Both: 0 };
+    // Tag usage breakdown (Read / Write / Read/Write)
+    const usageCounts: Record<string, number> = { Read: 0, Write: 0, "Read/Write": 0 };
     for (const ref of references) {
       const type = ref.usage_type?.toLowerCase();
       if (type === "write") {
         usageCounts["Write"]++;
       } else if (type === "both") {
-        usageCounts["Both"]++;
+        usageCounts["Read/Write"]++;
       } else {
         usageCounts["Read"]++;
       }
@@ -259,7 +259,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
     usageBreakdown = [
       { name: "Read", value: usageCounts["Read"] },
       { name: "Write", value: usageCounts["Write"] },
-      { name: "Both", value: usageCounts["Both"] },
+      { name: "Read/Write", value: usageCounts["Read/Write"] },
     ];
 
     // Comment coverage by routine (reuse routineCoverage map already computed above)

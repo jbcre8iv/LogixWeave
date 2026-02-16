@@ -106,7 +106,7 @@ export function TagXrefFilters({ programs }: TagXrefFiltersProps) {
           <SelectItem value="all">All Usage</SelectItem>
           <SelectItem value="read">Read</SelectItem>
           <SelectItem value="write">Write</SelectItem>
-          <SelectItem value="both">Both</SelectItem>
+          <SelectItem value="both">Read/Write</SelectItem>
         </SelectContent>
       </Select>
 
