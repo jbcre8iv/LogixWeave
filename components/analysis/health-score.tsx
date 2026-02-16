@@ -124,7 +124,7 @@ export function HealthScore({ projectId, stats }: HealthScoreProps) {
             <p className={`text-xs text-center mt-1 max-w-[160px] ${color.text}`}>{feedback}</p>
             <Link
               href={`/dashboard/projects/${projectId}/ai/health`}
-              className="inline-flex items-center justify-center w-[140px] mt-3 h-9 px-4 text-sm font-medium rounded-md border border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+              className="inline-flex items-center justify-center whitespace-nowrap mt-3 h-9 px-4 text-sm font-medium rounded-md border border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
             >
               <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
               Improve Score
