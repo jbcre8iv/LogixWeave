@@ -37,6 +37,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    const type = searchParams.get("type"); // "references" or null (definitions)
+
     // Get project files
     const { data: files } = await supabase
       .from("project_files")
@@ -49,49 +51,6 @@ export async function GET(request: Request) {
       return new NextResponse("No tags found", { status: 404 });
     }
 
-    // Build query for all matching tags
-    let query = supabase
-      .from("parsed_tags")
-      .select("name, data_type, scope, description, usage, radix, alias_for, external_access, dimensions")
-      .in("file_id", fileIds);
-
-    if (search) {
-      query = query.ilike("name", `%${search}%`);
-    }
-
-    if (scope) {
-      query = query.eq("scope", scope);
-    }
-
-    if (dataType) {
-      query = query.eq("data_type", dataType);
-    }
-
-    query = query.order("name");
-
-    const { data: tags, error } = await query;
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    if (!tags || tags.length === 0) {
-      return new NextResponse("No tags found", { status: 404 });
-    }
-
-    // Generate CSV
-    const headers = [
-      "Name",
-      "Data Type",
-      "Scope",
-      "Description",
-      "Usage",
-      "Radix",
-      "Alias For",
-      "External Access",
-      "Dimensions",
-    ];
-
     const escapeCSV = (value: string | null | undefined): string => {
       if (value === null || value === undefined) return "";
       const str = String(value);
@@ -101,25 +60,105 @@ export async function GET(request: Request) {
       return str;
     };
 
-    const rows = tags.map((tag) =>
-      [
-        tag.name,
-        tag.data_type,
-        tag.scope,
-        tag.description,
-        tag.usage,
-        tag.radix,
-        tag.alias_for,
-        tag.external_access,
-        tag.dimensions,
-      ]
-        .map(escapeCSV)
-        .join(",")
-    );
+    let csv: string;
+    let fileSuffix: string;
 
-    const csv = [headers.join(","), ...rows].join("\n");
+    if (type === "references") {
+      // Export referenced tags from tag_references table
+      let refQuery = supabase
+        .from("tag_references")
+        .select("tag_name, usage_type, routine_name, program_name, rung_number")
+        .in("file_id", fileIds);
 
-    const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, "_")}_tags_${new Date().toISOString().split("T")[0]}.csv`;
+      if (search) {
+        refQuery = refQuery.ilike("tag_name", `%${search}%`);
+      }
+
+      refQuery = refQuery.order("tag_name").order("program_name").order("routine_name");
+
+      const { data: refs, error } = await refQuery;
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      if (!refs || refs.length === 0) {
+        return new NextResponse("No referenced tags found", { status: 404 });
+      }
+
+      const headers = ["Tag Name", "Program", "Routine", "Rung", "Usage Type"];
+      const rows = refs.map((ref) =>
+        [ref.tag_name, ref.program_name, ref.routine_name, String(ref.rung_number), ref.usage_type]
+          .map(escapeCSV)
+          .join(",")
+      );
+
+      csv = [headers.join(","), ...rows].join("\n");
+      fileSuffix = "referenced_tags";
+    } else {
+      // Export tag definitions from parsed_tags table
+      let query = supabase
+        .from("parsed_tags")
+        .select("name, data_type, scope, description, usage, radix, alias_for, external_access, dimensions")
+        .in("file_id", fileIds);
+
+      if (search) {
+        query = query.ilike("name", `%${search}%`);
+      }
+
+      if (scope) {
+        query = query.eq("scope", scope);
+      }
+
+      if (dataType) {
+        query = query.eq("data_type", dataType);
+      }
+
+      query = query.order("name");
+
+      const { data: tags, error } = await query;
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      if (!tags || tags.length === 0) {
+        return new NextResponse("No tags found", { status: 404 });
+      }
+
+      const headers = [
+        "Name",
+        "Data Type",
+        "Scope",
+        "Description",
+        "Usage",
+        "Radix",
+        "Alias For",
+        "External Access",
+        "Dimensions",
+      ];
+
+      const rows = tags.map((tag) =>
+        [
+          tag.name,
+          tag.data_type,
+          tag.scope,
+          tag.description,
+          tag.usage,
+          tag.radix,
+          tag.alias_for,
+          tag.external_access,
+          tag.dimensions,
+        ]
+          .map(escapeCSV)
+          .join(",")
+      );
+
+      csv = [headers.join(","), ...rows].join("\n");
+      fileSuffix = "tags";
+    }
+
+    const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, "_")}_${fileSuffix}_${new Date().toISOString().split("T")[0]}.csv`;
 
     return new NextResponse(csv, {
       headers: {

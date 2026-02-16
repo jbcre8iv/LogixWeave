@@ -163,7 +163,9 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
   const paginatedRefTags = referencedTags.slice(refFrom, refTo);
   const refTotalCount = referencedTags.length;
 
-  const exportUrl = `/api/export/tags?projectId=${projectId}${search ? `&search=${search}` : ""}${scope ? `&scope=${scope}` : ""}${dataType ? `&dataType=${dataType}` : ""}`;
+  const exportUrl = activeTab === "references"
+    ? `/api/export/tags?projectId=${projectId}&type=references${search ? `&search=${search}` : ""}`
+    : `/api/export/tags?projectId=${projectId}${search ? `&search=${search}` : ""}${scope ? `&scope=${scope}` : ""}${dataType ? `&dataType=${dataType}` : ""}`;
 
   return (
     <div className="space-y-6">
