@@ -17,6 +17,7 @@ import {
   Minus,
   Download,
   Trash2,
+  Eye,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { Card, CardContent } from "@/components/ui/card";
@@ -189,11 +190,13 @@ function HistoryEntryCard({
   previousEntry,
   index,
   onDelete,
+  onView,
 }: {
   entry: HistoryEntry;
   previousEntry?: HistoryEntry;
   index: number;
   onDelete: (id: string) => void;
+  onView: (entry: HistoryEntry) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const scores = entry.health_scores;
@@ -281,6 +284,18 @@ function HistoryEntryCard({
                 ))}
               </ul>
             </div>
+          )}
+          {entry.result && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(entry);
+              }}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View Full Results
+            </button>
           )}
         </div>
       )}
@@ -633,7 +648,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
                     setCached(true);
                   }}
                 >
-                  View Results
+                  View Last Results
                 </Button>
               )}
             </div>
@@ -803,6 +818,10 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
                       previousEntry={history[i + 1]}
                       index={i}
                       onDelete={handleDeleteHistory}
+                      onView={(entry) => {
+                        setResult(entry.result);
+                        setCached(true);
+                      }}
                     />
                   ))}
                 </div>
