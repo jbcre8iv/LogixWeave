@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Sparkles, CheckCircle, AlertCircle, Download, ChevronDown, FileText, FileType } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle, AlertCircle, Download, ChevronDown, FileText, FileType, Info } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { ExplainChat, type ChatMessage } from "@/components/ai/explain-chat";
 import { AILoading } from "@/components/ai/ai-loading";
@@ -34,6 +34,12 @@ interface ExplanationResult {
   stepByStep: string[];
   tagsPurpose: Record<string, string>;
   potentialIssues?: string[];
+}
+
+interface RungInfo {
+  analyzed: number;
+  total: number;
+  truncated: boolean;
 }
 
 interface LogicExplainerProps {
@@ -125,6 +131,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
   const [result, setResult] = useState<ExplanationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
+  const [rungInfo, setRungInfo] = useState<RungInfo | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const handleChatMessagesChange = useCallback((messages: ChatMessage[]) => {
@@ -156,6 +163,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
 
       setResult(sanitizeResult(data.result));
       setCached(data.cached);
+      setRungInfo(data.rungInfo || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -459,11 +467,19 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
 
       {result && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {cached && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 Using cached analysis
+              </div>
+            )}
+            {rungInfo && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Info className="h-4 w-4 text-blue-500" />
+                {rungInfo.truncated
+                  ? `Analyzed ${rungInfo.analyzed} of ${rungInfo.total} rungs`
+                  : `Analyzed all ${rungInfo.total} rungs`}
               </div>
             )}
             <div className="ml-auto">

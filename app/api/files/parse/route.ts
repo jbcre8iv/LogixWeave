@@ -348,10 +348,15 @@ export async function POST(request: Request) {
         }
       }
 
-      // Update status to completed
+      // Update status to completed, and store export type metadata
       await supabase
         .from("project_files")
-        .update({ parsing_status: "completed", parsing_error: null })
+        .update({
+          parsing_status: "completed",
+          parsing_error: null,
+          target_type: parsed.metadata.targetType || null,
+          target_name: parsed.metadata.targetName || null,
+        })
         .eq("id", fileId);
 
       // Log activity

@@ -288,6 +288,7 @@ export function parseL5X(xmlContent: string): ParsedL5XData {
 
     // Extract metadata
     result.metadata.targetType = content["@_TargetType"];
+    result.metadata.targetName = content["@_TargetName"];
     result.metadata.exportDate = content["@_ExportDate"];
 
     const controller = content.Controller;

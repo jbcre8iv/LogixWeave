@@ -111,6 +111,7 @@ export interface ParsedL5XData {
     processorType?: string;
     softwareRevision?: string;
     targetType?: string;
+    targetName?: string;
     exportDate?: string;
   };
 }
@@ -246,6 +247,7 @@ export interface L5XModule {
 export interface L5XRoot {
   RSLogix5000Content?: {
     "@_TargetType"?: string;
+    "@_TargetName"?: string;
     "@_ExportDate"?: string;
     Controller?: L5XController;
   };

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Download } from "lucide-react";
 import { TagFilters } from "@/components/tools/tag-filters";
 import { TagTable } from "@/components/tools/tag-table";
+import { ReferencedTagsTable } from "@/components/tools/referenced-tags-table";
 
 interface TagsPageProps {
   params: Promise<{ projectId: string }>;
@@ -15,6 +16,7 @@ interface TagsPageProps {
     dataType?: string;
     page?: string;
     from?: string;
+    tab?: string;
   }>;
 }
 
@@ -22,7 +24,8 @@ const PAGE_SIZE = 50;
 
 export default async function TagsPage({ params, searchParams }: TagsPageProps) {
   const { projectId } = await params;
-  const { search, scope, dataType, page: pageParam, from: fromParam } = await searchParams;
+  const { search, scope, dataType, page: pageParam, from: fromParam, tab } = await searchParams;
+  const activeTab = tab || "definitions";
   const backHref = fromParam === "tools"
     ? "/dashboard/tools/tags"
     : `/dashboard/projects/${projectId}`;
@@ -116,6 +119,50 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
 
   const { data: tags, count } = await query;
 
+  // Query referenced tags (discovered from rung logic)
+  let refQuery = supabase
+    .from("tag_references")
+    .select("tag_name, usage_type, routine_name, program_name")
+    .in("file_id", fileIds);
+
+  if (search && activeTab === "references") {
+    refQuery = refQuery.ilike("tag_name", `%${search}%`);
+  }
+
+  const { data: allRefs } = await refQuery.order("tag_name");
+
+  // Aggregate referenced tags: unique tag names with usage counts and types
+  const refTagMap = new Map<string, { count: number; usageTypes: Set<string>; routines: Set<string> }>();
+  for (const ref of allRefs || []) {
+    const existing = refTagMap.get(ref.tag_name);
+    if (existing) {
+      existing.count++;
+      existing.usageTypes.add(ref.usage_type);
+      existing.routines.add(`${ref.program_name}/${ref.routine_name}`);
+    } else {
+      refTagMap.set(ref.tag_name, {
+        count: 1,
+        usageTypes: new Set([ref.usage_type]),
+        routines: new Set([`${ref.program_name}/${ref.routine_name}`]),
+      });
+    }
+  }
+
+  const referencedTags = Array.from(refTagMap.entries())
+    .map(([name, info]) => ({
+      name,
+      referenceCount: info.count,
+      usageTypes: Array.from(info.usageTypes),
+      routines: Array.from(info.routines),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Paginate referenced tags
+  const refFrom = (page - 1) * PAGE_SIZE;
+  const refTo = refFrom + PAGE_SIZE;
+  const paginatedRefTags = referencedTags.slice(refFrom, refTo);
+  const refTotalCount = referencedTags.length;
+
   const exportUrl = `/api/export/tags?projectId=${projectId}${search ? `&search=${search}` : ""}${scope ? `&scope=${scope}` : ""}${dataType ? `&dataType=${dataType}` : ""}`;
 
   return (
@@ -140,24 +187,61 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
-          <CardDescription>
-            {count || 0} tags found
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TagFilters scopes={scopes} dataTypes={dataTypes} />
-        </CardContent>
-      </Card>
+      {/* Tab switcher */}
+      <div className="flex gap-1 border-b">
+        <Link
+          href={`/dashboard/projects/${projectId}/tags?tab=definitions${fromParam ? `&from=${fromParam}` : ""}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            activeTab === "definitions"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Tag Definitions ({count || 0})
+        </Link>
+        <Link
+          href={`/dashboard/projects/${projectId}/tags?tab=references${fromParam ? `&from=${fromParam}` : ""}`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            activeTab === "references"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Referenced Tags ({refTotalCount})
+        </Link>
+      </div>
 
-      <TagTable
-        tags={tags || []}
-        totalCount={count || 0}
-        page={page}
-        pageSize={PAGE_SIZE}
-      />
+      {activeTab === "definitions" ? (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Search & Filter</CardTitle>
+              <CardDescription>
+                {count || 0} tag definitions found
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TagFilters scopes={scopes} dataTypes={dataTypes} />
+            </CardContent>
+          </Card>
+
+          <TagTable
+            tags={tags || []}
+            totalCount={count || 0}
+            page={page}
+            pageSize={PAGE_SIZE}
+          />
+        </>
+      ) : (
+        <ReferencedTagsTable
+          tags={paginatedRefTags}
+          totalCount={refTotalCount}
+          page={page}
+          pageSize={PAGE_SIZE}
+          projectId={projectId}
+          search={search}
+        />
+      )}
     </div>
   );
 }

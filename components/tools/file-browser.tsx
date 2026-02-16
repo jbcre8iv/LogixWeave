@@ -30,6 +30,8 @@ import {
   Trash2,
   ChevronRight,
   Home,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { FileVersionHistory } from "./file-version-history";
 import { DownloadFileButton } from "./download-file-button";
@@ -80,6 +82,7 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
   const [selectedFolder, setSelectedFolder] = useState<FolderItem | null>(null);
   const [folderName, setFolderName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [reparsingFileId, setReparsingFileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Get current folder object
@@ -275,6 +278,28 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
     setDeleteFolderOpen(true);
   };
 
+  const handleReparse = async (fileId: string) => {
+    setReparsingFileId(fileId);
+    try {
+      const response = await fetch("/api/files/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Re-parse failed:", data.error);
+      }
+
+      router.refresh();
+    } catch (err) {
+      console.error("Re-parse failed:", err);
+    } finally {
+      setReparsingFileId(null);
+    }
+  };
+
   const filesInFolder = (folderId: string) =>
     files.filter((f) => f.folder_id === folderId).length;
 
@@ -428,6 +453,20 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
                     {file.parsing_error}
                   </span>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title="Re-parse file"
+                  disabled={reparsingFileId === file.id}
+                  onClick={() => handleReparse(file.id)}
+                >
+                  {reparsingFileId === file.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                </Button>
                 <FileVersionHistory
                   fileId={file.id}
                   fileName={file.file_name}

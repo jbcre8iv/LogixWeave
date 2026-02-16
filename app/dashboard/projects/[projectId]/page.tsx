@@ -16,6 +16,11 @@ import {
   Pencil,
   Crown,
   Shield,
+  Rows3,
+  GitCompare,
+  Sparkles,
+  BarChart3,
+  Info,
 } from "lucide-react";
 import { DeleteProjectButton } from "@/components/dashboard/delete-project-button";
 import { ArchiveProjectButton } from "@/components/dashboard/archive-project-button";
@@ -64,6 +69,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         file_size,
         parsing_status,
         current_version,
+        target_type,
+        target_name,
         created_at
       )
     `)
@@ -123,9 +130,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   let tagCount = 0;
   let routineCount = 0;
   let moduleCount = 0;
+  let rungCount = 0;
+  let tagRefCount = 0;
 
   if (fileIds.length > 0) {
-    const [tagsResult, routinesResult, modulesResult] = await Promise.all([
+    const [tagsResult, routinesResult, modulesResult, rungsResult, tagRefsResult] = await Promise.all([
       queryClient
         .from("parsed_tags")
         .select("*", { count: "exact", head: true })
@@ -138,11 +147,26 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         .from("parsed_io_modules")
         .select("*", { count: "exact", head: true })
         .in("file_id", fileIds),
+      queryClient
+        .from("parsed_rungs")
+        .select("*", { count: "exact", head: true })
+        .in("file_id", fileIds),
+      queryClient
+        .from("tag_references")
+        .select("*", { count: "exact", head: true })
+        .in("file_id", fileIds),
     ]);
     tagCount = tagsResult.count || 0;
     routineCount = routinesResult.count || 0;
     moduleCount = modulesResult.count || 0;
+    rungCount = rungsResult.count || 0;
+    tagRefCount = tagRefsResult.count || 0;
   }
+
+  // Detect if any files are partial exports (routine/program exports vs full controller)
+  const hasPartialExports = project.project_files?.some(
+    (f: { target_type?: string }) => f.target_type && f.target_type !== "Controller"
+  ) || false;
 
   // Fetch rule sets for the picker (graceful if migration not applied)
   const { data: projectRuleSetRow } = await queryClient
@@ -245,7 +269,31 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <PermissionRequestsList projectId={projectId} />
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Contextual guidance for partial exports */}
+      {hasPartialExports && rungCount > 0 && (
+        <Card className="border-blue-500/30 bg-blue-500/5">
+          <CardContent className="flex items-start gap-3 py-4">
+            <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Routine exports detected</p>
+              <p className="text-sm text-muted-foreground">
+                These files contain exported routines with {rungCount.toLocaleString()} rungs of ladder logic.
+                Tag and I/O data is limited to context references.
+                For the best insights, try{" "}
+                <Link href={`/dashboard/projects/${projectId}/analysis`} className="text-blue-500 hover:underline font-medium">
+                  Analysis
+                </Link>
+                {" "}or{" "}
+                <Link href={`/dashboard/projects/${projectId}/ai`} className="text-blue-500 hover:underline font-medium">
+                  AI Assistant
+                </Link>.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Link href={`/dashboard/projects/${projectId}/files`}>
           <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -259,6 +307,58 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </Card>
         </Link>
 
+        {rungCount > 0 ? (
+          <Link href={`/dashboard/projects/${projectId}/analysis`}>
+            <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rungs</CardTitle>
+                <Rows3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{rungCount.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">Ladder logic rungs parsed</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card className="opacity-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rungs</CardTitle>
+              <Rows3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Upload files to parse rungs</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {tagRefCount > 0 ? (
+          <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
+            <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tag References</CardTitle>
+                <GitCompare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{tagRefCount.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">Cross-references found</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card className="opacity-50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tag References</CardTitle>
+              <GitCompare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Upload files to find references</p>
+            </CardContent>
+          </Card>
+        )}
+
         {tagCount > 0 ? (
           <Link href={`/dashboard/projects/${projectId}/tags`}>
             <Card className="transition-colors hover:bg-accent/50 cursor-pointer">
@@ -268,7 +368,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{tagCount}</div>
-                <p className="text-xs text-muted-foreground">Total tags parsed</p>
+                <p className="text-xs text-muted-foreground">Tag definitions parsed</p>
               </CardContent>
             </Card>
           </Link>
@@ -354,6 +454,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   file_size: number;
                   parsing_status: string;
                   current_version: number | null;
+                  target_type?: string;
+                  target_name?: string;
                   created_at: string;
                 }) => (
                   <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -363,10 +465,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         <p className="font-medium">{file.file_name}</p>
                         <p className="text-xs text-muted-foreground">
                           {(file.file_size / 1024).toFixed(1)} KB • {file.file_type.toUpperCase()}
+                          {file.target_type && file.target_type !== "Controller" && (
+                            <> • {file.target_type} Export</>
+                          )}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {file.target_type && file.target_type !== "Controller" && (
+                        <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                          {file.target_type}
+                        </Badge>
+                      )}
                       {(file.current_version ?? 1) > 1 && (
                         <Badge variant="outline" className="text-xs">
                           v{file.current_version}

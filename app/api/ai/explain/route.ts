@@ -62,11 +62,21 @@ export async function POST(request: Request) {
       rungsQuery = rungsQuery.eq("number", rungNumber);
     }
 
-    const { data: rungs } = await rungsQuery.order("number").limit(10);
+    // First get total count, then fetch rungs with a higher limit
+    const { count: totalRungCount } = await supabase
+      .from("parsed_rungs")
+      .select("*", { count: "exact", head: true })
+      .in("file_id", fileIds)
+      .eq("routine_name", routineName);
+
+    const RUNG_LIMIT = 50;
+    const { data: rungs } = await rungsQuery.order("number").limit(RUNG_LIMIT);
 
     if (!rungs || rungs.length === 0) {
       return NextResponse.json({ error: "No rungs found for this routine" }, { status: 404 });
     }
+
+    const wasTruncated = (totalRungCount || 0) > RUNG_LIMIT;
 
     // Get tags referenced in these rungs
     const rungNumbers = rungs.map((r) => r.number);
@@ -86,7 +96,7 @@ export async function POST(request: Request) {
         .from("parsed_tags")
         .select("name, data_type, description")
         .in("file_id", fileIds)
-        .in("name", tagNames.slice(0, 50)); // Limit to avoid token overflow
+        .in("name", tagNames.slice(0, 100)); // Limit to avoid token overflow
 
       tagInfo = tags?.map((t) => ({
         name: t.name,
@@ -131,6 +141,11 @@ export async function POST(request: Request) {
       return NextResponse.json({
         result: cached.result,
         cached: true,
+        rungInfo: {
+          analyzed: rungs.length,
+          total: totalRungCount || rungs.length,
+          truncated: wasTruncated,
+        },
       });
     }
 
@@ -167,6 +182,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       result,
       cached: false,
+      rungInfo: {
+        analyzed: rungs.length,
+        total: totalRungCount || rungs.length,
+        truncated: wasTruncated,
+      },
     });
   } catch (error) {
     console.error("AI explain error:", error);

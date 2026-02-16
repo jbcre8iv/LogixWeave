@@ -209,6 +209,8 @@ function parseL5KController(controllerBlock: string): ParsedL5XData["metadata"] 
     projectName: name,
     processorType: attrs["ProcessorType"],
     softwareRevision: attrs["Major"] ? `${attrs["Major"]}.${attrs["Minor"] || "0"}` : undefined,
+    targetType: "Controller",
+    targetName: name,
   };
 }
 
