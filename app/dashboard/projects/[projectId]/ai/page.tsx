@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Brain, Search, AlertTriangle, Sparkles, ArrowRight, HeartPulse } from "lucide-react";
 
 interface AIPageProps {
@@ -125,25 +125,26 @@ export default async function AIPage({ params }: AIPageProps) {
           </Link>
 
           {/* Other AI tools */}
-          <div className="grid gap-4 md:grid-cols-3">
-            {aiTools.map((tool) => (
-              <Link key={tool.href} href={tool.href}>
-                <Card className="h-full hover:bg-amber-500/10 hover:border-amber-500/30 transition-colors cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <tool.icon className="h-5 w-5 text-amber-500" />
-                      <CardTitle className="text-lg">{tool.title}</CardTitle>
-                    </div>
-                    <CardDescription>{tool.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-end">
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+          <div className="space-y-2">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-1">More Tools</h3>
+            <div className="grid gap-3 md:grid-cols-3">
+              {aiTools.map((tool) => (
+                <Link key={tool.href} href={tool.href}>
+                  <Card className="group h-full border-border/60 hover:bg-muted/50 hover:border-amber-500/30 transition-colors cursor-pointer">
+                    <CardContent className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <tool.icon className="h-4 w-4 text-muted-foreground group-hover:text-amber-500 transition-colors shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{tool.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{tool.description}</p>
+                        </div>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-amber-500 transition-colors shrink-0 ml-auto" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </div>
         </>
       )}
