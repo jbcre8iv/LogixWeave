@@ -153,11 +153,13 @@ function ProjectGridCard({
                 <Calendar className="h-4 w-4" />
                 {new Date(project.updated_at).toLocaleDateString()}
               </div>
-              {healthScore != null && (
-                <div className="ml-auto">
+              <div className="ml-auto">
+                {healthScore != null ? (
                   <MiniHealthRing score={healthScore} />
-                </div>
-              )}
+                ) : (
+                  <span className="text-[10px] text-muted-foreground/60">No Data</span>
+                )}
+              </div>
             </div>
             {matchingFiles.length > 0 && (
               <div className="mt-3 pl-6 space-y-1">
@@ -328,8 +330,10 @@ function ProjectListTable({
                 )}
                 <TableCell>{fileCount}</TableCell>
                 <TableCell>
-                  {healthScoreMap[project.id] && (
+                  {healthScoreMap[project.id] ? (
                     <MiniHealthRing score={healthScoreMap[project.id].overall} size={24} />
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/60">No Data</span>
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
