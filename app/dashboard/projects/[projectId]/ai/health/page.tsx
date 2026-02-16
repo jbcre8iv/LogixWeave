@@ -32,34 +32,35 @@ export default async function HealthPage({ params }: HealthPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/dashboard/projects/${projectId}/analysis`}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <HeartPulse className="h-8 w-8 text-amber-500" />
-            Health Coach
-          </h1>
-          <p className="text-muted-foreground">{project.name}</p>
-        </div>
-      </div>
-
       {!hasData ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              No parsed files found. Please upload and parse L5X files first.
-            </p>
-            <Button asChild>
-              <Link href={`/dashboard/projects/${projectId}/files`}>
-                Upload Files
+        <>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={`/dashboard/projects/${projectId}/analysis`}>
+                <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
-          </CardContent>
-        </Card>
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <HeartPulse className="h-8 w-8 text-amber-500" />
+                Health Coach
+              </h1>
+              <p className="text-muted-foreground">{project.name}</p>
+            </div>
+          </div>
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                No parsed files found. Please upload and parse L5X files first.
+              </p>
+              <Button asChild>
+                <Link href={`/dashboard/projects/${projectId}/files`}>
+                  Upload Files
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </>
       ) : (
         <HealthCoach projectId={projectId} projectName={project.name} />
       )}
