@@ -3,9 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, GitCompare, TagsIcon, MessageSquare, AlertTriangle, ArrowRight, FileCheck } from "lucide-react";
+import { ArrowLeft, GitCompare, TagsIcon, MessageSquare, AlertTriangle, ArrowRight, FileCheck, CheckCircle, Info } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
+import { HealthScore } from "@/components/analysis/health-score";
+import { Badge } from "@/components/ui/badge";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -356,6 +358,52 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
         </Card>
       ) : (
         <>
+          {/* Health Score */}
+          <HealthScore stats={stats} />
+
+          {/* Key Insights */}
+          {(() => {
+            const insights: Array<{ type: "warning" | "success" | "info"; message: string }> = [];
+            if (stats.unusedTags > 0) {
+              insights.push({ type: "warning", message: `${stats.unusedTags} unused tag${stats.unusedTags !== 1 ? "s" : ""} detected` });
+            }
+            if (stats.commentCoverage < 50) {
+              insights.push({ type: "warning", message: `Comment coverage is ${stats.commentCoverage}% — below recommended 50%` });
+            }
+            if (stats.commentCoverage >= 80) {
+              insights.push({ type: "success", message: `Excellent comment coverage at ${stats.commentCoverage}%` });
+            }
+            if (insights.length === 0) {
+              insights.push({ type: "success", message: "No significant issues detected" });
+            }
+            return (
+              <div className="flex flex-wrap gap-2">
+                {insights.map((insight, i) => (
+                  <Badge
+                    key={i}
+                    variant="outline"
+                    className={
+                      insight.type === "warning"
+                        ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400"
+                        : insight.type === "success"
+                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+                          : "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-400"
+                    }
+                  >
+                    {insight.type === "warning" ? (
+                      <AlertTriangle className="h-3 w-3" />
+                    ) : insight.type === "success" ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <Info className="h-3 w-3" />
+                    )}
+                    {insight.message}
+                  </Badge>
+                ))}
+              </div>
+            );
+          })()}
+
           {/* Summary Stats */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card>

@@ -45,7 +45,7 @@ const projectTools = [
   { name: "I/O Mapping", globalHref: "/dashboard/tools/io", projectHref: "/io-mapping", icon: HardDrive },
   { name: "UDTs", globalHref: "/dashboard/tools/udts", projectHref: "/udts", icon: Layers },
   { name: "AOIs", globalHref: "/dashboard/tools/aois", projectHref: "/aois", icon: Package },
-  { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3 },
+  { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
   { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
 ];
 
@@ -340,6 +340,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
                 (projectId && item.projectHref && pathname.startsWith(`/dashboard/projects/${projectId}${item.projectHref}`));
 
               const isAI = "isAI" in item && item.isAI;
+              const isAnalysis = "isAnalysis" in item && item.isAnalysis;
               return (
                 <Link
                   key={item.name}
@@ -351,13 +352,17 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
                     isActive
                       ? isAI
                         ? "bg-amber-500 text-white font-medium"
-                        : "bg-primary text-primary-foreground font-medium"
+                        : isAnalysis
+                          ? "bg-emerald-500 text-white font-medium"
+                          : "bg-primary text-primary-foreground font-medium"
                       : isAI
                         ? "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        : isAnalysis
+                          ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
                 >
-                  <item.icon className={cn("h-4 w-4", projectId && "h-3.5 w-3.5", !isActive && isAI && "text-amber-500")} />
+                  <item.icon className={cn("h-4 w-4", projectId && "h-3.5 w-3.5", !isActive && isAI && "text-amber-500", !isActive && isAnalysis && "text-emerald-500")} />
                   {item.name}
                 </Link>
               );
