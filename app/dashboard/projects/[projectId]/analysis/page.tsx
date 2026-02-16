@@ -405,7 +405,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
           })()}
 
           {/* Summary Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Total Tags</CardDescription>
@@ -422,6 +422,18 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
               <CardHeader className="pb-2">
                 <CardDescription>Tag References</CardDescription>
                 <CardTitle className="text-3xl">{stats.totalReferences.toLocaleString()}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className={stats.unusedTags > 0 ? "border-yellow-500/50" : ""}>
+              <CardHeader className="pb-2">
+                <CardDescription>Unused Tags</CardDescription>
+                <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}>{stats.unusedTags.toLocaleString()}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className={stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}>
+              <CardHeader className="pb-2">
+                <CardDescription>Comment Coverage</CardDescription>
+                <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}>{stats.commentCoverage}%</CardTitle>
               </CardHeader>
             </Card>
           </div>
