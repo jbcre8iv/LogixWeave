@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -38,6 +41,8 @@ interface AnalysisChartsProps {
   routineCoverage: RoutineCoverage[];
   topTags: TopTag[];
 }
+
+const COLLAPSED_LIMIT = 5;
 
 const USAGE_COLORS: Record<string, string> = {
   Read: "#3b82f6",
@@ -106,6 +111,9 @@ function PieCenterLabel({ data }: { data: UsageBreakdown[] }) {
 }
 
 export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: AnalysisChartsProps) {
+  const [coverageExpanded, setCoverageExpanded] = useState(false);
+  const [topTagsExpanded, setTopTagsExpanded] = useState(false);
+
   const hasUsageData = usageBreakdown.some((d) => d.value > 0);
   const hasCoverageData = routineCoverage.length > 0;
   const hasTopTags = topTags.length > 0;
@@ -115,9 +123,13 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
   const filteredUsage = usageBreakdown.filter((d) => d.value > 0);
   const usageTotal = filteredUsage.reduce((sum, d) => sum + d.value, 0);
 
-  // Compute dynamic height for bar charts based on data rows
-  const coverageHeight = Math.max(180, routineCoverage.length * 44 + 40);
-  const topTagsHeight = Math.max(180, topTags.length * 40 + 40);
+  const coverageCanExpand = routineCoverage.length > COLLAPSED_LIMIT;
+  const visibleCoverage = coverageExpanded ? routineCoverage : routineCoverage.slice(0, COLLAPSED_LIMIT);
+  const coverageHeight = Math.max(180, visibleCoverage.length * 44 + 40);
+
+  const topTagsCanExpand = topTags.length > COLLAPSED_LIMIT;
+  const visibleTopTags = topTagsExpanded ? topTags : topTags.slice(0, COLLAPSED_LIMIT);
+  const topTagsHeight = Math.max(180, visibleTopTags.length * 40 + 40);
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -199,14 +211,23 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
       {hasCoverageData && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Comment Coverage</CardTitle>
-            <CardDescription>Percentage of rungs with comments per routine</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Comment Coverage</CardTitle>
+                <CardDescription>Percentage of rungs with comments per routine</CardDescription>
+              </div>
+              {coverageCanExpand && (
+                <span className="text-xs text-muted-foreground">
+                  {visibleCoverage.length} of {routineCoverage.length}
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div style={{ height: `${coverageHeight}px` }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={routineCoverage}
+                  data={visibleCoverage}
                   layout="vertical"
                   margin={{ left: 8, right: 48, top: 4, bottom: 4 }}
                 >
@@ -239,7 +260,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     animationDuration={600}
                     animationEasing="ease-out"
                   >
-                    {routineCoverage.map((entry) => (
+                    {visibleCoverage.map((entry) => (
                       <Cell key={entry.routine} fill={getCoverageColor(entry.coverage)} />
                     ))}
                     <LabelList
@@ -252,6 +273,20 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {coverageCanExpand && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full mt-2 text-xs text-muted-foreground"
+                onClick={() => setCoverageExpanded(!coverageExpanded)}
+              >
+                {coverageExpanded ? (
+                  <>Show less <ChevronUp className="ml-1 h-3 w-3" /></>
+                ) : (
+                  <>Show all {routineCoverage.length} routines <ChevronDown className="ml-1 h-3 w-3" /></>
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -260,14 +295,23 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
       {hasTopTags && (
         <Card className={!hasUsageData || !hasCoverageData ? "" : "md:col-span-2 lg:col-span-1"}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Top Referenced Tags</CardTitle>
-            <CardDescription>Most frequently used tags in logic</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Top Referenced Tags</CardTitle>
+                <CardDescription>Most frequently used tags in logic</CardDescription>
+              </div>
+              {topTagsCanExpand && (
+                <span className="text-xs text-muted-foreground">
+                  {visibleTopTags.length} of {topTags.length}
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div style={{ height: `${topTagsHeight}px` }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={topTags}
+                  data={visibleTopTags}
                   layout="vertical"
                   margin={{ left: 8, right: 40, top: 4, bottom: 4 }}
                 >
@@ -298,7 +342,7 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                     animationDuration={600}
                     animationEasing="ease-out"
                   >
-                    {topTags.map((_, i) => (
+                    {visibleTopTags.map((_, i) => (
                       <Cell key={i} fill={TOP_TAG_COLORS[i % TOP_TAG_COLORS.length]} />
                     ))}
                     <LabelList
@@ -310,6 +354,20 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {topTagsCanExpand && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full mt-2 text-xs text-muted-foreground"
+                onClick={() => setTopTagsExpanded(!topTagsExpanded)}
+              >
+                {topTagsExpanded ? (
+                  <>Show less <ChevronUp className="ml-1 h-3 w-3" /></>
+                ) : (
+                  <>Show all {topTags.length} tags <ChevronDown className="ml-1 h-3 w-3" /></>
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
