@@ -31,12 +31,12 @@ function computeScore(stats: HealthScoreProps["stats"]) {
   return { overall, tagEfficiency: Math.round(tagEfficiency), documentation: Math.round(documentation), tagUsage: Math.round(tagUsage) };
 }
 
-function getGrade(score: number): string {
-  if (score >= 90) return "A";
-  if (score >= 80) return "B";
-  if (score >= 70) return "C";
-  if (score >= 60) return "D";
-  return "F";
+function getGrade(score: number): { letter: string; feedback: string } {
+  if (score >= 90) return { letter: "A", feedback: "Excellent — well-documented with minimal unused tags" };
+  if (score >= 80) return { letter: "B", feedback: "Good — minor improvements could tighten things up" };
+  if (score >= 70) return { letter: "C", feedback: "Fair — some areas need attention" };
+  if (score >= 60) return { letter: "D", feedback: "Below average — several metrics need improvement" };
+  return { letter: "F", feedback: "Needs work — significant cleanup recommended" };
 }
 
 function getColor(score: number): { ring: string; text: string; bg: string; progress: string } {
@@ -47,7 +47,7 @@ function getColor(score: number): { ring: string; text: string; bg: string; prog
 
 export function HealthScore({ stats }: HealthScoreProps) {
   const { overall, tagEfficiency, documentation, tagUsage } = computeScore(stats);
-  const grade = getGrade(overall);
+  const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
 
   const radius = 54;
@@ -94,6 +94,7 @@ export function HealthScore({ stats }: HealthScoreProps) {
               <span className={`text-3xl font-bold ${color.text}`}>{overall}</span>
               <span className={`text-sm font-semibold ${color.text}`}>{grade}</span>
             </div>
+            <p className={`text-xs text-center mt-1 ${color.text}`}>{feedback}</p>
           </div>
 
           {/* Sub-metrics */}
