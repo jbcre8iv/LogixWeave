@@ -390,8 +390,11 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
             projectId={projectId}
           />
 
-          {/* Analysis Tools */}
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Deep Dive Tools */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Additional Insights</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 -mt-3">
             {analysisTools.map((tool) => (
               <Link key={tool.href} href={tool.href}>
                 <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
