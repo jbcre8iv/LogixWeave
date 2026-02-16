@@ -12,6 +12,8 @@ import {
   Pie,
   Cell,
   Legend,
+  CartesianGrid,
+  LabelList,
 } from "recharts";
 
 interface UsageBreakdown {
@@ -49,6 +51,19 @@ function getCoverageColor(pct: number): string {
   return "#ef4444";
 }
 
+const TOP_TAG_COLORS = [
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#a78bfa",
+  "#818cf8",
+  "#60a5fa",
+  "#93c5fd",
+  "#7dd3fc",
+  "#67e8f9",
+  "#5eead4",
+];
+
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; payload?: { total?: number; commented?: number } }>; label?: string }) {
   if (!active || !payload?.length) return null;
   const data = payload[0];
@@ -71,8 +86,22 @@ function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ n
   return (
     <div className="bg-popover text-popover-foreground border rounded-lg px-3 py-2 shadow-md text-sm">
       <p className="font-medium">{payload[0].name}</p>
-      <p className="text-muted-foreground">{payload[0].value} references</p>
+      <p className="text-muted-foreground">{payload[0].value.toLocaleString()} references</p>
     </div>
+  );
+}
+
+function PieCenterLabel({ data }: { data: UsageBreakdown[] }) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  return (
+    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central">
+      <tspan x="50%" dy="-0.5em" className="fill-foreground text-xl font-bold">
+        {total.toLocaleString()}
+      </tspan>
+      <tspan x="50%" dy="1.4em" className="fill-muted-foreground text-[11px]">
+        total refs
+      </tspan>
+    </text>
   );
 }
 
@@ -82,6 +111,13 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
   const hasTopTags = topTags.length > 0;
 
   if (!hasUsageData && !hasCoverageData && !hasTopTags) return null;
+
+  const filteredUsage = usageBreakdown.filter((d) => d.value > 0);
+  const usageTotal = filteredUsage.reduce((sum, d) => sum + d.value, 0);
+
+  // Compute dynamic height for bar charts based on data rows
+  const coverageHeight = Math.max(180, routineCoverage.length * 44 + 40);
+  const topTagsHeight = Math.max(180, topTags.length * 40 + 40);
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -93,35 +129,64 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
             <CardDescription>Read vs. Write vs. Both</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px]">
+            <div className="h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={usageBreakdown.filter((d) => d.value > 0)}
+                    data={filteredUsage}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={filteredUsage.length > 1 ? 4 : 0}
                     dataKey="value"
                     nameKey="name"
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
+                    label={(props) => {
+                      if (filteredUsage.length <= 1) return null;
+                      const { value, cx: cxVal, cy: cyVal, midAngle: ma, outerRadius: or } = props as { value?: number; cx?: number; cy?: number; midAngle?: number; outerRadius?: number };
+                      if (value == null || cxVal == null || cyVal == null || ma == null || or == null) return null;
+                      const RADIAN = Math.PI / 180;
+                      const radius = or + 20;
+                      const x = cxVal + radius * Math.cos(-ma * RADIAN);
+                      const y = cyVal + radius * Math.sin(-ma * RADIAN);
+                      const pct = Math.round((value / usageTotal) * 100);
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          textAnchor={x > cxVal ? "start" : "end"}
+                          dominantBaseline="central"
+                          className="fill-muted-foreground text-[11px]"
+                        >
+                          {pct}%
+                        </text>
+                      );
+                    }}
                   >
-                    {usageBreakdown
-                      .filter((d) => d.value > 0)
-                      .map((entry) => (
-                        <Cell
-                          key={entry.name}
-                          fill={USAGE_COLORS[entry.name] || "#6b7280"}
-                        />
-                      ))}
+                    {filteredUsage.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={USAGE_COLORS[entry.name] || "#6b7280"}
+                        strokeWidth={0}
+                      />
+                    ))}
                   </Pie>
+                  <PieCenterLabel data={filteredUsage} />
                   <Tooltip content={<PieTooltip />} />
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value: string) => (
-                      <span className="text-xs text-muted-foreground">{value}</span>
-                    )}
+                    formatter={(value: string) => {
+                      const item = filteredUsage.find((d) => d.name === value);
+                      return (
+                        <span className="text-xs text-muted-foreground">
+                          {value} ({item?.value.toLocaleString() ?? 0})
+                        </span>
+                      );
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -138,26 +203,51 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
             <CardDescription>Percentage of rungs with comments per routine</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px]">
+            <div style={{ height: `${coverageHeight}px` }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={routineCoverage}
                   layout="vertical"
-                  margin={{ left: 0, right: 16, top: 0, bottom: 0 }}
+                  margin={{ left: 0, right: 48, top: 4, bottom: 4 }}
                 >
-                  <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} fontSize={12} />
+                  <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-muted/30" />
+                  <XAxis
+                    type="number"
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                    fontSize={11}
+                    className="fill-muted-foreground"
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <YAxis
                     type="category"
                     dataKey="routine"
-                    width={120}
+                    width={130}
                     fontSize={11}
-                    tickFormatter={(v: string) => v.length > 18 ? v.slice(0, 18) + "..." : v}
+                    className="fill-muted-foreground"
+                    tickFormatter={(v: string) => v.length > 22 ? v.slice(0, 22) + "\u2026" : v}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="coverage" radius={[0, 4, 4, 0]} maxBarSize={28}>
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
+                  <Bar
+                    dataKey="coverage"
+                    radius={[0, 6, 6, 0]}
+                    maxBarSize={24}
+                    animationBegin={0}
+                    animationDuration={600}
+                    animationEasing="ease-out"
+                  >
                     {routineCoverage.map((entry) => (
                       <Cell key={entry.routine} fill={getCoverageColor(entry.coverage)} />
                     ))}
+                    <LabelList
+                      dataKey="coverage"
+                      position="right"
+                      formatter={(v) => `${v}%`}
+                      className="fill-muted-foreground text-[11px]"
+                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -174,23 +264,49 @@ export function AnalysisCharts({ usageBreakdown, routineCoverage, topTags }: Ana
             <CardDescription>Most frequently used tags in logic</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[200px]">
+            <div style={{ height: `${topTagsHeight}px` }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={topTags}
                   layout="vertical"
-                  margin={{ left: 0, right: 16, top: 0, bottom: 0 }}
+                  margin={{ left: 0, right: 40, top: 4, bottom: 4 }}
                 >
-                  <XAxis type="number" fontSize={12} />
+                  <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-muted/30" />
+                  <XAxis
+                    type="number"
+                    fontSize={11}
+                    className="fill-muted-foreground"
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    width={120}
+                    width={130}
                     fontSize={11}
-                    tickFormatter={(v: string) => v.length > 18 ? v.slice(0, 18) + "..." : v}
+                    className="fill-muted-foreground"
+                    tickFormatter={(v: string) => v.length > 22 ? v.slice(0, 22) + "\u2026" : v}
+                    axisLine={false}
+                    tickLine={false}
                   />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} maxBarSize={28} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted) / 0.3)" }} />
+                  <Bar
+                    dataKey="count"
+                    radius={[0, 6, 6, 0]}
+                    maxBarSize={24}
+                    animationBegin={0}
+                    animationDuration={600}
+                    animationEasing="ease-out"
+                  >
+                    {topTags.map((_, i) => (
+                      <Cell key={i} fill={TOP_TAG_COLORS[i % TOP_TAG_COLORS.length]} />
+                    ))}
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      className="fill-muted-foreground text-[11px]"
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
