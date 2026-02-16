@@ -94,8 +94,8 @@ export function CommentCoverageTable({ byProgram, byRoutine, routineRungs }: Com
             <TableHeader>
               <TableRow>
                 <TableHead>Program</TableHead>
-                <TableHead className="text-right">Total Rungs</TableHead>
-                <TableHead className="text-right">Commented</TableHead>
+                <TableHead className="text-right w-[120px]">Total Rungs</TableHead>
+                <TableHead className="text-right w-[120px]">Commented</TableHead>
                 <TableHead className="text-right w-[200px]">Coverage</TableHead>
               </TableRow>
             </TableHeader>
@@ -178,8 +178,8 @@ export function CommentCoverageTable({ byProgram, byRoutine, routineRungs }: Com
                   <TableHead className="w-[40px]" />
                   <TableHead>Program</TableHead>
                   <TableHead>Routine</TableHead>
-                  <TableHead className="text-right">Total Rungs</TableHead>
-                  <TableHead className="text-right">Commented</TableHead>
+                  <TableHead className="text-right w-[120px]">Total Rungs</TableHead>
+                  <TableHead className="text-right w-[120px]">Commented</TableHead>
                   <TableHead className="text-right w-[200px]">Coverage</TableHead>
                 </TableRow>
               </TableHeader>
