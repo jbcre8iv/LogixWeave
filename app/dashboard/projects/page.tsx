@@ -30,9 +30,9 @@ export default async function ProjectsPage() {
 
   // Fetch latest health score per project
   const activeProjectIds = activeProjects.map((p) => p.id);
+  const serviceSupabase = await createServiceClient();
   let healthScoreMap: Record<string, { overall: number; tagEfficiency: number; documentation: number; tagUsage: number }> = {};
   if (activeProjectIds.length > 0) {
-    const serviceSupabase = await createServiceClient();
     const { data: healthRows } = await serviceSupabase
       .from("ai_analysis_history")
       .select("project_id, health_scores")
@@ -47,6 +47,91 @@ export default async function ProjectsPage() {
           healthScoreMap[row.project_id] = hs;
         }
       }
+    }
+  }
+
+  // Compute health scores from parsed data for projects that have files but no stored score
+  const projectsNeedingCompute = activeProjects.filter(
+    (p) => !healthScoreMap[p.id] && Array.isArray(p.project_files) && p.project_files.length > 0
+  );
+
+  if (projectsNeedingCompute.length > 0) {
+    const fileIdToProject: Record<string, string> = {};
+    const allFileIds: string[] = [];
+    for (const p of projectsNeedingCompute) {
+      if (Array.isArray(p.project_files)) {
+        for (const f of p.project_files) {
+          fileIdToProject[f.id] = p.id;
+          allFileIds.push(f.id);
+        }
+      }
+    }
+
+    const [tagsResult, refsResult, rungsResult] = await Promise.all([
+      serviceSupabase.from("parsed_tags").select("file_id, name").in("file_id", allFileIds),
+      serviceSupabase.from("tag_references").select("file_id, tag_name").in("file_id", allFileIds),
+      serviceSupabase.from("parsed_rungs").select("file_id, comment").in("file_id", allFileIds),
+    ]);
+
+    // Group by project
+    const projectTags: Record<string, string[]> = {};
+    const projectRefNames: Record<string, Set<string>> = {};
+    const projectRefCount: Record<string, number> = {};
+    const projectRungs: Record<string, { total: number; commented: number }> = {};
+
+    for (const tag of tagsResult.data || []) {
+      const pid = fileIdToProject[tag.file_id];
+      if (!projectTags[pid]) projectTags[pid] = [];
+      projectTags[pid].push(tag.name);
+    }
+
+    for (const ref of refsResult.data || []) {
+      const pid = fileIdToProject[ref.file_id];
+      if (!projectRefNames[pid]) projectRefNames[pid] = new Set();
+      projectRefNames[pid].add(ref.tag_name);
+      projectRefCount[pid] = (projectRefCount[pid] || 0) + 1;
+    }
+
+    for (const rung of rungsResult.data || []) {
+      const pid = fileIdToProject[rung.file_id];
+      if (!projectRungs[pid]) projectRungs[pid] = { total: 0, commented: 0 };
+      projectRungs[pid].total++;
+      if (rung.comment && rung.comment.trim() !== "") projectRungs[pid].commented++;
+    }
+
+    // Compute score for each project (same formula as health-score.tsx)
+    for (const p of projectsNeedingCompute) {
+      const tags = projectTags[p.id] || [];
+      const refNames = projectRefNames[p.id] || new Set<string>();
+      const rungs = projectRungs[p.id] || { total: 0, commented: 0 };
+      const totalRefs = projectRefCount[p.id] || 0;
+      if (tags.length === 0) continue;
+
+      let unusedCount = 0;
+      for (const tagName of tags) {
+        const tagParts = tagName.split(".");
+        let found = false;
+        for (let i = 1; i <= tagParts.length; i++) {
+          if (refNames.has(tagParts.slice(0, i).join("."))) { found = true; break; }
+        }
+        if (!found) {
+          const baseName = tagName.split("[")[0];
+          if (!refNames.has(baseName) && !refNames.has(tagName)) unusedCount++;
+        }
+      }
+
+      const commentCoverage = rungs.total > 0 ? Math.round((rungs.commented / rungs.total) * 100) : 0;
+      const tagEfficiency = Math.max(0, 100 - (unusedCount / tags.length) * 200);
+      const documentation = commentCoverage;
+      const tagUsage = Math.min(100, (totalRefs / tags.length) * 20);
+      const overall = Math.round(tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25);
+
+      healthScoreMap[p.id] = {
+        overall,
+        tagEfficiency: Math.round(tagEfficiency),
+        documentation: Math.round(documentation),
+        tagUsage: Math.round(tagUsage),
+      };
     }
   }
 
