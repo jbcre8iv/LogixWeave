@@ -17,6 +17,9 @@ interface TagsPageProps {
     page?: string;
     from?: string;
     tab?: string;
+    sort?: string;
+    order?: string;
+    usage?: string;
   }>;
 }
 
@@ -24,8 +27,14 @@ const PAGE_SIZE = 50;
 
 export default async function TagsPage({ params, searchParams }: TagsPageProps) {
   const { projectId } = await params;
-  const { search, scope, dataType, page: pageParam, from: fromParam, tab } = await searchParams;
+  const { search, scope, dataType, page: pageParam, from: fromParam, tab, sort, order, usage } = await searchParams;
   const activeTab = tab || "definitions";
+
+  // Sort whitelist for tag definitions
+  const defSortWhitelist = ["name", "data_type", "scope", "usage"] as const;
+  type DefSortField = typeof defSortWhitelist[number];
+  const defSortField: DefSortField = defSortWhitelist.includes(sort as DefSortField) ? (sort as DefSortField) : "name";
+  const ascending = order === "desc" ? false : true;
   const backHref = fromParam === "tools"
     ? "/dashboard/tools/tags"
     : `/dashboard/projects/${projectId}`;
@@ -115,7 +124,7 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  query = query.order("name").range(from, to);
+  query = query.order(defSortField, { ascending }).range(from, to);
 
   const { data: tags, count } = await query;
 
@@ -148,7 +157,7 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
     }
   }
 
-  const referencedTags = Array.from(refTagMap.entries())
+  const referencedTagsAll = Array.from(refTagMap.entries())
     .map(([name, info]) => {
       // Normalize to lowercase for comparison
       const lowered = new Set(Array.from(info.usageTypes).map((t) => t.toLowerCase()));
@@ -171,8 +180,37 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
         usageTypes: resolvedTypes,
         routines: Array.from(info.routines),
       };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+  // Filter by usage type if specified
+  const filteredRefTags = usage && usage !== "all"
+    ? referencedTagsAll.filter((t) => t.usageTypes.some((u) => u.toLowerCase() === usage.toLowerCase()))
+    : referencedTagsAll;
+
+  // Sort referenced tags
+  const refSortWhitelist = ["name", "referenceCount", "usageTypes", "routines"] as const;
+  type RefSortField = typeof refSortWhitelist[number];
+  const refSortField: RefSortField = refSortWhitelist.includes(sort as RefSortField) ? (sort as RefSortField) : "name";
+  const refAscending = order === "desc" ? false : true;
+
+  const referencedTags = filteredRefTags.sort((a, b) => {
+    let cmp = 0;
+    switch (refSortField) {
+      case "name":
+        cmp = a.name.localeCompare(b.name);
+        break;
+      case "referenceCount":
+        cmp = a.referenceCount - b.referenceCount;
+        break;
+      case "usageTypes":
+        cmp = a.usageTypes.join(",").localeCompare(b.usageTypes.join(","));
+        break;
+      case "routines":
+        cmp = a.routines.length - b.routines.length;
+        break;
+    }
+    return refAscending ? cmp : -cmp;
+  });
 
   // Paginate referenced tags
   const refFrom = (page - 1) * PAGE_SIZE;
@@ -259,6 +297,7 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
           pageSize={PAGE_SIZE}
           projectId={projectId}
           search={search}
+          usage={usage}
         />
       )}
     </div>

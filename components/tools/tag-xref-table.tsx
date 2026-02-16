@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface TagReference {
   id: string;
@@ -67,11 +68,11 @@ export function TagXrefTable({ references, totalCount, page, pageSize }: TagXref
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Tag Name</TableHead>
-              <TableHead className="w-[150px]">Program</TableHead>
-              <TableHead className="w-[150px]">Routine</TableHead>
-              <TableHead className="w-[100px]">Rung</TableHead>
-              <TableHead className="w-[100px]">Usage</TableHead>
+              <SortableTableHead column="tag_name" className="w-[250px]">Tag Name</SortableTableHead>
+              <SortableTableHead column="program_name" className="w-[150px]">Program</SortableTableHead>
+              <SortableTableHead column="routine_name" className="w-[150px]">Routine</SortableTableHead>
+              <SortableTableHead column="rung_number" className="w-[100px]">Rung</SortableTableHead>
+              <SortableTableHead column="usage_type" className="w-[100px]">Usage</SortableTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

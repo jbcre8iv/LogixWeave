@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface AOIParameter {
   id: string;
@@ -255,9 +256,9 @@ export function AOITable({ aois, totalCount, page, pageSize }: AOITableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Name</TableHead>
-              <TableHead className="w-[100px]">Revision</TableHead>
-              <TableHead className="w-[150px]">Vendor</TableHead>
+              <SortableTableHead column="name" className="w-[250px]">Name</SortableTableHead>
+              <SortableTableHead column="revision" className="w-[100px]">Revision</SortableTableHead>
+              <SortableTableHead column="vendor" className="w-[150px]">Vendor</SortableTableHead>
               <TableHead className="w-[100px]">Params</TableHead>
               <TableHead>Description</TableHead>
             </TableRow>

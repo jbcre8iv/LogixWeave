@@ -4,41 +4,39 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Download } from "lucide-react";
-import { AOIFilters } from "@/components/tools/aoi-filters";
-import { AOITable } from "@/components/tools/aoi-table";
+import { IOFilters } from "@/components/tools/io-filters";
+import { IOTable } from "@/components/tools/io-table";
 
-interface AOIsPageProps {
+interface IOPageProps {
   params: Promise<{ projectId: string }>;
   searchParams: Promise<{
     search?: string;
-    vendor?: string;
+    catalogNumber?: string;
+    parentModule?: string;
     page?: string;
-    from?: string;
     sort?: string;
     order?: string;
   }>;
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 
-export default async function AOIsPage({ params, searchParams }: AOIsPageProps) {
+export default async function IOPage({ params, searchParams }: IOPageProps) {
   const { projectId } = await params;
-  const { search, vendor, page: pageParam, from: fromParam, sort, order } = await searchParams;
-  const sortWhitelist = ["name", "revision", "vendor"] as const;
+  const { search, catalogNumber, parentModule, page: pageParam, sort, order } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam || "1", 10));
+
+  const sortWhitelist = ["name", "catalog_number", "parent_module", "slot"] as const;
   type SortField = typeof sortWhitelist[number];
   const sortField: SortField = sortWhitelist.includes(sort as SortField) ? (sort as SortField) : "name";
   const ascending = order === "desc" ? false : true;
-  const backHref = fromParam === "tools"
-    ? "/dashboard/tools/aois"
-    : `/dashboard/projects/${projectId}`;
-  const page = Math.max(1, parseInt(pageParam || "1", 10));
 
   const supabase = await createClient();
 
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, project_files(id)")
+    .select("id, name, project_files(id, original_name)")
     .eq("id", projectId)
     .single();
 
@@ -53,12 +51,12 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={backHref}>
+            <Link href={`/dashboard/projects/${projectId}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Add-On Instructions</h1>
+            <h1 className="text-3xl font-bold">I/O Mapping</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -78,32 +76,46 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
     );
   }
 
-  // Get unique vendors for filters
-  const { data: vendorsData } = await supabase
-    .from("parsed_aois")
-    .select("vendor")
-    .in("file_id", fileIds)
-    .not("vendor", "is", null);
+  // Get unique catalog numbers and parent modules for filters
+  const [catalogNumbersResult, parentModulesResult] = await Promise.all([
+    supabase
+      .from("parsed_io_modules")
+      .select("catalog_number")
+      .in("file_id", fileIds)
+      .not("catalog_number", "is", null)
+      .order("catalog_number"),
+    supabase
+      .from("parsed_io_modules")
+      .select("parent_module")
+      .in("file_id", fileIds)
+      .not("parent_module", "is", null)
+      .order("parent_module"),
+  ]);
 
-  const vendors = [...new Set(vendorsData?.map((a) => a.vendor).filter(Boolean) || [])].sort() as string[];
+  const catalogNumbers = [...new Set(catalogNumbersResult.data?.map((m) => m.catalog_number).filter(Boolean) || [])] as string[];
+  const parentModules = [...new Set(parentModulesResult.data?.map((m) => m.parent_module).filter(Boolean) || [])] as string[];
 
-  // Build query for AOIs with related data
+  // Create file ID to name mapping
+  const fileMap = new Map(
+    project.project_files?.map((f: { id: string; original_name: string }) => [f.id, f.original_name]) || []
+  );
+
+  // Build query for modules
   let query = supabase
-    .from("parsed_aois")
-    .select(`
-      id, name, description, revision, vendor, created_by, edited_by,
-      parsed_aoi_parameters(id, name, data_type, usage, required, visible, description),
-      parsed_aoi_local_tags(id, name, data_type, description),
-      parsed_aoi_routines(id, name, type, rung_count)
-    `, { count: "exact" })
+    .from("parsed_io_modules")
+    .select("id, name, catalog_number, parent_module, slot, connection_info, file_id", { count: "exact" })
     .in("file_id", fileIds);
 
   if (search) {
     query = query.ilike("name", `%${search}%`);
   }
 
-  if (vendor && vendor !== "all") {
-    query = query.eq("vendor", vendor);
+  if (catalogNumber) {
+    query = query.eq("catalog_number", catalogNumber);
+  }
+
+  if (parentModule) {
+    query = query.eq("parent_module", parentModule);
   }
 
   // Add pagination
@@ -112,21 +124,27 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
 
   query = query.order(sortField, { ascending }).range(from, to);
 
-  const { data: aois, count } = await query;
+  const { data: modules, count } = await query;
 
-  const exportUrl = `/api/export/aois?projectId=${projectId}${search ? `&search=${search}` : ""}${vendor ? `&vendor=${vendor}` : ""}`;
+  // Add file names to modules
+  const modulesWithFileNames = (modules || []).map((m) => ({
+    ...m,
+    file_name: fileMap.get(m.file_id) || undefined,
+  }));
+
+  const exportUrl = `/api/export/io?projectId=${projectId}${search ? `&search=${search}` : ""}${catalogNumber ? `&catalogNumber=${catalogNumber}` : ""}${parentModule ? `&parentModule=${parentModule}` : ""}`;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={backHref}>
+            <Link href={`/dashboard/projects/${projectId}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Add-On Instructions</h1>
+            <h1 className="text-3xl font-bold">I/O Mapping</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -142,16 +160,16 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
         <CardHeader>
           <CardTitle>Search & Filter</CardTitle>
           <CardDescription>
-            {count || 0} AOIs found
+            {count || 0} I/O modules found
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AOIFilters vendors={vendors} />
+          <IOFilters catalogNumbers={catalogNumbers} parentModules={parentModules} />
         </CardContent>
       </Card>
 
-      <AOITable
-        aois={aois || []}
+      <IOTable
+        modules={modulesWithFileNames}
         totalCount={count || 0}
         page={page}
         pageSize={PAGE_SIZE}

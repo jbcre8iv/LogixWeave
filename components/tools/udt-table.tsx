@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface UDTMember {
   id: string;
@@ -134,8 +135,8 @@ export function UDTTable({ udts, totalCount, page, pageSize }: UDTTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Name</TableHead>
-              <TableHead className="w-[150px]">Family</TableHead>
+              <SortableTableHead column="name" className="w-[250px]">Name</SortableTableHead>
+              <SortableTableHead column="family_type" className="w-[150px]">Family</SortableTableHead>
               <TableHead className="w-[100px]">Members</TableHead>
               <TableHead>Description</TableHead>
             </TableRow>

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface Tag {
   id: string;
@@ -54,10 +55,10 @@ export function TagTable({ tags, totalCount, page, pageSize }: TagTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[250px]">Name</TableHead>
-              <TableHead className="w-[150px]">Data Type</TableHead>
-              <TableHead className="w-[150px]">Scope</TableHead>
-              <TableHead className="w-[100px]">Usage</TableHead>
+              <SortableTableHead column="name" className="w-[250px]">Name</SortableTableHead>
+              <SortableTableHead column="data_type" className="w-[150px]">Data Type</SortableTableHead>
+              <SortableTableHead column="scope" className="w-[150px]">Scope</SortableTableHead>
+              <SortableTableHead column="usage" className="w-[100px]">Usage</SortableTableHead>
               <TableHead>Description</TableHead>
             </TableRow>
           </TableHeader>

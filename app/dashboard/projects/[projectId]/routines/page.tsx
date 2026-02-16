@@ -14,6 +14,8 @@ interface RoutinesPageProps {
     program?: string;
     type?: string;
     page?: string;
+    sort?: string;
+    order?: string;
   }>;
 }
 
@@ -21,8 +23,13 @@ const PAGE_SIZE = 50;
 
 export default async function RoutinesPage({ params, searchParams }: RoutinesPageProps) {
   const { projectId } = await params;
-  const { search, program, type, page: pageParam } = await searchParams;
+  const { search, program, type, page: pageParam, sort, order } = await searchParams;
   const page = Math.max(1, parseInt(pageParam || "1", 10));
+
+  const sortWhitelist = ["name", "program_name", "type", "rung_count"] as const;
+  type SortField = typeof sortWhitelist[number];
+  const sortField: SortField = sortWhitelist.includes(sort as SortField) ? (sort as SortField) : "name";
+  const ascending = order === "desc" ? false : true;
 
   const supabase = await createClient();
 
@@ -113,7 +120,7 @@ export default async function RoutinesPage({ params, searchParams }: RoutinesPag
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  query = query.order("program_name").order("name").range(from, to);
+  query = query.order(sortField, { ascending }).range(from, to);
 
   const { data: routines, count } = await query;
 

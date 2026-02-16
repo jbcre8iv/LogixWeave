@@ -15,6 +15,8 @@ interface TagXrefPageProps {
     usageType?: string;
     program?: string;
     page?: string;
+    sort?: string;
+    order?: string;
   }>;
 }
 
@@ -22,8 +24,13 @@ const PAGE_SIZE = 50;
 
 export default async function TagXrefPage({ params, searchParams }: TagXrefPageProps) {
   const { projectId } = await params;
-  const { search, usageType, program, page: pageParam } = await searchParams;
+  const { search, usageType, program, page: pageParam, sort, order } = await searchParams;
   const page = Math.max(1, parseInt(pageParam || "1", 10));
+
+  const sortWhitelist = ["tag_name", "program_name", "routine_name", "rung_number", "usage_type"] as const;
+  type SortField = typeof sortWhitelist[number];
+  const sortField: SortField = sortWhitelist.includes(sort as SortField) ? (sort as SortField) : "tag_name";
+  const ascending = order === "desc" ? false : true;
 
   const supabase = await createClient();
 
@@ -100,7 +107,7 @@ export default async function TagXrefPage({ params, searchParams }: TagXrefPageP
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  query = query.order("tag_name").order("program_name").order("routine_name").range(from, to);
+  query = query.order(sortField, { ascending }).range(from, to);
 
   const { data: references, count } = await query;
 

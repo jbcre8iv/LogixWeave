@@ -15,6 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface ReferencedTag {
   name: string;
@@ -30,6 +38,7 @@ interface ReferencedTagsTableProps {
   pageSize: number;
   projectId: string;
   search?: string;
+  usage?: string;
 }
 
 function UsageBadge({ type }: { type: string }) {
@@ -51,6 +60,7 @@ export function ReferencedTagsTable({
   pageSize,
   projectId,
   search,
+  usage,
 }: ReferencedTagsTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -85,6 +95,18 @@ export function ReferencedTagsTable({
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const handleUsageFilter = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", "references");
+    params.delete("page");
+    if (value && value !== "all") {
+      params.set("usage", value);
+    } else {
+      params.delete("usage");
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -105,6 +127,17 @@ export function ReferencedTagsTable({
                 className="pl-9"
               />
             </div>
+            <Select value={usage || "all"} onValueChange={handleUsageFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Usage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Usage</SelectItem>
+                <SelectItem value="read">Read</SelectItem>
+                <SelectItem value="write">Write</SelectItem>
+                <SelectItem value="read/write">Read/Write</SelectItem>
+              </SelectContent>
+            </Select>
             <Button type="submit" variant="secondary">Search</Button>
           </form>
         </CardContent>
@@ -114,10 +147,10 @@ export function ReferencedTagsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Tag Name</TableHead>
-              <TableHead className="w-[120px]">References</TableHead>
-              <TableHead className="w-[150px]">Usage</TableHead>
-              <TableHead>Found In</TableHead>
+              <SortableTableHead column="name" className="w-[300px]">Tag Name</SortableTableHead>
+              <SortableTableHead column="referenceCount" defaultOrder="desc" className="w-[120px]">References</SortableTableHead>
+              <SortableTableHead column="usageTypes" className="w-[150px]">Usage</SortableTableHead>
+              <SortableTableHead column="routines" defaultOrder="desc" className="w-[150px]">Found In</SortableTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

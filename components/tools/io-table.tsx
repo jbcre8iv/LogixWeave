@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface IOModule {
   id: string;
@@ -72,10 +73,10 @@ export function IOTable({ modules, totalCount, page, pageSize }: IOTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead className="w-[180px]">Catalog Number</TableHead>
-              <TableHead className="w-[150px]">Parent Module</TableHead>
-              <TableHead className="w-[80px]">Slot</TableHead>
+              <SortableTableHead column="name" className="w-[200px]">Name</SortableTableHead>
+              <SortableTableHead column="catalog_number" className="w-[180px]">Catalog Number</SortableTableHead>
+              <SortableTableHead column="parent_module" className="w-[150px]">Parent Module</SortableTableHead>
+              <SortableTableHead column="slot" className="w-[80px]">Slot</SortableTableHead>
               <TableHead>File</TableHead>
             </TableRow>
           </TableHeader>

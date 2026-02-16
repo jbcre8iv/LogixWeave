@@ -14,6 +14,8 @@ interface UDTsPageProps {
     familyType?: string;
     page?: string;
     from?: string;
+    sort?: string;
+    order?: string;
   }>;
 }
 
@@ -21,7 +23,11 @@ const PAGE_SIZE = 25;
 
 export default async function UDTsPage({ params, searchParams }: UDTsPageProps) {
   const { projectId } = await params;
-  const { search, familyType, page: pageParam, from: fromParam } = await searchParams;
+  const { search, familyType, page: pageParam, from: fromParam, sort, order } = await searchParams;
+  const sortWhitelist = ["name", "family_type"] as const;
+  type SortField = typeof sortWhitelist[number];
+  const sortField: SortField = sortWhitelist.includes(sort as SortField) ? (sort as SortField) : "name";
+  const ascending = order === "desc" ? false : true;
   const backHref = fromParam === "tools"
     ? "/dashboard/tools/udts"
     : `/dashboard/projects/${projectId}`;
@@ -99,7 +105,7 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  query = query.order("name").range(from, to);
+  query = query.order(sortField, { ascending }).range(from, to);
 
   const { data: udts, count } = await query;
 

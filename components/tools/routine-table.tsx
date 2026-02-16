@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { SortableTableHead } from "@/components/tools/sortable-table-head";
 
 interface Routine {
   id: string;
@@ -85,10 +86,10 @@ export function RoutineTable({ routines, totalCount, page, pageSize }: RoutineTa
           <TableHeader>
             <TableRow>
               <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead className="w-[180px]">Program</TableHead>
-              <TableHead className="w-[100px]">Type</TableHead>
-              <TableHead className="w-[80px]">Rungs</TableHead>
+              <SortableTableHead column="name" className="w-[200px]">Name</SortableTableHead>
+              <SortableTableHead column="program_name" className="w-[180px]">Program</SortableTableHead>
+              <SortableTableHead column="type" className="w-[100px]">Type</SortableTableHead>
+              <SortableTableHead column="rung_count" defaultOrder="desc" className="w-[80px]">Rungs</SortableTableHead>
               <TableHead>File</TableHead>
             </TableRow>
           </TableHeader>
