@@ -55,9 +55,9 @@ export function HealthScore({ stats }: HealthScoreProps) {
   const offset = circumference - (overall / 100) * circumference;
 
   const metrics = [
-    { label: "Tag Efficiency", value: tagEfficiency },
-    { label: "Documentation", value: documentation },
-    { label: "Tag Usage", value: tagUsage },
+    { label: "Tag Efficiency (unused tags)", value: tagEfficiency },
+    { label: "Documentation (comment coverage)", value: documentation },
+    { label: "Tag Usage (reference density)", value: tagUsage },
   ];
 
   return (
