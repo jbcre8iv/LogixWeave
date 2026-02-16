@@ -54,13 +54,13 @@ export function HealthScore({ stats }: HealthScoreProps) {
   const [displayScore, setDisplayScore] = useState(0);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setAnimated(true));
-    return () => cancelAnimationFrame(id);
+    const timeout = setTimeout(() => setAnimated(true), 300);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     if (!animated) return;
-    const duration = 600;
+    const duration = 1200;
     const start = performance.now();
     const step = (now: number) => {
       const elapsed = now - start;
@@ -111,7 +111,7 @@ export function HealthScore({ stats }: HealthScoreProps) {
                   strokeDasharray={circumference}
                   strokeDashoffset={offset}
                   transform="rotate(-90 64 64)"
-                  style={{ transition: "stroke-dashoffset 0.6s ease" }}
+                  style={{ transition: "stroke-dashoffset 1.2s ease-out" }}
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -139,7 +139,10 @@ export function HealthScore({ stats }: HealthScoreProps) {
                       <span className="text-xs ml-1">/ 100</span>
                     </span>
                   </div>
-                  <Progress value={animated ? m.value : 0} className={`h-2 ${metricColor.progress}`} />
+                  <Progress
+                    value={animated ? m.value : 0}
+                    className={`h-2 ${metricColor.progress} [&_[data-slot=progress-indicator]]:duration-1000 [&_[data-slot=progress-indicator]]:ease-out`}
+                  />
                 </div>
               );
             })}
