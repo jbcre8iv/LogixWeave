@@ -41,11 +41,11 @@ const navigation = [
 
 // Project-specific tools (shown under project selector)
 const projectTools = [
+  { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
   { name: "Tag Explorer", globalHref: "/dashboard/tools/tags", projectHref: "/tags", icon: Tags },
   { name: "I/O Mapping", globalHref: "/dashboard/tools/io", projectHref: "/io-mapping", icon: HardDrive },
   { name: "UDTs", globalHref: "/dashboard/tools/udts", projectHref: "/udts", icon: Layers },
   { name: "AOIs", globalHref: "/dashboard/tools/aois", projectHref: "/aois", icon: Package },
-  { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
   { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
 ];
 
@@ -158,8 +158,8 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
     }
     // Get the current sub-path within the project (e.g., /tags, /analysis)
     const subPath = pathname.replace(/^\/dashboard\/projects\/[^/]+/, "");
-    // Navigate to the same sub-path in the new project
-    router.push(`/dashboard/projects/${newProjectId}${subPath || ""}`);
+    // Navigate to the same sub-path in the new project, defaulting to Analysis
+    router.push(`/dashboard/projects/${newProjectId}${subPath || "/analysis"}`);
     onNavClick?.();
   };
 
@@ -171,7 +171,8 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
     if (currentTool?.projectHref) {
       router.push(`/dashboard/projects/${selectedProjectId}${currentTool.projectHref}`);
     } else {
-      router.push(`/dashboard/projects/${selectedProjectId}`);
+      // Default to Analysis as landing page
+      router.push(`/dashboard/projects/${selectedProjectId}/analysis`);
     }
     onNavClick?.();
   };
