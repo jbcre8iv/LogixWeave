@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, ChevronUp, CheckCircle, XCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle, XCircle, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RoutineRow {
@@ -100,55 +100,74 @@ export function CommentCoverageTable({ byProgram, byRoutine, routineRungs }: Com
               </TableRow>
             </TableHeader>
             <TableBody>
-              {byProgram.map((prog) => (
-                <TableRow
-                  key={prog.name}
-                  className={cn(
-                    "cursor-pointer transition-colors",
-                    programFilter === prog.name && "bg-muted"
-                  )}
-                  onClick={() => handleProgramClick(prog.name)}
-                >
-                  <TableCell className="font-medium">{prog.name}</TableCell>
-                  <TableCell className="text-right">{prog.totalRungs}</TableCell>
-                  <TableCell className="text-right">{prog.commentedRungs}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Progress
-                        value={prog.coveragePercent}
-                        className={cn("h-2 w-16", getProgressColor(prog.coveragePercent))}
-                      />
-                      {getCoverageBadge(prog.coveragePercent)}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {byProgram.map((prog) => {
+                const isSelected = programFilter === prog.name;
+                return (
+                  <TableRow
+                    key={prog.name}
+                    className={cn(
+                      "cursor-pointer transition-colors",
+                      isSelected
+                        ? "bg-primary/5 border-l-4 border-l-primary"
+                        : "hover:bg-muted/50"
+                    )}
+                    onClick={() => handleProgramClick(prog.name)}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {isSelected && <Filter className="h-3.5 w-3.5 text-primary shrink-0" />}
+                        {prog.name}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">{prog.totalRungs}</TableCell>
+                    <TableCell className="text-right">{prog.commentedRungs}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Progress
+                          value={prog.coveragePercent}
+                          className={cn("h-2 w-16", getProgressColor(prog.coveragePercent))}
+                        />
+                        {getCoverageBadge(prog.coveragePercent)}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
       {/* Coverage by Routine */}
-      <Card id="coverage-by-routine">
+      <Card
+        id="coverage-by-routine"
+        className={cn(
+          "transition-all",
+          programFilter && "ring-2 ring-primary/20"
+        )}
+      >
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-1">
               <CardTitle>Coverage by Routine</CardTitle>
-              <CardDescription>
-                {programFilter
-                  ? `Showing routines for ${programFilter}`
-                  : "Click a row to see rung-level detail"}
-              </CardDescription>
+              {programFilter ? (
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="gap-1.5 bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                    onClick={() => setProgramFilter(null)}
+                  >
+                    <Filter className="h-3 w-3" />
+                    {programFilter}
+                    <X className="h-3 w-3" />
+                  </Badge>
+                </div>
+              ) : (
+                <CardDescription>
+                  Click a row to see rung-level detail
+                </CardDescription>
+              )}
             </div>
-            {programFilter && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setProgramFilter(null)}
-              >
-                Clear filter
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent>
