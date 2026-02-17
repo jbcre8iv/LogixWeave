@@ -116,7 +116,28 @@ export async function POST(request: Request) {
         ? `\n\nIMPORTANT: Respond in ${AI_LANGUAGES[language]}.`
         : "";
 
-    const systemPrompt = `You are an expert PLC programmer and industrial automation specialist. You are helping a user understand and work with their Rockwell Automation PLC project "${project.name}".
+    const pid = projectId;
+    const toolLinks = {
+      tags: `/dashboard/projects/${pid}/tags`,
+      routines: `/dashboard/projects/${pid}/routines`,
+      udts: `/dashboard/projects/${pid}/udts`,
+      aois: `/dashboard/projects/${pid}/aois`,
+      io: `/dashboard/projects/${pid}/io`,
+      ioMapping: `/dashboard/projects/${pid}/io-mapping`,
+      analysis: `/dashboard/projects/${pid}/analysis`,
+      tagXref: `/dashboard/projects/${pid}/analysis/tag-xref`,
+      unusedTags: `/dashboard/projects/${pid}/analysis/unused-tags`,
+      naming: `/dashboard/projects/${pid}/analysis/naming`,
+      commentCoverage: `/dashboard/projects/${pid}/analysis/comment-coverage`,
+      explain: `/dashboard/projects/${pid}/ai/explain`,
+      issues: `/dashboard/projects/${pid}/ai/issues`,
+      search: `/dashboard/projects/${pid}/ai/search`,
+      health: `/dashboard/projects/${pid}/ai/health`,
+      documentation: `/dashboard/projects/${pid}/tools/documentation`,
+      bulkTags: `/dashboard/projects/${pid}/tools/bulk-tags`,
+    };
+
+    const systemPrompt = `You are an expert PLC programmer and industrial automation specialist. You are helping a user understand and work with their Rockwell Automation PLC project "${project.name}" inside the LogixWeave platform.
 
 Here is the project data:
 
@@ -128,7 +149,29 @@ ${routines.map((r) => `- ${r.name} (program: ${r.program_name}, type: ${r.type},
 
 ${udts.length > 0 ? `USER-DEFINED TYPES (${udts.length}):\n${udts.map((u) => `- ${u.name}${u.description ? ` — ${u.description}` : ""}`).join("\n")}\n` : ""}
 ${aois.length > 0 ? `ADD-ON INSTRUCTIONS (${aois.length}):\n${aois.map((a) => `- ${a.name}${a.description ? ` — ${a.description}` : ""}`).join("\n")}\n` : ""}
-Answer questions about this project. Be concise, accurate, and use PLC terminology. If asked about something not reflected in the data above, say so.${languageInstruction}`;
+RESPONSE GUIDELINES:
+1. **Summarize first.** When a question could produce a lengthy answer, give a concise summary (a few sentences or short bullet points). Then ask the user if they'd like more detail on specific parts or the full breakdown.
+2. **Be concise.** Use PLC terminology. Avoid repeating raw data the user can already see in the app.
+3. **Link to LogixWeave tools.** When relevant, suggest the LogixWeave tool that can help and provide a markdown link. Available tools:
+   - [Tag Explorer](${toolLinks.tags}) — browse, search, and filter all project tags
+   - [Routines](${toolLinks.routines}) — view routines by program and type
+   - [UDTs](${toolLinks.udts}) — browse user-defined types
+   - [AOIs](${toolLinks.aois}) — browse add-on instructions
+   - [I/O Modules](${toolLinks.io}) — view I/O hardware configuration
+   - [I/O Mapping](${toolLinks.ioMapping}) — explore I/O module mapping
+   - [Analysis Dashboard](${toolLinks.analysis}) — charts, health scores, and statistics
+   - [Tag Cross-Reference](${toolLinks.tagXref}) — see where tags are used across the project
+   - [Unused Tags](${toolLinks.unusedTags}) — find tags with no references
+   - [Naming Conventions](${toolLinks.naming}) — check tags against naming rules
+   - [Comment Coverage](${toolLinks.commentCoverage}) — analyze comment coverage across routines
+   - [Logic Explainer](${toolLinks.explain}) — get AI explanations of specific routines
+   - [Issue Finder](${toolLinks.issues}) — AI scan for bugs and anti-patterns
+   - [AI Search](${toolLinks.search}) — natural language search across the project
+   - [Health Coach](${toolLinks.health}) — comprehensive AI health score and recommendations
+   - [Documentation Generator](${toolLinks.documentation}) — generate project documentation
+   - [Bulk Tag Editor](${toolLinks.bulkTags}) — bulk edit tag descriptions
+4. Only suggest 1-3 of the most relevant tools per response — don't list them all.
+5. If asked about something not reflected in the data above, say so.${languageInstruction}`;
 
     // Truncate to most recent messages
     const recentMessages = messages.slice(-MAX_MESSAGES);
