@@ -13,6 +13,7 @@ export type ActivityAction =
   | "share_revoked"
   | "permission_changed"
   | "collaborator_removed"
+  | "member_left"
   | "tag_exported"
   | "documentation_exported"
   | "ai_analysis_run";
@@ -85,6 +86,7 @@ export function getActionDescription(action: ActivityAction, targetName?: string
     share_revoked: targetName ? `revoked share access for ${targetName}` : "revoked share access",
     permission_changed: targetName ? `changed permissions for ${targetName}` : "changed a collaborator's permissions",
     collaborator_removed: targetName ? `removed collaborator ${targetName}` : "removed a collaborator",
+    member_left: "left the project",
     tag_exported: "exported tags",
     documentation_exported: targetName ? `exported documentation as ${targetName}` : "exported documentation",
     ai_analysis_run: targetName ? `ran AI analysis: ${targetName}` : "ran AI analysis",

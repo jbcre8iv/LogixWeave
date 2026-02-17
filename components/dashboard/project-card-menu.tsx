@@ -28,6 +28,7 @@ import {
   Share2,
   Archive,
   Trash2,
+  LogOut,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
   const router = useRouter();
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -101,6 +103,24 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
       console.error("Failed to delete:", error);
       setActionLoading(null);
       setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleLeave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setActionLoading("leave");
+    try {
+      const response = await fetch(`/api/projects/${project.id}/leave`, {
+        method: "POST",
+      });
+
+      if (!response.ok) throw new Error("Failed to leave");
+
+      window.location.href = "/dashboard/projects";
+    } catch (error) {
+      console.error("Failed to leave project:", error);
+      setActionLoading(null);
+      setLeaveDialogOpen(false);
     }
   };
 
@@ -158,6 +178,18 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
               >
                 <Trash2 className="h-4 w-4" />
                 Delete
+              </DropdownMenuItem>
+            </>
+          )}
+          {!isOwner && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setLeaveDialogOpen(true)}
+              >
+                <LogOut className="h-4 w-4" />
+                Leave Project
               </DropdownMenuItem>
             </>
           )}
@@ -225,6 +257,35 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
                 </>
               ) : (
                 "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave project confirmation dialog */}
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave &ldquo;{project.name}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will lose access to this project and its files. To rejoin, the owner will need to invite you again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading === "leave"}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeave}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={actionLoading === "leave"}
+            >
+              {actionLoading === "leave" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Leaving...
+                </>
+              ) : (
+                "Leave Project"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
