@@ -347,21 +347,24 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Analysis</h1>
-          <p className="text-muted-foreground">{project.name}</p>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-0.5">
-            <Avatar className="size-5">
-              <AvatarImage src={ownerProfile?.avatar_url || undefined} alt={ownerName} />
-              <AvatarFallback className="text-[9px]">{ownerInitials}</AvatarFallback>
-            </Avatar>
-            <span>
-              {ownerName}
-              {" · "}
-              Created {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              {" · "}
-              Modified {formatTimeAgo(project.updated_at)}
-              {" · "}
-              {project.project_files.length} {project.project_files.length === 1 ? "file" : "files"}
-            </span>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span>{project.name}</span>
+            <span className="text-muted-foreground/40">—</span>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+              <Avatar className="size-5">
+                <AvatarImage src={ownerProfile?.avatar_url || undefined} alt={ownerName} />
+                <AvatarFallback className="text-[9px]">{ownerInitials}</AvatarFallback>
+              </Avatar>
+              <span>
+                {ownerName}
+                {" · "}
+                Created {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                {" · "}
+                Modified {formatTimeAgo(project.updated_at)}
+                {" · "}
+                {project.project_files.length} {project.project_files.length === 1 ? "file" : "files"}
+              </span>
+            </div>
           </div>
           {project.description && (
             <p className="text-sm text-muted-foreground/80 mt-1">{project.description}</p>
