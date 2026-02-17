@@ -57,7 +57,8 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const handleArchive = async () => {
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent AlertDialogAction from auto-closing the dialog
     setActionLoading("archive");
     try {
       const response = await fetch("/api/projects/bulk", {
@@ -81,7 +82,8 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent AlertDialogAction from auto-closing the dialog
     setActionLoading("delete");
     try {
       const response = await fetch("/api/projects/bulk", {
