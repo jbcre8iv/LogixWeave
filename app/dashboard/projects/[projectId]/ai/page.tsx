@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Search, AlertTriangle, Sparkles, ArrowRight, HeartPulse } from "lucide-react";
+import { AIChatSearchBar } from "@/components/ai/ai-chat-sidebar";
 
 interface AIPageProps {
   params: Promise<{ projectId: string }>;
@@ -66,6 +67,7 @@ export default async function AIPage({ params }: AIPageProps) {
               <p className="text-sm text-muted-foreground mt-3 max-w-xl leading-relaxed">
                 Analyze your PLC code, get explanations of complex logic, find potential issues, and search your project using natural language.
               </p>
+              {hasData && <AIChatSearchBar />}
             </div>
           </div>
         </CardContent>
