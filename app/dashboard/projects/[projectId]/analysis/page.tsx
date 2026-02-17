@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, GitCompare, ArrowRight, FileCheck } from "lucide-react";
+import { GitCompare, ArrowRight, FileCheck } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
@@ -12,17 +12,10 @@ import { analyzeExportTypes } from "@/lib/partial-export";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{
-    from?: string;
-  }>;
 }
 
-export default async function AnalysisPage({ params, searchParams }: AnalysisPageProps) {
+export default async function AnalysisPage({ params }: AnalysisPageProps) {
   const { projectId } = await params;
-  const { from } = await searchParams;
-  const backHref = from === "tools"
-    ? "/dashboard/tools/analysis"
-    : `/dashboard/projects/${projectId}`;
 
   const supabase = await createClient();
 
@@ -311,16 +304,9 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={backHref}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Analysis</h1>
-            <p className="text-muted-foreground">{project.name}</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold">Analysis</h1>
+          <p className="text-muted-foreground">{project.name}</p>
         </div>
         {fileIds.length > 0 && (
           <div className="flex flex-col items-end gap-1">
