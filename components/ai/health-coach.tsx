@@ -16,7 +16,6 @@ import {
   ChevronUp,
   TrendingUp,
   TrendingDown,
-  Minus,
   Download,
   Trash2,
   Eye,
@@ -30,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AILoading } from "@/components/ai/ai-loading";
+import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
 import type {
   HealthRecommendationResult,
   HealthRecommendation,
@@ -175,7 +175,7 @@ function RecommendationCard({
 
 function ScoreChangeIndicator({ current, previous }: { current: number; previous: number }) {
   const diff = current - previous;
-  if (diff === 0) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
+  if (diff === 0) return null;
   if (diff > 0) return (
     <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
       <TrendingUp className="h-3.5 w-3.5" />
@@ -242,7 +242,7 @@ function HistoryEntryCard({
           <div className="flex items-center gap-2 shrink-0">
             {scores && (
               <div className="flex items-center gap-2">
-                <ScoreBadge label="Overall" score={scores.overall} />
+                <MiniHealthRing score={scores.overall} size={32} />
                 <ScoreBadge label="TagEff" score={scores.tagEfficiency} />
                 <ScoreBadge label="Docs" score={scores.documentation} />
                 <ScoreBadge label="Usage" score={scores.tagUsage} />
@@ -309,15 +309,8 @@ function HistoryEntryCard({
 }
 
 function ScoreBadge({ label, score }: { label: string; score: number }) {
-  const color =
-    score >= 80
-      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-      : score >= 50
-        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400"
-        : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400";
-
   return (
-    <span className={`hidden sm:inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
+    <span className="hidden sm:inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
       {label} {score}
     </span>
   );
