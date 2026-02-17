@@ -89,7 +89,7 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
   ];
 
   return (
-    <Card className={`overflow-hidden ${partialExportInfo?.hasPartialExports ? "pt-0" : ""}`}>
+    <Card className={`overflow-hidden ${partialExportInfo?.hasPartialExports ? "pt-0 gap-3" : ""}`}>
       {partialExportInfo?.hasPartialExports && (
         <div className="px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20">
           <div className="flex items-center gap-2 text-sm">
