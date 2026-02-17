@@ -88,10 +88,8 @@ export default async function AIPage({ params }: AIPageProps) {
         <>
           {/* Featured: Project Health Coach */}
           <Link href={`/dashboard/projects/${projectId}/ai/health`}>
-            <Card className="group overflow-hidden hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer">
-              <div className="flex">
-                <div className="w-1.5 bg-gradient-to-b from-amber-500 to-orange-500 shrink-0" />
-                <CardContent className="py-6 px-6 flex-1">
+            <Card className="group hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer">
+              <CardContent className="py-6 px-6">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/15 to-orange-500/10 shrink-0">
@@ -113,12 +111,11 @@ export default async function AIPage({ params }: AIPageProps) {
                     Results are cached for faster repeat queries
                   </p>
                 </CardContent>
-              </div>
             </Card>
           </Link>
 
           {/* AI Tool Cards */}
-          <div className="space-y-3">
+          <div className="space-y-3 mt-6">
             <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-1">More Tools</h3>
             <div className="grid gap-4 md:grid-cols-3">
               {aiTools.map((tool) => (
