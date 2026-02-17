@@ -99,7 +99,7 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
                 <>
                   <span className="font-medium text-amber-600 dark:text-amber-400">All files are partial exports.</span>{" "}
                   Scores are approximate — tags may appear unused because referencing routines were not included in the export.
-                  Upload a full Controller export for accurate results.{" "}
+                  Upload a full Controller export for accurate results.{" \u00A0\u00A0"}
                   <Link href={`/dashboard/projects/${projectId}/files`} className="font-medium text-amber-600 dark:text-amber-400 underline hover:text-amber-700 dark:hover:text-amber-300">Upload new files</Link>
                 </>
               ) : (
