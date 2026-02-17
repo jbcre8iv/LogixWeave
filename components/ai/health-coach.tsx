@@ -674,7 +674,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
           </Button>
         ) : (
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+            <Link href={`/dashboard/projects/${projectId}/ai`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
