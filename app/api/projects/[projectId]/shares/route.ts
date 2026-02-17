@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity-log";
 
 interface RouteContext {
@@ -179,12 +179,24 @@ export async function PATCH(request: Request, context: RouteContext) {
       .update({ permission })
       .eq("id", shareId)
       .eq("project_id", projectId)
-      .select()
+      .select("*, shared_with_email")
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Log activity for permission change
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "permission_changed",
+      targetType: "share",
+      targetId: shareId,
+      targetName: updatedShare.shared_with_email,
+      metadata: { permission, shareId },
+    });
 
     return NextResponse.json(updatedShare);
   } catch (error) {
@@ -225,10 +237,10 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
-    // Get share details before deleting for logging
+    // Get share details before deleting for logging and direct notification
     const { data: shareToDelete } = await supabase
       .from("project_shares")
-      .select("shared_with_email")
+      .select("shared_with_email, shared_with_user_id")
       .eq("id", shareId)
       .single();
 
@@ -252,6 +264,30 @@ export async function DELETE(request: Request, context: RouteContext) {
       targetId: shareId,
       targetName: shareToDelete?.shared_with_email,
     });
+
+    // Send direct notification to the revoked user (they're no longer in
+    // project_shares so the trigger can't reach them)
+    if (shareToDelete?.shared_with_user_id) {
+      try {
+        const serviceClient = createServiceClient();
+        const { data: proj } = await serviceClient
+          .from("projects")
+          .select("name")
+          .eq("id", projectId)
+          .single();
+
+        await serviceClient.from("notifications").insert({
+          user_id: shareToDelete.shared_with_user_id,
+          type: "project_activity",
+          title: "Access revoked",
+          message: `Your access to "${proj?.name || "a project"}" has been revoked`,
+          link: "/dashboard",
+          metadata: { project_id: projectId, action: "share_revoked" },
+        });
+      } catch (notifError) {
+        console.error("Failed to notify revoked user:", notifError);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

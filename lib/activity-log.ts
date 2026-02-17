@@ -11,6 +11,7 @@ export type ActivityAction =
   | "project_shared"
   | "share_accepted"
   | "share_revoked"
+  | "permission_changed"
   | "collaborator_removed"
   | "tag_exported"
   | "documentation_exported"
@@ -82,6 +83,7 @@ export function getActionDescription(action: ActivityAction, targetName?: string
     project_shared: targetName ? `shared project with ${targetName}` : "shared the project",
     share_accepted: "accepted the project share invitation",
     share_revoked: targetName ? `revoked share access for ${targetName}` : "revoked share access",
+    permission_changed: targetName ? `changed permissions for ${targetName}` : "changed a collaborator's permissions",
     collaborator_removed: targetName ? `removed collaborator ${targetName}` : "removed a collaborator",
     tag_exported: "exported tags",
     documentation_exported: targetName ? `exported documentation as ${targetName}` : "exported documentation",
