@@ -181,8 +181,8 @@ export async function deleteProject(projectId: string) {
   }
 
   revalidatePath("/dashboard/projects");
-  redirect("/dashboard/projects");
 }
+
 
 export async function archiveProject(projectId: string) {
   const supabase = await createClient();
