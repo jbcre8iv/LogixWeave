@@ -68,9 +68,7 @@ export default async function GlobalIOPage() {
                       <FolderOpen className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">{project.name}</CardTitle>
                     </div>
-                    {healthScores.has(project.id) && (
-                      <MiniHealthRing score={healthScores.get(project.id)!.overall} />
-                    )}
+                    <MiniHealthRing score={healthScores.get(project.id)?.overall ?? null} />
                   </div>
                 </CardHeader>
                 <CardContent>

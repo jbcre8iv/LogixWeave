@@ -1,5 +1,5 @@
 interface MiniHealthRingProps {
-  score: number;
+  score: number | null;
   size?: number;
 }
 
@@ -10,6 +10,14 @@ function getColor(score: number) {
 }
 
 export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
+  if (score === null) {
+    return (
+      <span className="text-[10px] font-medium text-muted-foreground/60 leading-tight text-center whitespace-nowrap">
+        No Data
+      </span>
+    );
+  }
+
   const color = getColor(score);
   const radius = 10;
   const circumference = 2 * Math.PI * radius;
