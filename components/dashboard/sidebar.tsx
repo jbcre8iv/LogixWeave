@@ -25,6 +25,7 @@ import {
   Package,
   BarChart3,
   Sparkles,
+  Upload,
   FolderOpen as FolderIcon,
   ChevronDown,
   Check,
@@ -41,6 +42,7 @@ const navigation = [
 
 // Project-specific tools (shown under project selector)
 const projectTools = [
+  { name: "Files", projectHref: "/files", icon: Upload },
   { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
   { name: "Tag Explorer", globalHref: "/dashboard/tools/tags", projectHref: "/tags", icon: Tags },
   { name: "I/O Mapping", globalHref: "/dashboard/tools/io", projectHref: "/io-mapping", icon: HardDrive },
@@ -332,6 +334,9 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
               const href = projectId && item.projectHref
                 ? `/dashboard/projects/${projectId}${item.projectHref}`
                 : item.globalHref;
+
+              // Skip items with no global fallback when no project is selected
+              if (!href) return null;
 
               // Check if active (either global or project-specific path)
               const isActive = pathname === href ||
