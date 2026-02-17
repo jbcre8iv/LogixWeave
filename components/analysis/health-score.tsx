@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Info } from "lucide-react";
+import type { PartialExportInfo } from "@/lib/partial-export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
@@ -15,6 +16,7 @@ interface HealthScoreProps {
     totalReferences: number;
     totalRungs: number;
   };
+  partialExportInfo?: PartialExportInfo;
 }
 
 function computeScore(stats: HealthScoreProps["stats"]) {
@@ -49,7 +51,7 @@ function getColor(score: number): { ring: string; text: string; bg: string; prog
   return { ring: "stroke-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", progress: "[&_[data-slot=progress-indicator]]:bg-red-500" };
 }
 
-export function HealthScore({ projectId, stats }: HealthScoreProps) {
+export function HealthScore({ projectId, stats, partialExportInfo }: HealthScoreProps) {
   const { overall, tagEfficiency, documentation, tagUsage } = computeScore(stats);
   const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
@@ -158,6 +160,28 @@ export function HealthScore({ projectId, stats }: HealthScoreProps) {
           </div>
         </div>
       </CardContent>
+      {partialExportInfo?.hasPartialExports && (
+        <div className="border-t px-6 py-3 bg-amber-500/5">
+          <div className="flex items-start gap-2 text-sm">
+            <Info className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <p className="text-muted-foreground">
+              {partialExportInfo.allPartial ? (
+                <>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">All files are partial exports.</span>{" "}
+                  Scores are approximate — tags may appear unused because referencing routines were not included in the export.
+                  Upload a full Controller export for accurate results.
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">Some files are partial exports</span>{" "}
+                  ({partialExportInfo.partialFiles.map((f) => `${f.targetType}${f.targetName ? `: ${f.targetName}` : ""}`).join(", ")}).
+                  Scores may be less accurate for data from those files.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

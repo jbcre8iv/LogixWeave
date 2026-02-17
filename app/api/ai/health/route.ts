@@ -5,6 +5,7 @@ import {
   generateHash,
   AILanguage,
 } from "@/lib/ai/claude-client";
+import { analyzeExportTypes } from "@/lib/partial-export";
 
 export async function POST(request: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     const { data: project } = await supabase
       .from("projects")
       .select(
-        "id, organization_id, project_files(id, parsing_status, current_version, version_count)"
+        "id, organization_id, project_files(id, parsing_status, current_version, version_count, target_type, target_name)"
       )
       .eq("id", projectId)
       .single();
@@ -57,6 +58,15 @@ export async function POST(request: Request) {
         (f: { parsing_status: string }) => f.parsing_status === "completed"
       ) || [];
     const fileIds = parsedFiles.map((f: { id: string }) => f.id);
+
+    const partialExportInfo = analyzeExportTypes(
+      (project.project_files || []).map(
+        (f: { target_type: string | null; target_name: string | null }) => ({
+          target_type: f.target_type,
+          target_name: f.target_name,
+        })
+      )
+    );
 
     if (fileIds.length === 0) {
       return NextResponse.json(
@@ -320,6 +330,7 @@ export async function POST(request: Request) {
         JSON.stringify(usageCounts) +
         JSON.stringify(versionHistory?.versionSummaries?.length || 0) +
         JSON.stringify(previousRuns?.length || 0) +
+        JSON.stringify(partialExportInfo.hasPartialExports) +
         language
     );
 
@@ -385,7 +396,8 @@ export async function POST(request: Request) {
       })),
       versionHistory,
       language,
-      previousAnalyses
+      previousAnalyses,
+      partialExportInfo.hasPartialExports ? partialExportInfo : undefined
     );
 
     // Cache result (7-day TTL)

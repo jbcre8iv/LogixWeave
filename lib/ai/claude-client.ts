@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import crypto from "crypto";
+import type { PartialExportInfo } from "@/lib/partial-export";
 
 // Initialize client only if API key is available
 const getClient = () => {
@@ -619,6 +620,7 @@ export async function recommendHealthImprovements(
     quickWins: string[];
     analyzedAt: string;
   }> | null,
+  partialExportContext?: PartialExportInfo,
 ): Promise<HealthRecommendationResult> {
   const client = getClient();
 
@@ -643,6 +645,20 @@ When making recommendations, compare current scores to these previous runs:
 - Note if previous quick wins appear addressed (e.g., "Previously recommended removing unused tag X — this has been done")
 - Flag negative trends (e.g., "Unused tags increased from 5 to 7 over the last 3 analyses")
 - Acknowledge positive trends to reinforce good behavior
+`
+    : "";
+
+  const partialExportSection = partialExportContext?.hasPartialExports
+    ? `\nIMPORTANT — Partial Export Context:
+This project contains ${partialExportContext.allPartial ? "ONLY" : "some"} partial exports (${partialExportContext.partialFiles.map((f) => `${f.targetType}${f.targetName ? ` "${f.targetName}"` : ""}`).join(", ")}).
+Partial exports (Program or Routine level) do NOT include the full project — tags may appear "unused" because they are referenced in routines not included in the export, and comment coverage only reflects the exported subset.
+
+When making recommendations:
+- Qualify unused-tag recommendations (e.g., "these tags appear unused in the exported subset but may be referenced in routines not included in this export")
+- Note that coverage metrics only reflect the exported routines, not the full project
+- Recommend verifying tags are truly unused in the full Controller project before deleting
+- Explicitly mention the partial export caveat in your summary
+- Do NOT recommend removing tags that might be used elsewhere in the full project
 `
     : "";
 
@@ -687,7 +703,7 @@ ${topTags.slice(0, 10).map((t) => `- ${t.name}: ${t.count} references`).join("\n
 
 Routines (${routines.length} total, showing ${limitedRoutines.length}):
 ${limitedRoutines.map((r) => `- ${r.programName}/${r.name} (${r.type}, ${r.rungCount || 0} rungs)`).join("\n")}
-${versionHistorySection}${previousAnalysesSection}
+${versionHistorySection}${previousAnalysesSection}${partialExportSection}
 Provide your analysis as JSON with this structure:
 {
   "summary": "2-3 sentence overall assessment of the project health",

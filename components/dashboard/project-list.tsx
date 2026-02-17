@@ -71,6 +71,7 @@ interface HealthScores {
   tagEfficiency: number;
   documentation: number;
   tagUsage: number;
+  hasPartialExports?: boolean;
 }
 
 interface ProjectListProps {
@@ -92,6 +93,7 @@ interface ProjectGridCardProps {
   currentUserId?: string;
   searchQuery?: string;
   healthScore?: number;
+  hasPartialExports?: boolean;
 }
 
 function getMatchingFiles(project: Project, query: string): string[] {
@@ -111,6 +113,7 @@ function ProjectGridCard({
   currentUserId,
   searchQuery = "",
   healthScore,
+  hasPartialExports,
 }: ProjectGridCardProps) {
   const fileCount = getFileCount(project);
   const isOwner = !currentUserId || !project.created_by || project.created_by === currentUserId;
@@ -155,7 +158,7 @@ function ProjectGridCard({
               </div>
               <div className="ml-auto">
                 {healthScore != null ? (
-                  <MiniHealthRing score={healthScore} size={56} />
+                  <MiniHealthRing score={healthScore} size={56} approximate={hasPartialExports} />
                 ) : (
                   <span className="text-[10px] text-muted-foreground/60">No Data</span>
                 )}
@@ -331,7 +334,7 @@ function ProjectListTable({
                 <TableCell>{fileCount}</TableCell>
                 <TableCell>
                   {healthScoreMap[project.id] ? (
-                    <MiniHealthRing score={healthScoreMap[project.id].overall} size={32} />
+                    <MiniHealthRing score={healthScoreMap[project.id].overall} size={32} approximate={healthScoreMap[project.id].hasPartialExports} />
                   ) : (
                     <span className="text-[10px] text-muted-foreground/60">No Data</span>
                   )}
@@ -829,6 +832,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     currentUserId={currentUserId}
                     searchQuery={searchQuery}
                     healthScore={healthScoreMap[project.id]?.overall}
+                    hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
                   />
                 ))}
               </div>
@@ -855,6 +859,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     currentUserId={currentUserId}
                     searchQuery={searchQuery}
                     healthScore={healthScoreMap[project.id]?.overall}
+                    hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
                   />
                 ))}
               </div>
@@ -882,6 +887,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                     currentUserId={currentUserId}
                     searchQuery={searchQuery}
                     healthScore={healthScoreMap[project.id]?.overall}
+                    hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
                   />
                 ))}
               </div>

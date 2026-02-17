@@ -8,6 +8,7 @@ import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-but
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
 import { AnimatedCount } from "@/components/analysis/animated-count";
+import { analyzeExportTypes } from "@/lib/partial-export";
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -28,7 +29,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, organization_id, project_files(id)")
+    .select("id, name, organization_id, project_files(id, target_type, target_name)")
     .eq("id", projectId)
     .single();
 
@@ -45,6 +46,13 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
   const projectRuleSetId: string | null = projectRuleSetRow?.naming_rule_set_id ?? null;
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
+
+  const partialExportInfo = analyzeExportTypes(
+    (project.project_files || []).map((f: { target_type: string | null; target_name: string | null }) => ({
+      target_type: f.target_type,
+      target_name: f.target_name,
+    }))
+  );
 
   // Fetch full analysis data (used for both summary stats and CSV export)
   let stats = {
@@ -343,7 +351,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
       ) : (
         <>
           {/* Health Score */}
-          <HealthScore projectId={projectId} stats={stats} />
+          <HealthScore projectId={projectId} stats={stats} partialExportInfo={partialExportInfo} />
 
           {/* Summary Stats */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">

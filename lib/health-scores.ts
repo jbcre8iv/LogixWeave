@@ -1,10 +1,12 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { analyzeExportTypes } from "@/lib/partial-export";
 
 interface HealthScores {
   overall: number;
   tagEfficiency: number;
   documentation: number;
   tagUsage: number;
+  hasPartialExports?: boolean;
 }
 
 function computeScore(stats: {
@@ -128,6 +130,31 @@ export async function getProjectHealthScores(
           commentCoverage,
           totalReferences: references.length,
         }));
+      }
+    }
+  }
+
+  // 3. Query target_type for all projects to detect partial exports
+  const { data: allFiles } = await supabase
+    .from("project_files")
+    .select("project_id, target_type, target_name")
+    .in("project_id", projectIds);
+
+  if (allFiles && allFiles.length > 0) {
+    const filesByProjectAll = new Map<string, Array<{ target_type: string | null; target_name: string | null }>>();
+    for (const f of allFiles) {
+      const arr = filesByProjectAll.get(f.project_id) || [];
+      arr.push({ target_type: f.target_type, target_name: f.target_name });
+      filesByProjectAll.set(f.project_id, arr);
+    }
+
+    for (const projectId of projectIds) {
+      const projFiles = filesByProjectAll.get(projectId);
+      if (!projFiles) continue;
+      const exportInfo = analyzeExportTypes(projFiles);
+      const existing = scores.get(projectId);
+      if (existing) {
+        existing.hasPartialExports = exportInfo.hasPartialExports;
       }
     }
   }

@@ -1,6 +1,7 @@
 interface MiniHealthRingProps {
   score: number | null;
   size?: number;
+  approximate?: boolean;
 }
 
 function getColor(score: number) {
@@ -9,7 +10,7 @@ function getColor(score: number) {
   return { stroke: "stroke-red-500", text: "text-red-600 dark:text-red-400" };
 }
 
-export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
+export function MiniHealthRing({ score, size = 36, approximate }: MiniHealthRingProps) {
   if (score === null) {
     return (
       <span className="text-[10px] font-medium text-muted-foreground/60 leading-tight text-center whitespace-nowrap">
@@ -27,7 +28,7 @@ export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
     <div
       className="relative inline-flex items-center justify-center"
       style={{ width: size, height: size }}
-      title={`Health Score: ${score}/100`}
+      title={approximate ? `~${score}/100 (approximate — partial export)` : `Health Score: ${score}/100`}
     >
       <svg width={size} height={size} viewBox="0 0 24 24">
         <circle
@@ -56,7 +57,7 @@ export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
         className={`absolute font-bold leading-none ${color.text}`}
         style={{ fontSize: Math.round(size * 0.28) }}
       >
-        {score}
+        {approximate ? `~${score}` : score}
       </span>
     </div>
   );

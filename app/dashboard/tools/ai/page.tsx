@@ -75,7 +75,7 @@ export default async function GlobalAIPage() {
                       <FolderOpen className="h-5 w-5 text-amber-500" />
                       <CardTitle className="text-lg">{project.name}</CardTitle>
                     </div>
-                    <MiniHealthRing score={healthScores.get(project.id)?.overall ?? null} />
+                    <MiniHealthRing score={healthScores.get(project.id)?.overall ?? null} approximate={healthScores.get(project.id)?.hasPartialExports} />
                   </div>
                 </CardHeader>
                 <CardContent>
