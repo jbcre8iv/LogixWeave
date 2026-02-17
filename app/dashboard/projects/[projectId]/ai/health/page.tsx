@@ -43,7 +43,7 @@ export default async function HealthPage({ params }: HealthPageProps) {
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 <HeartPulse className="h-8 w-8 text-amber-500" />
-                Health Coach
+                Project Health Coach
               </h1>
               <p className="text-muted-foreground">{project.name}</p>
             </div>

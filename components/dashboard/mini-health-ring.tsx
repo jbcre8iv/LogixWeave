@@ -10,24 +10,19 @@ function getColor(score: number) {
 }
 
 export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
-  if (score === null) {
-    return (
-      <span className="text-[10px] font-medium text-muted-foreground/60 leading-tight text-center whitespace-nowrap">
-        No Data
-      </span>
-    );
-  }
-
-  const color = getColor(score);
+  const hasScore = score !== null;
+  const color = hasScore ? getColor(score) : null;
   const radius = 10;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
+  const offset = hasScore
+    ? circumference - (score / 100) * circumference
+    : circumference;
 
   return (
     <div
       className="relative inline-flex items-center justify-center"
       style={{ width: size, height: size }}
-      title={`Health Score: ${score}/100`}
+      title={hasScore ? `Health Score: ${score}/100` : "No health score yet"}
     >
       <svg width={size} height={size} viewBox="0 0 24 24">
         <circle
@@ -39,24 +34,26 @@ export function MiniHealthRing({ score, size = 36 }: MiniHealthRingProps) {
           strokeWidth="2.5"
           className="text-muted/30"
         />
-        <circle
-          cx="12"
-          cy="12"
-          r={radius}
-          fill="none"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          className={color.stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          transform="rotate(-90 12 12)"
-        />
+        {hasScore && (
+          <circle
+            cx="12"
+            cy="12"
+            r={radius}
+            fill="none"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            className={color!.stroke}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            transform="rotate(-90 12 12)"
+          />
+        )}
       </svg>
       <span
-        className={`absolute font-bold leading-none ${color.text}`}
+        className={`absolute font-bold leading-none ${hasScore ? color!.text : "text-muted-foreground/50"}`}
         style={{ fontSize: Math.round(size * 0.28) }}
       >
-        {score}
+        {hasScore ? score : "—"}
       </span>
     </div>
   );

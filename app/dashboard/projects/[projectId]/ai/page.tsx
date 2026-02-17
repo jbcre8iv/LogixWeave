@@ -99,7 +99,7 @@ export default async function AIPage({ params }: AIPageProps) {
             </CardContent>
           </Card>
 
-          {/* Featured: Health Coach */}
+          {/* Featured: Project Health Coach */}
           <Link href={`/dashboard/projects/${projectId}/ai/health`}>
             <Card className="group border-l-4 border-l-amber-500 hover:border-amber-500/30 hover:shadow-md hover:shadow-amber-500/5 transition-all cursor-pointer">
               <CardContent className="py-5">
@@ -109,7 +109,7 @@ export default async function AIPage({ params }: AIPageProps) {
                       <HeartPulse className="h-6 w-6 text-amber-500" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Health Coach</CardTitle>
+                      <CardTitle className="text-lg">Project Health Coach</CardTitle>
                       <CardDescription className="mt-0.5">
                         Get a comprehensive health score with AI-powered recommendations to improve your project
                       </CardDescription>
