@@ -211,10 +211,13 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
       <nav className="flex-1 space-y-1 p-4">
         <div className="space-y-1">
           {navigation.map((item) => {
-            // Dashboard should only be active when exactly on /dashboard
+            // Dashboard: active only on exact /dashboard
+            // Projects: active on /dashboard/projects but NOT inside a specific project
             const isActive = item.href === "/dashboard"
               ? pathname === "/dashboard"
-              : pathname === item.href || pathname.startsWith(item.href + "/");
+              : item.href === "/dashboard/projects"
+                ? pathname === "/dashboard/projects" || (pathname.startsWith("/dashboard/projects") && !getProjectIdFromPath(pathname))
+                : pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.name}
