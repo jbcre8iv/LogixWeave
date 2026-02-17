@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FolderOpen, Plus, ArrowRight, Users, Mail } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Plus, ArrowRight, Users, Mail } from "lucide-react";
 import { PendingInvites } from "@/components/dashboard/pending-invites";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { getFirstName } from "@/lib/utils/display-name";
 
 interface DashboardPageProps {
   searchParams: Promise<{ page?: string }>;
@@ -17,6 +18,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Get profile for personalized greeting
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, full_name")
+    .eq("id", user?.id)
+    .single();
+
+  const firstName = getFirstName(profile || {});
 
   // Get user's projects count (only owned, non-archived projects)
   const { count: projectCount } = await supabase
@@ -54,108 +64,115 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome to LogixWeave</h1>
-        <p className="text-muted-foreground mt-2">
-          Your toolkit for exploring and documenting Studio 5000 projects
-        </p>
-      </div>
-
-      <div className={`grid gap-4 md:grid-cols-2 ${pendingInvitesCount ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
-        {/* Total Projects */}
-        <Link href="/dashboard/projects">
-          <Card className="h-full transition-colors hover:bg-accent/50 cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{projectCount || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Active projects in workspace
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Shared with Me */}
-        <Link href="/dashboard/projects#shared-with-me">
-          <Card className="h-full transition-colors hover:bg-accent/50 cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Shared with Me</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{sharedCount || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                Shared projects
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Amber - Pending Invites (only shown if count > 0) */}
-        {pendingInvitesCount ? (
-          <Card className="border-l-4 border-l-[#F59E0B] bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-950/20">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
-              <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-2">
-                <Mail className="h-4 w-4 text-[#F59E0B]" />
+      {/* Hero Card */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/10 via-indigo-500/5 to-transparent">
+        <CardContent className="py-8 px-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+            {/* Left: Icon + Greeting + Stats */}
+            <div className="flex items-start gap-5">
+              <div className="rounded-full bg-primary/10 p-3 ring-1 ring-primary/20">
+                <LayoutDashboard className="h-7 w-7 text-primary" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingInvitesCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Pending invites
-              </p>
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {firstName ? `Welcome back, ${firstName}` : "Welcome to LogixWeave"}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Your toolkit for exploring and documenting Studio 5000 projects
+                </p>
 
-      {/* Pending Invites - shows if user has any */}
-      <PendingInvites />
+                {/* Inline Stats */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-sm">
+                  <Link
+                    href="/dashboard/projects"
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    <span className="font-semibold text-foreground">{projectCount || 0}</span>
+                    {(projectCount || 0) === 1 ? "project" : "projects"}
+                  </Link>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Recent Projects</CardTitle>
+                  <div className="h-4 w-px bg-border" />
+
+                  <Link
+                    href="/dashboard/projects#shared-with-me"
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span className="font-semibold text-foreground">{sharedCount || 0}</span>
+                    shared
+                  </Link>
+
+                  {pendingInvitesCount ? (
+                    <>
+                      <div className="h-4 w-px bg-border" />
+                      <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                        <Mail className="h-4 w-4" />
+                        <span className="font-semibold">{pendingInvitesCount}</span>
+                        pending {pendingInvitesCount === 1 ? "invite" : "invites"}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Action Buttons */}
+            <div className="flex items-center gap-3 sm:shrink-0">
               <Button variant="outline" size="sm" asChild>
+                <Link href="/dashboard/projects">View All Projects</Link>
+              </Button>
+              <Button size="sm" asChild>
                 <Link href="/dashboard/projects/new">
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="mr-1.5 h-4 w-4" />
                   New Project
                 </Link>
               </Button>
             </div>
-            <CardDescription>Your recently updated projects</CardDescription>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pending Invites - shows if user has any */}
+      <PendingInvites />
+
+      {/* 2-Column Grid: Recent Projects + Shared with Me */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Projects */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Recent Projects</CardTitle>
+              <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+                <Link href="/dashboard/projects">
+                  View all
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {recentProjects && recentProjects.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {recentProjects.map((project) => (
-                  <div key={project.id} className="flex items-center justify-between">
-                    <div>
-                      <Link
-                        href={`/dashboard/projects/${project.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {project.name}
-                      </Link>
+                  <Link
+                    key={project.id}
+                    href={`/dashboard/projects/${project.id}`}
+                    className="group flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{project.name}</p>
                       <p className="text-xs text-muted-foreground">
                         Updated {new Date(project.updated_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/projects/${project.id}`}>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground shrink-0 ml-3 transition-colors" />
+                  </Link>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
+              <div className="text-center py-8">
+                <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-muted-foreground mb-4">No projects yet</p>
                 <Button asChild>
                   <Link href="/dashboard/projects/new">
@@ -168,87 +185,55 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </CardContent>
         </Card>
 
+        {/* Shared with Me */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Shared with Me</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Shared with Me</CardTitle>
+              </div>
+              {sharedProjects && sharedProjects.length > 0 && (
+                <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+                  <Link href="/dashboard/projects#shared-with-me">
+                    View all
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              )}
             </div>
-            <CardDescription>Projects others have shared with you</CardDescription>
           </CardHeader>
           <CardContent>
             {sharedProjects && sharedProjects.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {sharedProjects.map((share) => {
                   const project = share.projects as unknown as { id: string; name: string; updated_at: string } | null;
                   if (!project) return null;
                   return (
-                    <div key={project.id} className="flex items-center justify-between">
-                      <div>
-                        <Link
-                          href={`/dashboard/projects/${project.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {project.name}
-                        </Link>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {share.permission === "edit" ? "Can edit" : "View only"}
-                          </Badge>
-                        </div>
+                    <Link
+                      key={project.id}
+                      href={`/dashboard/projects/${project.id}`}
+                      className="group flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{project.name}</p>
+                        <Badge variant="secondary" className="text-xs mt-1">
+                          {share.permission === "edit" ? "Can edit" : "View only"}
+                        </Badge>
                       </div>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/projects/${project.id}`}>
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground shrink-0 ml-3 transition-colors" />
+                    </Link>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-center py-6">
+              <div className="text-center py-8">
                 <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-muted-foreground text-sm">
                   No projects shared with you yet
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Getting Started</CardTitle>
-            <CardDescription>Quick guide to using LogixWeave</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ol className="list-decimal list-inside space-y-3 text-sm">
-              <li>
-                <span className="font-medium">Create a project</span>
-                <p className="text-muted-foreground ml-5">
-                  Organize your PLC files by project
-                </p>
-              </li>
-              <li>
-                <span className="font-medium">Upload L5X/L5K files</span>
-                <p className="text-muted-foreground ml-5">
-                  Export from Studio 5000 and upload here
-                </p>
-              </li>
-              <li>
-                <span className="font-medium">Explore and understand</span>
-                <p className="text-muted-foreground ml-5">
-                  Search tags, view I/O, get AI explanations
-                </p>
-              </li>
-              <li>
-                <span className="font-medium">Export documentation</span>
-                <p className="text-muted-foreground ml-5">
-                  Generate reports in CSV, PDF, or Markdown
-                </p>
-              </li>
-            </ol>
           </CardContent>
         </Card>
       </div>
