@@ -5,10 +5,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GitCompare, ArrowRight, FileCheck } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
 import { AnimatedCount } from "@/components/analysis/animated-count";
 import { analyzeExportTypes } from "@/lib/partial-export";
+
+function formatTimeAgo(date: string): string {
+  const now = Date.now();
+  const then = new Date(date).getTime();
+  const seconds = Math.floor((now - then) / 1000);
+
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 interface AnalysisPageProps {
   params: Promise<{ projectId: string }>;
@@ -22,13 +43,33 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, organization_id, project_files(id, target_type, target_name)")
+    .select("id, name, description, created_by, created_at, updated_at, organization_id, project_files(id, target_type, target_name)")
     .eq("id", projectId)
     .single();
 
   if (projectError || !project) {
     notFound();
   }
+
+  // Fetch current user and project owner profile in parallel
+  const [{ data: { user } }, { data: ownerProfile }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("profiles")
+      .select("first_name, last_name, avatar_url")
+      .eq("id", project.created_by)
+      .single(),
+  ]);
+
+  const isOwner = user?.id === project.created_by;
+  const ownerName = isOwner
+    ? "You"
+    : ownerProfile?.first_name
+      ? `${ownerProfile.first_name} ${ownerProfile.last_name || ""}`.trim()
+      : "Unknown";
+  const ownerInitials = ownerProfile?.first_name
+    ? `${ownerProfile.first_name[0]}${ownerProfile.last_name?.[0] || ""}`.toUpperCase()
+    : "?";
 
   // Fetch naming_rule_set_id separately (column may not exist pre-migration)
   const { data: projectRuleSetRow } = await supabase
@@ -307,6 +348,24 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         <div>
           <h1 className="text-3xl font-bold">Analysis</h1>
           <p className="text-muted-foreground">{project.name}</p>
+          {project.description && (
+            <p className="text-sm text-muted-foreground/80">{project.description}</p>
+          )}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-1">
+            <Avatar className="size-4">
+              <AvatarImage src={ownerProfile?.avatar_url || undefined} alt={ownerName} />
+              <AvatarFallback className="text-[8px]">{ownerInitials}</AvatarFallback>
+            </Avatar>
+            <span>
+              {ownerName}
+              {" · "}
+              Created {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              {" · "}
+              Modified {formatTimeAgo(project.updated_at)}
+              {" · "}
+              {project.project_files.length} {project.project_files.length === 1 ? "file" : "files"}
+            </span>
+          </div>
         </div>
         {fileIds.length > 0 && (
           <div className="flex flex-col items-end gap-1">
