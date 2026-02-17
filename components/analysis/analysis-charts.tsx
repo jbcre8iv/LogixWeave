@@ -108,11 +108,11 @@ function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ n
 function PieCenterLabel({ data }: { data: UsageBreakdown[] }) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   return (
-    <text x="50%" y="45%" textAnchor="middle" dominantBaseline="central">
-      <tspan x="50%" dy="-0.5em" className="fill-foreground text-xl font-bold">
+    <text x="50%" y="43%" textAnchor="middle" dominantBaseline="central">
+      <tspan x="50%" className="fill-foreground text-xl font-bold">
         {total.toLocaleString()}
       </tspan>
-      <tspan x="50%" dy="1.4em" className="fill-muted-foreground text-[11px]">
+      <tspan x="50%" dy="1.3em" className="fill-muted-foreground text-[11px]">
         total refs
       </tspan>
     </text>
