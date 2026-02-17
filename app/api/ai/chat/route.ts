@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       .map((v: { id: string }) => v.id);
 
     // Gather project context in parallel (filter by version_id for current versions only)
-    const [tagsResult, routinesResult, udtsResult, aoisResult] =
+    const [tagsResult, routinesResult, udtsResult, aoisResult, rungsResult, refsResult] =
       await Promise.all([
         supabase
           .from("parsed_tags")
@@ -103,12 +103,25 @@ export async function POST(request: Request) {
           .select("name, description")
           .in("version_id", versionIds)
           .limit(50),
+        supabase
+          .from("parsed_rungs")
+          .select("routine_name, program_name, number, content, comment")
+          .in("version_id", versionIds)
+          .order("number")
+          .limit(500),
+        supabase
+          .from("tag_references")
+          .select("tag_name, routine_name, program_name, rung_number, usage_type")
+          .in("file_id", fileIds)
+          .limit(1000),
       ]);
 
     const tags = tagsResult.data || [];
     const routines = routinesResult.data || [];
     const udts = udtsResult.data || [];
     const aois = aoisResult.data || [];
+    const rungs = rungsResult.data || [];
+    const tagRefs = refsResult.data || [];
 
     // Build system prompt
     const languageInstruction =
@@ -137,9 +150,44 @@ export async function POST(request: Request) {
       bulkTags: `/dashboard/projects/${pid}/tools/bulk-tags`,
     };
 
+    // Group rungs by routine for structured context
+    const rungsByRoutine: Record<string, typeof rungs> = {};
+    for (const r of rungs) {
+      const key = `${r.program_name}/${r.routine_name}`;
+      if (!rungsByRoutine[key]) rungsByRoutine[key] = [];
+      rungsByRoutine[key].push(r);
+    }
+
+    const rungsSection = Object.entries(rungsByRoutine)
+      .map(([key, rungList]) => {
+        const lines = rungList.map(
+          (r) =>
+            `  Rung ${r.number}${r.comment ? ` [${r.comment}]` : ""}${r.content ? `: ${r.content}` : ""}`
+        );
+        return `${key}:\n${lines.join("\n")}`;
+      })
+      .join("\n\n");
+
+    // Build tag cross-reference summary
+    const tagRefSummary = tagRefs.reduce<Record<string, { routines: Set<string>; usage: Set<string> }>>(
+      (acc, ref) => {
+        if (!acc[ref.tag_name]) acc[ref.tag_name] = { routines: new Set(), usage: new Set() };
+        acc[ref.tag_name].routines.add(`${ref.program_name}/${ref.routine_name}`);
+        acc[ref.tag_name].usage.add(ref.usage_type);
+        return acc;
+      },
+      {}
+    );
+
+    const tagRefSection = Object.entries(tagRefSummary)
+      .map(([name, info]) => `- ${name}: used in ${[...info.routines].join(", ")} (${[...info.usage].join("/")})`)
+      .join("\n");
+
     const systemPrompt = `You are an expert PLC programmer and industrial automation specialist. You are helping a user understand and work with their Rockwell Automation PLC project "${project.name}" inside the LogixWeave platform.
 
-Here is the project data:
+You have FULL ACCESS to all parsed project data including ladder logic, tags, routines, cross-references, and more. You CAN and SHOULD examine, analyze, and explain any part of the project when asked. Never say you don't have access or can't see the data — it's all provided below.
+
+PROJECT DATA:
 
 TAGS (${tags.length}):
 ${tags.map((t) => `- ${t.name} (${t.data_type}, scope: ${t.scope})${t.description ? ` — ${t.description}` : ""}`).join("\n")}
@@ -149,6 +197,12 @@ ${routines.map((r) => `- ${r.name} (program: ${r.program_name}, type: ${r.type},
 
 ${udts.length > 0 ? `USER-DEFINED TYPES (${udts.length}):\n${udts.map((u) => `- ${u.name}${u.description ? ` — ${u.description}` : ""}`).join("\n")}\n` : ""}
 ${aois.length > 0 ? `ADD-ON INSTRUCTIONS (${aois.length}):\n${aois.map((a) => `- ${a.name}${a.description ? ` — ${a.description}` : ""}`).join("\n")}\n` : ""}
+LADDER LOGIC (${rungs.length} rungs):
+${rungsSection}
+
+TAG CROSS-REFERENCES (${tagRefs.length} references):
+${tagRefSection}
+
 RESPONSE GUIDELINES:
 
 1. **Summarize first.** When a question could produce a lengthy answer, give a concise high-level summary (a few sentences or short bullet points). Then ask the user if they'd like more detail on specific parts or the full breakdown.
@@ -186,7 +240,7 @@ Available tools (use exact URLs below):
 
 4. Only suggest 1-3 of the most relevant tools per response — don't list them all.
 
-5. If asked about something not reflected in the data above, say so.${languageInstruction}`;
+5. **Never claim you lack access.** You have the full project data above — tags, routines, ladder logic, and cross-references. When the user asks you to examine something, do it directly using the data provided. Only mention limitations if specific data is genuinely absent from the sections above (e.g., the project has no AOIs).${languageInstruction}`;
 
     // Truncate to most recent messages
     const recentMessages = messages.slice(-MAX_MESSAGES);
