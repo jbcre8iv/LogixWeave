@@ -40,16 +40,43 @@ const navigation = [
   { name: "Projects", href: "/dashboard/projects", icon: FolderOpen },
 ];
 
-// Project-specific tools (shown under project selector)
-const projectTools = [
-  { name: "Files", projectHref: "/files", icon: Upload },
-  { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
-  { name: "Tag Explorer", globalHref: "/dashboard/tools/tags", projectHref: "/tags", icon: Tags },
-  { name: "I/O Mapping", globalHref: "/dashboard/tools/io", projectHref: "/io-mapping", icon: HardDrive },
-  { name: "UDTs", globalHref: "/dashboard/tools/udts", projectHref: "/udts", icon: Layers },
-  { name: "AOIs", globalHref: "/dashboard/tools/aois", projectHref: "/aois", icon: Package },
-  { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
+// Project-specific tools (shown under project selector), grouped by purpose
+interface ProjectTool {
+  name: string;
+  projectHref: string;
+  globalHref?: string;
+  icon: typeof Upload;
+  isAI?: boolean;
+  isAnalysis?: boolean;
+}
+
+const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
+  {
+    label: "Manage",
+    items: [
+      { name: "Files", projectHref: "/files", icon: Upload },
+    ],
+  },
+  {
+    label: "Explore",
+    items: [
+      { name: "Tag Explorer", globalHref: "/dashboard/tools/tags", projectHref: "/tags", icon: Tags },
+      { name: "I/O Mapping", globalHref: "/dashboard/tools/io", projectHref: "/io-mapping", icon: HardDrive },
+      { name: "UDTs", globalHref: "/dashboard/tools/udts", projectHref: "/udts", icon: Layers },
+      { name: "AOIs", globalHref: "/dashboard/tools/aois", projectHref: "/aois", icon: Package },
+    ],
+  },
+  {
+    label: "Analyze",
+    items: [
+      { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
+      { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
+    ],
+  },
 ];
+
+// Flat list for project switching logic
+const projectTools = projectToolGroups.flatMap((g) => g.items);
 
 // Global tools (always cross-project)
 const globalTools = [
@@ -326,51 +353,68 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
           </DropdownMenu>
 
           <div className={cn(
-            "space-y-0.5",
+            "space-y-3",
             projectId && "ml-3 pl-3 border-l-2 border-primary/20"
           )}>
-            {projectTools.map((item) => {
-              // Use project-specific href if on a project page and tool supports it
-              const href = projectId && item.projectHref
-                ? `/dashboard/projects/${projectId}${item.projectHref}`
-                : item.globalHref;
+            {projectToolGroups.map((group) => {
+              // Filter out items that have no href (project-only items when no project selected)
+              const visibleItems = group.items.filter((item) => {
+                const href = projectId && item.projectHref
+                  ? `/dashboard/projects/${projectId}${item.projectHref}`
+                  : item.globalHref;
+                return !!href;
+              });
 
-              // Skip items with no global fallback when no project is selected
-              if (!href) return null;
+              if (visibleItems.length === 0) return null;
 
-              // Check if active (either global or project-specific path)
-              const isActive = pathname === href ||
-                pathname.startsWith(href + "/") ||
-                pathname === item.globalHref ||
-                pathname.startsWith(item.globalHref + "/") ||
-                (projectId && item.projectHref && pathname.startsWith(`/dashboard/projects/${projectId}${item.projectHref}`));
-
-              const isAI = "isAI" in item && item.isAI;
-              const isAnalysis = "isAnalysis" in item && item.isAnalysis;
               return (
-                <Link
-                  key={item.name}
-                  href={href}
-                  onClick={onNavClick}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                    projectId ? "py-1.5 text-[13px]" : "",
-                    isActive
-                      ? isAI
-                        ? "bg-amber-500 text-white font-medium"
-                        : isAnalysis
-                          ? "bg-emerald-500 text-white font-medium"
-                          : "bg-primary text-primary-foreground font-medium"
-                      : isAI
-                        ? "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                        : isAnalysis
-                          ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4", projectId && "h-3.5 w-3.5", !isActive && isAI && "text-amber-500", !isActive && isAnalysis && "text-emerald-500")} />
-                  {item.name}
-                </Link>
+                <div key={group.label} className="space-y-0.5">
+                  <p className={cn(
+                    "px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60",
+                    projectId ? "pb-0.5" : "pb-1"
+                  )}>
+                    {group.label}
+                  </p>
+                  {visibleItems.map((item) => {
+                    const href = projectId && item.projectHref
+                      ? `/dashboard/projects/${projectId}${item.projectHref}`
+                      : item.globalHref!;
+
+                    const isActive = pathname === href ||
+                      pathname.startsWith(href + "/") ||
+                      pathname === item.globalHref ||
+                      pathname.startsWith(item.globalHref + "/") ||
+                      (projectId && item.projectHref && pathname.startsWith(`/dashboard/projects/${projectId}${item.projectHref}`));
+
+                    const isAI = "isAI" in item && item.isAI;
+                    const isAnalysis = "isAnalysis" in item && item.isAnalysis;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={href}
+                        onClick={onNavClick}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                          projectId ? "py-1.5 text-[13px]" : "",
+                          isActive
+                            ? isAI
+                              ? "bg-amber-500 text-white font-medium"
+                              : isAnalysis
+                                ? "bg-emerald-500 text-white font-medium"
+                                : "bg-primary text-primary-foreground font-medium"
+                            : isAI
+                              ? "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                              : isAnalysis
+                                ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        )}
+                      >
+                        <item.icon className={cn("h-4 w-4", projectId && "h-3.5 w-3.5", !isActive && isAI && "text-amber-500", !isActive && isAnalysis && "text-emerald-500")} />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
