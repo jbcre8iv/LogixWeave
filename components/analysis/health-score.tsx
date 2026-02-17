@@ -90,6 +90,28 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
 
   return (
     <Card className="overflow-hidden">
+      {partialExportInfo?.hasPartialExports && (
+        <div className="px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20">
+          <div className="flex items-center gap-2 text-sm">
+            <Info className="h-4 w-4 text-amber-500 flex-shrink-0" />
+            <p className="text-muted-foreground">
+              {partialExportInfo.allPartial ? (
+                <>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">All files are partial exports.</span>{" "}
+                  Scores are approximate — tags may appear unused because referencing routines were not included in the export.
+                  Upload a full Controller export for accurate results.
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">Some files are partial exports</span>{" "}
+                  ({partialExportInfo.partialFiles.map((f) => `${f.targetType}${f.targetName ? `: ${f.targetName}` : ""}`).join(", ")}).
+                  Scores may be less accurate for data from those files.
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
       <CardContent className="p-6">
         <div className="flex flex-col sm:flex-row items-center gap-8">
           {/* Circular progress ring */}
@@ -160,28 +182,6 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
           </div>
         </div>
       </CardContent>
-      {partialExportInfo?.hasPartialExports && (
-        <div className="border-t px-6 py-3 bg-amber-500/5">
-          <div className="flex items-start gap-2 text-sm">
-            <Info className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-            <p className="text-muted-foreground">
-              {partialExportInfo.allPartial ? (
-                <>
-                  <span className="font-medium text-amber-600 dark:text-amber-400">All files are partial exports.</span>{" "}
-                  Scores are approximate — tags may appear unused because referencing routines were not included in the export.
-                  Upload a full Controller export for accurate results.
-                </>
-              ) : (
-                <>
-                  <span className="font-medium text-amber-600 dark:text-amber-400">Some files are partial exports</span>{" "}
-                  ({partialExportInfo.partialFiles.map((f) => `${f.targetType}${f.targetName ? `: ${f.targetName}` : ""}`).join(", ")}).
-                  Scores may be less accurate for data from those files.
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-      )}
     </Card>
   );
 }
