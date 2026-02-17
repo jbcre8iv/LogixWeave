@@ -43,11 +43,13 @@ interface CommentCoverageTableProps {
 }
 
 function getCoverageBadge(percent: number) {
-  if (percent >= 80)
-    return <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">{percent}%</Badge>;
-  if (percent >= 50)
-    return <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20">{percent}%</Badge>;
-  return <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20">{percent}%</Badge>;
+  const color =
+    percent >= 80
+      ? "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+      : percent >= 50
+        ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+        : "bg-red-500/10 text-red-500 hover:bg-red-500/20";
+  return <Badge className={cn("w-[52px] justify-center", color)}>{percent}%</Badge>;
 }
 
 function getProgressColor(percent: number) {
