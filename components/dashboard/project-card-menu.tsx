@@ -94,7 +94,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
 
       if (!response.ok) throw new Error("Failed to delete");
 
-      router.push("/dashboard/projects");
+      window.location.href = "/dashboard/projects";
     } catch (error) {
       console.error("Failed to delete:", error);
       setActionLoading(null);

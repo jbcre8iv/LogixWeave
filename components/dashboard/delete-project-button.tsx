@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { deleteProject } from "@/lib/actions/projects";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +22,12 @@ interface DeleteProjectButtonProps {
 export function DeleteProjectButton({ projectId, projectName }: DeleteProjectButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const router = useRouter();
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
       await deleteProject(projectId);
-      router.push("/dashboard/projects");
+      window.location.href = "/dashboard/projects";
     } catch (error) {
       console.error("Failed to delete project:", error);
       setIsDeleting(false);
