@@ -31,9 +31,10 @@ export async function POST(request: Request) {
 
     const language = (profile?.ai_language || "en") as AILanguage;
 
-    const { projectId, messages } = (await request.json()) as {
+    const { projectId, messages, conversationId } = (await request.json()) as {
       projectId: string;
       messages: ChatMessage[];
+      conversationId?: string;
     };
 
     if (!projectId || !messages?.length) {
@@ -271,7 +272,7 @@ Available tools (use exact URLs below):
     }
 
     // Log usage
-    const serviceSupabase = await createServiceClient();
+    const serviceSupabase = createServiceClient();
     await serviceSupabase.from("ai_usage_log").insert({
       user_id: user.id,
       organization_id: project.organization_id,
@@ -282,7 +283,50 @@ Available tools (use exact URLs below):
       cached: false,
     });
 
-    return NextResponse.json({ reply: textContent.text });
+    // Persist messages to conversation if conversationId provided
+    if (conversationId) {
+      const lastUserMessage = messages[messages.length - 1];
+      const messagesToInsert = [
+        {
+          conversation_id: conversationId,
+          role: "user" as const,
+          content: lastUserMessage.content,
+        },
+        {
+          conversation_id: conversationId,
+          role: "assistant" as const,
+          content: textContent.text,
+        },
+      ];
+
+      await serviceSupabase.from("ai_chat_messages").insert(messagesToInsert);
+
+      // Auto-title on first message: check if this is the first exchange
+      const { count } = await serviceSupabase
+        .from("ai_chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", conversationId);
+
+      if (count !== null && count <= 2) {
+        // First exchange — set title from first user message
+        const title = lastUserMessage.content.slice(0, 80);
+        await serviceSupabase
+          .from("ai_chat_conversations")
+          .update({ title })
+          .eq("id", conversationId);
+      } else {
+        // Touch updated_at via a no-op update (trigger handles timestamp)
+        await serviceSupabase
+          .from("ai_chat_conversations")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("id", conversationId);
+      }
+    }
+
+    return NextResponse.json({
+      reply: textContent.text,
+      conversationId: conversationId || null,
+    });
   } catch (error) {
     console.error("AI project chat error:", error);
 

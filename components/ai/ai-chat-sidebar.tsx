@@ -6,10 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, Sparkles, X, MessageSquare } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  Sparkles,
+  X,
+  MessageSquare,
+  Plus,
+  Clock,
+  Trash2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIChat } from "./ai-chat-provider";
-import type { ChatMessage } from "./ai-chat-provider";
+import type { ChatMessage, Conversation } from "./ai-chat-provider";
 
 const MAX_MESSAGES = 20;
 
@@ -60,6 +69,21 @@ function renderMessageContent(text: string) {
   return elements.length > 0 ? elements : text;
 }
 
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
 const SUGGESTIONS = [
   "What programs and routines does this project have?",
   "Summarize the tag structure",
@@ -71,19 +95,40 @@ export function AIChatSidebar() {
     isOpen,
     messages,
     projectId,
+    currentConversationId,
+    conversations,
+    conversationsLoaded,
+    showConversationList,
+    setShowConversationList,
     close,
     setMessages,
     consumePendingQuery,
+    loadConversations,
+    selectConversation,
+    startNewConversation,
+    deleteConversation,
   } = useAIChat();
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSelectingConversation, setIsSelectingConversation] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasSentPending = useRef(false);
+  const conversationIdRef = useRef<string | null>(currentConversationId);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    conversationIdRef.current = currentConversationId;
+  }, [currentConversationId]);
 
   const totalMessages = messages.length;
   const atLimit = totalMessages >= MAX_MESSAGES;
+
+  // Get current conversation title
+  const currentTitle = currentConversationId
+    ? conversations.find((c) => c.id === currentConversationId)?.title || "Project Chat"
+    : "Project Chat";
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -94,16 +139,28 @@ export function AIChatSidebar() {
         content: content.trim(),
       };
 
+      // If no conversation yet, create one first
+      let convId = conversationIdRef.current;
+      if (!convId) {
+        setIsLoading(true);
+        convId = await startNewConversation();
+        if (!convId) {
+          setError("Failed to create conversation");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       setMessages((prev) => {
         const updated = [...prev, userMessage];
-        doSend(updated);
+        doSend(updated, convId!);
         return updated;
       });
       setInput("");
       setError(null);
       setIsLoading(true);
 
-      async function doSend(updatedMessages: ChatMessage[]) {
+      async function doSend(updatedMessages: ChatMessage[], conversationId: string) {
         try {
           const response = await fetch("/api/ai/chat", {
             method: "POST",
@@ -111,6 +168,7 @@ export function AIChatSidebar() {
             body: JSON.stringify({
               projectId,
               messages: updatedMessages,
+              conversationId,
             }),
           });
 
@@ -124,6 +182,9 @@ export function AIChatSidebar() {
             ...prev,
             { role: "assistant", content: data.reply },
           ]);
+
+          // Update conversation in list (title may have changed on first message)
+          loadConversations();
         } catch (err) {
           setError(err instanceof Error ? err.message : "An error occurred");
         } finally {
@@ -131,7 +192,7 @@ export function AIChatSidebar() {
         }
       }
     },
-    [isLoading, projectId, setMessages]
+    [isLoading, projectId, setMessages, startNewConversation, loadConversations]
   );
 
   // Auto-scroll on new messages
@@ -155,6 +216,39 @@ export function AIChatSidebar() {
     }
   }, [isOpen, consumePendingQuery, sendMessage]);
 
+  // Load conversations lazily on first history toggle
+  const handleToggleHistory = useCallback(() => {
+    if (!conversationsLoaded) {
+      loadConversations();
+    }
+    setShowConversationList(!showConversationList);
+  }, [conversationsLoaded, loadConversations, setShowConversationList, showConversationList]);
+
+  const handleNewConversation = useCallback(async () => {
+    await startNewConversation();
+  }, [startNewConversation]);
+
+  const handleSelectConversation = useCallback(
+    async (id: string) => {
+      if (isLoading || isSelectingConversation) return;
+      setIsSelectingConversation(true);
+      try {
+        await selectConversation(id);
+      } finally {
+        setIsSelectingConversation(false);
+      }
+    },
+    [isLoading, isSelectingConversation, selectConversation]
+  );
+
+  const handleDeleteConversation = useCallback(
+    async (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      await deleteConversation(id);
+    },
+    [deleteConversation]
+  );
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -170,108 +264,192 @@ export function AIChatSidebar() {
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-amber-500" />
-          <h2 className="font-semibold text-sm">Project Chat</h2>
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={close}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b shrink-0">
+        <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+        <span className="font-semibold text-sm truncate flex-1">
+          {currentTitle}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={handleNewConversation}
+          title="New conversation"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "h-8 w-8 shrink-0",
+            showConversationList && "bg-amber-500/10 text-amber-500"
+          )}
+          onClick={handleToggleHistory}
+          title="Conversation history"
+        >
+          <Clock className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={close}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Chat area */}
-      <div className="flex-1 overflow-hidden">
-      <ScrollArea className="h-full px-4">
-        <div className="space-y-3 py-4">
-          {messages.length === 0 && !isLoading && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Ask anything about your project:
-              </p>
-              <div className="flex flex-col gap-2">
-                {SUGGESTIONS.map((suggestion) => (
+      {/* Conversation list view */}
+      {showConversationList ? (
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-2 space-y-1">
+              {conversations.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No conversations yet
+                </p>
+              ) : (
+                conversations.map((conv) => (
                   <button
-                    key={suggestion}
-                    onClick={() => sendMessage(suggestion)}
-                    className="text-xs px-3 py-2 rounded-lg border bg-muted hover:bg-muted/80 transition-colors text-left"
+                    key={conv.id}
+                    onClick={() => handleSelectConversation(conv.id)}
+                    disabled={isLoading || isSelectingConversation}
+                    className={cn(
+                      "group w-full text-left rounded-lg px-3 py-2.5 transition-colors",
+                      "hover:bg-muted/80",
+                      currentConversationId === conv.id
+                        ? "bg-amber-500/10 border border-amber-500/20"
+                        : "border border-transparent",
+                      (isLoading || isSelectingConversation) && "opacity-50 cursor-not-allowed"
+                    )}
                   >
-                    {suggestion}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">
+                          {conv.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {conv.message_count} message{conv.message_count !== 1 ? "s" : ""}
+                          {" \u00B7 "}
+                          {formatTime(conv.updated_at)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteConversation(e, conv.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive shrink-0"
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={cn(
-                "flex",
-                msg.role === "user" ? "justify-end" : "justify-start"
+                ))
               )}
-            >
-              <div
-                className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words overflow-hidden",
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                )}
-              >
-                {msg.role === "assistant"
-                  ? renderMessageContent(msg.content)
-                  : msg.content}
-              </div>
             </div>
-          ))}
-
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg px-3 py-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </div>
-            </div>
-          )}
-
-          <div ref={scrollRef} />
+          </ScrollArea>
         </div>
-      </ScrollArea>
-      </div>
+      ) : (
+        <>
+          {/* Chat area */}
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full px-4">
+              <div className="space-y-3 py-4">
+                {messages.length === 0 && !isLoading && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Ask anything about your project:
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {SUGGESTIONS.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => sendMessage(suggestion)}
+                          className="text-xs px-3 py-2 rounded-lg border bg-muted hover:bg-muted/80 transition-colors text-left"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-      {/* Input area */}
-      <div className="border-t p-3 shrink-0">
-        {error && (
-          <p className="text-xs text-destructive mb-2">{error}</p>
-        )}
+                {messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "flex",
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words overflow-hidden",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      )}
+                    >
+                      {msg.role === "assistant"
+                        ? renderMessageContent(msg.content)
+                        : msg.content}
+                    </div>
+                  </div>
+                ))}
 
-        {atLimit ? (
-          <p className="text-xs text-muted-foreground text-center py-2">
-            Message limit reached ({MAX_MESSAGES} messages). Start a new
-            conversation to continue.
-          </p>
-        ) : (
-          <div className="flex items-end gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about your project..."
-              className="min-h-[40px] max-h-[120px] resize-none text-sm"
-              rows={1}
-              disabled={isLoading}
-            />
-            <Button
-              size="icon"
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isLoading}
-              className="shrink-0 h-10 w-10 bg-amber-500 hover:bg-amber-600 text-white"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-lg px-3 py-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  </div>
+                )}
+
+                <div ref={scrollRef} />
+              </div>
+            </ScrollArea>
           </div>
-        )}
-      </div>
+
+          {/* Input area */}
+          <div className="border-t p-3 shrink-0">
+            {error && (
+              <p className="text-xs text-destructive mb-2">{error}</p>
+            )}
+
+            {atLimit ? (
+              <div className="text-center py-2">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Message limit reached ({MAX_MESSAGES} messages).
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNewConversation}
+                  className="text-xs"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Start new conversation
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-end gap-2">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask about your project..."
+                  className="min-h-[40px] max-h-[120px] resize-none text-sm"
+                  rows={1}
+                  disabled={isLoading}
+                />
+                <Button
+                  size="icon"
+                  onClick={() => sendMessage(input)}
+                  disabled={!input.trim() || isLoading}
+                  className="shrink-0 h-10 w-10 bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
