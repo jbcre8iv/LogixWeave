@@ -13,15 +13,14 @@ import type { ChatMessage } from "./ai-chat-provider";
 
 const MAX_MESSAGES = 20;
 
-/** Renders markdown-style links and bold text as React elements */
+/** Renders markdown-style links, bold, and inline code as React elements */
 function renderMessageContent(text: string) {
-  const pattern = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+  const pattern = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`/g;
   const elements: React.ReactNode[] = [];
   let lastIndex = 0;
   let match;
 
   while ((match = pattern.exec(text)) !== null) {
-    // Add plain text before this match
     if (match.index > lastIndex) {
       elements.push(
         <Fragment key={lastIndex}>{text.slice(lastIndex, match.index)}</Fragment>
@@ -34,7 +33,7 @@ function renderMessageContent(text: string) {
         <Link
           key={match.index}
           href={match[2]}
-          className="underline font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+          className="inline-flex items-center gap-1 underline font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
         >
           {match[1]}
         </Link>
@@ -42,12 +41,18 @@ function renderMessageContent(text: string) {
     } else if (match[3]) {
       // Bold: **text**
       elements.push(<strong key={match.index}>{match[3]}</strong>);
+    } else if (match[4]) {
+      // Inline code: `text`
+      elements.push(
+        <code key={match.index} className="px-1 py-0.5 rounded bg-background/50 text-xs font-mono">
+          {match[4]}
+        </code>
+      );
     }
 
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining plain text
   if (lastIndex < text.length) {
     elements.push(<Fragment key={lastIndex}>{text.slice(lastIndex)}</Fragment>);
   }

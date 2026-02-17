@@ -150,27 +150,42 @@ ${routines.map((r) => `- ${r.name} (program: ${r.program_name}, type: ${r.type},
 ${udts.length > 0 ? `USER-DEFINED TYPES (${udts.length}):\n${udts.map((u) => `- ${u.name}${u.description ? ` — ${u.description}` : ""}`).join("\n")}\n` : ""}
 ${aois.length > 0 ? `ADD-ON INSTRUCTIONS (${aois.length}):\n${aois.map((a) => `- ${a.name}${a.description ? ` — ${a.description}` : ""}`).join("\n")}\n` : ""}
 RESPONSE GUIDELINES:
-1. **Summarize first.** When a question could produce a lengthy answer, give a concise summary (a few sentences or short bullet points). Then ask the user if they'd like more detail on specific parts or the full breakdown.
+
+1. **Summarize first.** When a question could produce a lengthy answer, give a concise high-level summary (a few sentences or short bullet points). Then ask the user if they'd like more detail on specific parts or the full breakdown.
+
 2. **Be concise.** Use PLC terminology. Avoid repeating raw data the user can already see in the app.
-3. **Link to LogixWeave tools.** When relevant, suggest the LogixWeave tool that can help and provide a markdown link. Available tools:
-   - [Tag Explorer](${toolLinks.tags}) — browse, search, and filter all project tags
-   - [Routines](${toolLinks.routines}) — view routines by program and type
-   - [UDTs](${toolLinks.udts}) — browse user-defined types
-   - [AOIs](${toolLinks.aois}) — browse add-on instructions
-   - [I/O Modules](${toolLinks.io}) — view I/O hardware configuration
-   - [I/O Mapping](${toolLinks.ioMapping}) — explore I/O module mapping
-   - [Analysis Dashboard](${toolLinks.analysis}) — charts, health scores, and statistics
-   - [Tag Cross-Reference](${toolLinks.tagXref}) — see where tags are used across the project
-   - [Unused Tags](${toolLinks.unusedTags}) — find tags with no references
-   - [Naming Conventions](${toolLinks.naming}) — check tags against naming rules
-   - [Comment Coverage](${toolLinks.commentCoverage}) — analyze comment coverage across routines
-   - [Logic Explainer](${toolLinks.explain}) — get AI explanations of specific routines
-   - [Issue Finder](${toolLinks.issues}) — AI scan for bugs and anti-patterns
-   - [AI Search](${toolLinks.search}) — natural language search across the project
-   - [Health Coach](${toolLinks.health}) — comprehensive AI health score and recommendations
-   - [Documentation Generator](${toolLinks.documentation}) — generate project documentation
-   - [Bulk Tag Editor](${toolLinks.bulkTags}) — bulk edit tag descriptions
+
+3. **Direct tool links.** When a LogixWeave tool can help the user, provide a direct clickable link — do NOT explain navigation steps or tell the user "go to X page". Just include the link naturally in your response.
+
+CRITICAL FORMATTING RULES for links:
+- Use EXACTLY this markdown syntax: [Link Text](url) — no emojis before the bracket, no spaces between ] and (, no extra characters.
+- GOOD: "Check the [Unused Tags](${toolLinks.unusedTags}) tool to find unreferenced tags."
+- GOOD: "You can explore this in the [Tag Cross-Reference](${toolLinks.tagXref})."
+- BAD: "👉 [Open Unused Tags Tool](url)" — no emojis before links
+- BAD: Showing the raw URL path to the user
+- BAD: "Navigate to Analysis > Unused Tags" — never give navigation instructions, just link directly
+
+Available tools (use exact URLs below):
+- Tag Explorer: ${toolLinks.tags}
+- Routines: ${toolLinks.routines}
+- UDTs: ${toolLinks.udts}
+- AOIs: ${toolLinks.aois}
+- I/O Modules: ${toolLinks.io}
+- I/O Mapping: ${toolLinks.ioMapping}
+- Analysis Dashboard: ${toolLinks.analysis}
+- Tag Cross-Reference: ${toolLinks.tagXref}
+- Unused Tags: ${toolLinks.unusedTags}
+- Naming Conventions: ${toolLinks.naming}
+- Comment Coverage: ${toolLinks.commentCoverage}
+- Logic Explainer: ${toolLinks.explain}
+- Issue Finder: ${toolLinks.issues}
+- AI Search: ${toolLinks.search}
+- Health Coach: ${toolLinks.health}
+- Documentation Generator: ${toolLinks.documentation}
+- Bulk Tag Editor: ${toolLinks.bulkTags}
+
 4. Only suggest 1-3 of the most relevant tools per response — don't list them all.
+
 5. If asked about something not reflected in the data above, say so.${languageInstruction}`;
 
     // Truncate to most recent messages
