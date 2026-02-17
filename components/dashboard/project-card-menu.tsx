@@ -94,10 +94,9 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
 
       if (!response.ok) throw new Error("Failed to delete");
 
-      router.refresh();
+      router.push("/dashboard/projects");
     } catch (error) {
       console.error("Failed to delete:", error);
-    } finally {
       setActionLoading(null);
       setDeleteDialogOpen(false);
     }
