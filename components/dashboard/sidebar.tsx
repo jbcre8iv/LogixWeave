@@ -52,9 +52,10 @@ interface ProjectTool {
 
 const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
   {
-    label: "Manage",
+    label: "Analyze",
     items: [
-      { name: "Files", projectHref: "/files", icon: Upload },
+      { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
+      { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
     ],
   },
   {
@@ -67,10 +68,9 @@ const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
     ],
   },
   {
-    label: "Analyze",
+    label: "Manage",
     items: [
-      { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
-      { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
+      { name: "Files", projectHref: "/files", icon: Upload },
     ],
   },
 ];
