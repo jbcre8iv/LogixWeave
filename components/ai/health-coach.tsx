@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { addPdfBranding } from "@/lib/pdf-branding";
+import { getTimestampSuffix } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -446,7 +447,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
     doc.setFont("helvetica", "normal");
     doc.setTextColor(120, 120, 120);
     doc.text(
-      `Generated ${new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,
+      `Generated ${new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })} at ${new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" })}`,
       margin,
       y
     );
@@ -605,7 +606,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
     }
 
     await addPdfBranding(doc);
-    doc.save(`health-report-${projectName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.pdf`);
+    doc.save(`health-report-${projectName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}_${getTimestampSuffix()}.pdf`);
   };
 
   const handleDeleteHistory = async (id: string) => {

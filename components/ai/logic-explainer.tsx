@@ -20,6 +20,7 @@ import {
 import { Loader2, Sparkles, CheckCircle, AlertCircle, Download, ChevronDown, FileText, FileType, Info } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { addPdfBranding } from "@/lib/pdf-branding";
+import { getTimestampSuffix } from "@/lib/utils";
 import { ExplainChat, type ChatMessage } from "@/components/ai/explain-chat";
 import { AILoading } from "@/components/ai/ai-loading";
 
@@ -238,7 +239,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
     }
 
     const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
-    downloadBlob(blob, `${selectedRoutine}-analysis.md`);
+    downloadBlob(blob, `${selectedRoutine}-analysis_${getTimestampSuffix()}.md`);
   };
 
   const exportCSV = () => {
@@ -274,7 +275,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
 
     const csvContent = rows.map((row) => row.map(escapeCSV).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    downloadBlob(blob, `${selectedRoutine}-analysis.csv`);
+    downloadBlob(blob, `${selectedRoutine}-analysis_${getTimestampSuffix()}.csv`);
   };
 
   const exportPDF = async () => {
@@ -404,7 +405,7 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
     }
 
     await addPdfBranding(doc);
-    doc.save(`${selectedRoutine}-analysis.pdf`);
+    doc.save(`${selectedRoutine}-analysis_${getTimestampSuffix()}.pdf`);
   };
 
   // Group routines by program

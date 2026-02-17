@@ -155,7 +155,7 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
         </div>
         {unusedTags.length > 0 && (
           <ExportCSVButton
-            filename={`unused_tags_${new Date().toISOString().slice(0, 10)}.csv`}
+            filename="unused_tags.csv"
             data={[
               ["Name", "Data Type", "Scope", "Usage", "Description"],
               ...unusedTags.map((tag) => [

@@ -183,7 +183,7 @@ export default async function CommentCoveragePage({ params }: CommentCoveragePag
           </div>
         </div>
         <ExportCSVButton
-          filename={`comment_coverage_${new Date().toISOString().slice(0, 10)}.csv`}
+          filename="comment_coverage.csv"
           data={[
             ["Level", "Program", "Routine", "Total Rungs", "Commented Rungs", "Coverage %"],
             ["Overall", "", "", String(totalRungs), String(commentedRungs), `${coveragePercent}%`],

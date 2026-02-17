@@ -271,7 +271,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
         <div className="flex items-center gap-2">
           {allViolations.length > 0 && (
             <ExportCSVButton
-              filename={`naming_validation_${new Date().toISOString().slice(0, 10)}.csv`}
+              filename="naming_validation.csv"
               data={[
                 ["Severity", "Tag Name", "Scope", "Rule"],
                 ...allViolations.map((v) => [

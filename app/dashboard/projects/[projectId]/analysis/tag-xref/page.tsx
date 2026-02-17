@@ -147,7 +147,7 @@ export default async function TagXrefPage({ params, searchParams }: TagXrefPageP
         </div>
         {(allReferences?.length ?? 0) > 0 && (
           <ExportCSVButton
-            filename={`tag_cross_reference_${new Date().toISOString().slice(0, 10)}.csv`}
+            filename="tag_cross_reference.csv"
             data={[
               ["Tag Name", "Program", "Routine", "Rung", "Usage Type"],
               ...(allReferences || []).map((ref) => [

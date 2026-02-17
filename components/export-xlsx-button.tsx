@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, ChevronDown, FileSpreadsheet, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
+import { getTimestampSuffix } from "@/lib/utils";
 
 export interface ExportSheet {
   name: string;
@@ -47,7 +48,7 @@ export function ExportXLSXButton({ sheets, filename }: ExportXLSXButtonProps) {
       const worksheet = XLSX.utils.aoa_to_sheet(sheet.data);
       XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name);
     }
-    XLSX.writeFile(workbook, `${baseFilename}.xlsx`);
+    XLSX.writeFile(workbook, `${baseFilename}_${getTimestampSuffix()}.xlsx`);
   };
 
   const handleExportCSV = () => {
@@ -59,7 +60,7 @@ export function ExportXLSXButton({ sheets, filename }: ExportXLSXButtonProps) {
     }
     const csvContent = rows.map((row) => row.map(escapeCSV).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    downloadBlob(blob, `${baseFilename}.csv`);
+    downloadBlob(blob, `${baseFilename}_${getTimestampSuffix()}.csv`);
   };
 
   return (

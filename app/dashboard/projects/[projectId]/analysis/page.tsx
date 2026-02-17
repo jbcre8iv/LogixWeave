@@ -317,7 +317,7 @@ export default async function AnalysisPage({ params, searchParams }: AnalysisPag
         {fileIds.length > 0 && (
           <div className="flex flex-col items-end gap-1">
             <ExportXLSXButton
-              filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`}
+              filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
               sheets={exportSheets}
             />
             <p className="text-xs text-muted-foreground">
