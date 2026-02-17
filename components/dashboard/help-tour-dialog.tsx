@@ -24,8 +24,10 @@ import {
   FileText,
   Users,
   MessageSquare,
-  Lightbulb,
   Workflow,
+  BarChart3,
+  Heart,
+  History,
 } from "lucide-react";
 
 const STORAGE_KEY = "logixweave-tour-completed";
@@ -146,13 +148,36 @@ const tourSteps: TourStep[] = [
     accentColor: "from-chart-4/20 to-chart-1/20",
   },
   {
-    title: "AI Assistant",
+    title: "Analysis & Health",
     description:
-      "Ask questions about your PLC program and get AI-powered explanations and insights. Understand complex logic faster than ever.",
+      "Get a health score for your project based on tag efficiency, comment coverage, and naming conventions. Track improvements over time with the AI Health Coach.",
     icons: [
       {
-        Icon: Bot,
-        className: "h-10 w-10 text-primary animate-tour-float",
+        Icon: BarChart3,
+        className: "h-10 w-10 text-chart-1 animate-tour-float",
+        delay: "0s",
+      },
+      {
+        Icon: Heart,
+        className: "h-7 w-7 text-chart-5",
+        delay: "0.2s",
+      },
+      {
+        Icon: Tags,
+        className: "h-7 w-7 text-chart-3 animate-tour-float",
+        delay: "0.4s",
+      },
+    ],
+    accentColor: "from-chart-1/20 to-chart-5/20",
+  },
+  {
+    title: "AI-Powered Tools",
+    description:
+      "Chat with an AI assistant that knows your entire project. Ask questions, explain logic, find issues, and keep conversation history across sessions.",
+    icons: [
+      {
+        Icon: Sparkles,
+        className: "h-10 w-10 text-amber-500 animate-tour-float",
         delay: "0s",
       },
       {
@@ -161,17 +186,17 @@ const tourSteps: TourStep[] = [
         delay: "0.2s",
       },
       {
-        Icon: Lightbulb,
-        className: "h-7 w-7 text-chart-5 animate-tour-float",
+        Icon: History,
+        className: "h-7 w-7 text-amber-400 animate-tour-float",
         delay: "0.4s",
       },
     ],
-    accentColor: "from-primary/20 to-chart-5/20",
+    accentColor: "from-amber-500/20 to-chart-2/20",
   },
   {
     title: "Export & Share",
     description:
-      "Export documentation, tag lists, and reports. Share projects with your team for seamless collaboration.",
+      "Export documentation, tag lists, and reports. Share projects with your team and manage access with role-based permissions.",
     icons: [
       {
         Icon: FileDown,
