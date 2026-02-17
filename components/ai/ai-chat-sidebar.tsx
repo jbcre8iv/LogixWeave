@@ -133,7 +133,8 @@ export function AIChatSidebar() {
       </div>
 
       {/* Chat area */}
-      <ScrollArea className="flex-1 px-4">
+      <div className="flex-1 overflow-hidden">
+      <ScrollArea className="h-full px-4">
         <div className="space-y-3 py-4">
           {messages.length === 0 && !isLoading && (
             <div className="space-y-3">
@@ -186,6 +187,7 @@ export function AIChatSidebar() {
           <div ref={scrollRef} />
         </div>
       </ScrollArea>
+      </div>
 
       {/* Input area */}
       <div className="border-t p-3 shrink-0">
