@@ -56,7 +56,8 @@ export function DeleteFileButton({ fileId, fileName }: DeleteFileButtonProps) {
           <DialogTitle>Delete File</DialogTitle>
           <DialogDescription>
             Are you sure you want to delete &quot;{fileName}&quot;? This will also delete all
-            parsed data (tags, routines, modules) associated with this file. This action
+            parsed data (tags, routines, modules) associated with this file, reducing
+            the project knowledgebase and affecting AI response quality. This action
             cannot be undone.
           </DialogDescription>
         </DialogHeader>
