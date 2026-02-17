@@ -88,6 +88,8 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
               <Home className="mr-2 h-4 w-4" />
               Home
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Account</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
               <User className="mr-2 h-4 w-4" />
               Profile
@@ -96,17 +98,19 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/legal")}>
-              <Scale className="mr-2 h-4 w-4" />
-              Terms & Privacy
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Support</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => { setAutoTriggered(false); setHelpTourOpen(true); }}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              Take a Tour
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
               <MessageSquareMore className="mr-2 h-4 w-4" />
               Feedback
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { setAutoTriggered(false); setHelpTourOpen(true); }}>
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Take a Tour
+            <DropdownMenuItem onClick={() => router.push("/legal")}>
+              <Scale className="mr-2 h-4 w-4" />
+              Terms & Privacy
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
