@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     // Get project and verify access
     const { data: project } = await supabase
       .from("projects")
-      .select("id, organization_id, project_files(id, parsing_status)")
+      .select("id, organization_id, project_files(id, parsing_status, current_version)")
       .eq("id", projectId)
       .single();
 
@@ -40,32 +40,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const fileIds = project.project_files
-      ?.filter((f: { parsing_status: string }) => f.parsing_status === "completed")
-      .map((f: { id: string }) => f.id) || [];
+    const completedFiles = project.project_files
+      ?.filter((f: { parsing_status: string }) => f.parsing_status === "completed") || [];
+    const fileIds = completedFiles.map((f: { id: string }) => f.id);
 
     if (fileIds.length === 0) {
       return NextResponse.json({ error: "No parsed files in project" }, { status: 400 });
     }
 
-    // Get routines
+    // Resolve latest version IDs to avoid duplicate data from old versions
+    const { data: latestVersions } = await supabase
+      .from("file_versions")
+      .select("id, file_id, version_number")
+      .in("file_id", fileIds);
+
+    const versionIds = (latestVersions || [])
+      .filter((v: { file_id: string; version_number: number }) => {
+        const file = completedFiles.find((f: { id: string }) => f.id === v.file_id);
+        return file && v.version_number === (file as { current_version: number }).current_version;
+      })
+      .map((v: { id: string }) => v.id);
+
+    // Get routines (filter by version_id for current versions only)
     const { data: routines } = await supabase
       .from("parsed_routines")
       .select("name, program_name, type, rung_count")
-      .in("file_id", fileIds);
+      .in("version_id", versionIds);
 
     // Get tags
     const { data: tags } = await supabase
       .from("parsed_tags")
       .select("name, data_type, scope, description")
-      .in("file_id", fileIds)
+      .in("version_id", versionIds)
       .limit(500);
 
     // Get sample rungs
     const { data: rungs } = await supabase
       .from("parsed_rungs")
       .select("routine_name, number, content, comment")
-      .in("file_id", fileIds)
+      .in("version_id", versionIds)
       .limit(100);
 
     if (!routines || !tags) {

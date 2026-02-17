@@ -75,13 +75,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // Parallel fetch: tags, references, rungs, routines, and file versions
-    const [tagsResult, referencesResult, rungsResult, routinesResult, versionsResult] =
+    // Fetch file versions first to resolve latest version IDs
+    const { data: allFileVersions } = await supabase
+      .from("file_versions")
+      .select("id, file_id, version_number, created_at, comment")
+      .in("file_id", fileIds)
+      .order("version_number", { ascending: true });
+
+    const allVersions = allFileVersions || [];
+
+    // Get latest version IDs to avoid duplicate data from old versions
+    const versionIds = allVersions
+      .filter((v) => {
+        const file = parsedFiles.find((f: { id: string }) => f.id === v.file_id);
+        return file && v.version_number === (file as { current_version: number }).current_version;
+      })
+      .map((v) => v.id);
+
+    // Parallel fetch: tags, references, rungs, routines (using version_id for current data only)
+    const [tagsResult, referencesResult, rungsResult, routinesResult] =
       await Promise.all([
         supabase
           .from("parsed_tags")
           .select("name, data_type, scope, description, usage")
-          .in("file_id", fileIds),
+          .in("version_id", versionIds),
         supabase
           .from("tag_references")
           .select("tag_name, usage_type")
@@ -89,24 +106,17 @@ export async function POST(request: Request) {
         supabase
           .from("parsed_rungs")
           .select("program_name, routine_name, comment")
-          .in("file_id", fileIds),
+          .in("version_id", versionIds),
         supabase
           .from("parsed_routines")
           .select("name, program_name, type, rung_count")
-          .in("file_id", fileIds),
-        // Fetch file versions with their parsed data stats for version history
-        supabase
-          .from("file_versions")
-          .select("id, file_id, version_number, created_at, comment")
-          .in("file_id", fileIds)
-          .order("version_number", { ascending: true }),
+          .in("version_id", versionIds),
       ]);
 
     const allTags = tagsResult.data || [];
     const references = referencesResult.data || [];
     const rungs = rungsResult.data || [];
     const routines = routinesResult.data || [];
-    const allVersions = versionsResult.data || [];
 
     if (allTags.length === 0 && routines.length === 0) {
       return NextResponse.json(

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // Get project and verify access
     const { data: project } = await supabase
       .from("projects")
-      .select("id, name, organization_id, project_files(id, parsing_status)")
+      .select("id, name, organization_id, project_files(id, parsing_status, current_version)")
       .eq("id", projectId)
       .single();
 
@@ -54,12 +54,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const fileIds =
-      project.project_files
-        ?.filter(
-          (f: { parsing_status: string }) => f.parsing_status === "completed"
-        )
-        .map((f: { id: string }) => f.id) || [];
+    const completedFiles =
+      project.project_files?.filter(
+        (f: { parsing_status: string }) => f.parsing_status === "completed"
+      ) || [];
+    const fileIds = completedFiles.map((f: { id: string }) => f.id);
 
     if (fileIds.length === 0) {
       return NextResponse.json(
@@ -68,28 +67,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Gather project context in parallel
+    // Resolve latest version IDs to avoid duplicate data from old versions
+    const { data: latestVersions } = await supabase
+      .from("file_versions")
+      .select("id, file_id, version_number")
+      .in("file_id", fileIds);
+
+    const versionIds = (latestVersions || [])
+      .filter((v: { file_id: string; version_number: number }) => {
+        const file = completedFiles.find((f: { id: string }) => f.id === v.file_id);
+        return file && v.version_number === (file as { current_version: number }).current_version;
+      })
+      .map((v: { id: string }) => v.id);
+
+    // Gather project context in parallel (filter by version_id for current versions only)
     const [tagsResult, routinesResult, udtsResult, aoisResult] =
       await Promise.all([
         supabase
           .from("parsed_tags")
           .select("name, data_type, scope, description")
-          .in("file_id", fileIds)
+          .in("version_id", versionIds)
           .limit(500),
         supabase
           .from("parsed_routines")
           .select("name, program_name, type, description, rung_count")
-          .in("file_id", fileIds)
+          .in("version_id", versionIds)
           .limit(100),
         supabase
           .from("parsed_udts")
           .select("name, description")
-          .in("file_id", fileIds)
+          .in("version_id", versionIds)
           .limit(50),
         supabase
           .from("parsed_aois")
           .select("name, description")
-          .in("file_id", fileIds)
+          .in("version_id", versionIds)
           .limit(50),
       ]);
 
