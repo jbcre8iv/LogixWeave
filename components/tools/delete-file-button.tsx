@@ -58,7 +58,8 @@ export function DeleteFileButton({ fileId, fileName }: DeleteFileButtonProps) {
             Are you sure you want to delete &quot;{fileName}&quot;? This will also delete all
             parsed data (tags, routines, modules) associated with this file, reducing
             the project knowledgebase and affecting AI response quality. This action
-            cannot be undone.
+            cannot be undone. To update a file instead, simply re-upload it — versioning
+            is automatic.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
