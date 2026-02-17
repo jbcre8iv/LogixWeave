@@ -348,13 +348,10 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         <div>
           <h1 className="text-3xl font-bold">Analysis</h1>
           <p className="text-muted-foreground">{project.name}</p>
-          {project.description && (
-            <p className="text-sm text-muted-foreground/80">{project.description}</p>
-          )}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-1">
-            <Avatar className="size-4">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 mt-0.5">
+            <Avatar className="size-5">
               <AvatarImage src={ownerProfile?.avatar_url || undefined} alt={ownerName} />
-              <AvatarFallback className="text-[8px]">{ownerInitials}</AvatarFallback>
+              <AvatarFallback className="text-[9px]">{ownerInitials}</AvatarFallback>
             </Avatar>
             <span>
               {ownerName}
@@ -366,6 +363,9 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
               {project.project_files.length} {project.project_files.length === 1 ? "file" : "files"}
             </span>
           </div>
+          {project.description && (
+            <p className="text-sm text-muted-foreground/80 mt-1">{project.description}</p>
+          )}
         </div>
         {fileIds.length > 0 && (
           <div className="flex flex-col items-end gap-1">
