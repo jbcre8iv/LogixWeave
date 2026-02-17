@@ -19,16 +19,17 @@ export function MiniHealthRing({ score, size = 36, approximate }: MiniHealthRing
     );
   }
 
-  const color = getColor(score);
+  const clamped = Math.max(0, Math.min(100, score));
+  const color = getColor(clamped);
   const radius = 10;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
+  const offset = circumference - (clamped / 100) * circumference;
 
   return (
     <div
       className="relative inline-flex items-center justify-center"
       style={{ width: size, height: size }}
-      title={approximate ? `~${score}/100 (approximate — partial export)` : `Health Score: ${score}/100`}
+      title={approximate ? `~${clamped}/100 (approximate — partial export)` : `Health Score: ${clamped}/100`}
     >
       <svg width={size} height={size} viewBox="0 0 24 24">
         <circle
@@ -39,6 +40,7 @@ export function MiniHealthRing({ score, size = 36, approximate }: MiniHealthRing
           stroke="currentColor"
           strokeWidth="2.5"
           className="text-muted/30"
+          strokeDasharray={approximate ? "2 2" : undefined}
         />
         <circle
           cx="12"
@@ -57,7 +59,7 @@ export function MiniHealthRing({ score, size = 36, approximate }: MiniHealthRing
         className={`absolute font-bold leading-none ${color.text}`}
         style={{ fontSize: Math.round(size * 0.28) }}
       >
-        {approximate ? `~${score}` : score}
+        {clamped}
       </span>
     </div>
   );
