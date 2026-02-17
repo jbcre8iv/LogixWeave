@@ -309,8 +309,15 @@ function HistoryEntryCard({
 }
 
 function ScoreBadge({ label, score }: { label: string; score: number }) {
+  const color =
+    score >= 80
+      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+      : score >= 50
+        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400"
+        : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400";
+
   return (
-    <span className="hidden sm:inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
+    <span className={`hidden sm:inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
       {label} {score}
     </span>
   );
