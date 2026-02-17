@@ -294,25 +294,21 @@ export function LogicExplainer({ projectId, routines }: LogicExplainerProps) {
       }
     };
 
+    const sanitize = (text: string) =>
+      text
+        .replace(/[\u2018\u2019\u201A]/g, "'")
+        .replace(/[\u201C\u201D\u201E]/g, '"')
+        .replace(/[\u2013\u2014]/g, "-")
+        .replace(/\u2026/g, "...")
+        .replace(/[^\x00-\x7F]/g, "");
+
     const addWrappedText = (text: string, x: number, fontSize: number, indent = 0) => {
       doc.setFontSize(fontSize);
       const availWidth = maxWidth - indent;
       const lineHeight = fontSize * 0.5;
-      const words = text.split(" ");
-      let line = "";
+      const lines = doc.splitTextToSize(sanitize(text), availWidth);
 
-      for (const word of words) {
-        const testLine = line ? `${line} ${word}` : word;
-        if (doc.getTextWidth(testLine) > availWidth && line) {
-          addPageIfNeeded(lineHeight);
-          doc.text(line, x + indent, y);
-          y += lineHeight;
-          line = word;
-        } else {
-          line = testLine;
-        }
-      }
-      if (line) {
+      for (const line of lines) {
         addPageIfNeeded(lineHeight);
         doc.text(line, x + indent, y);
         y += lineHeight;
