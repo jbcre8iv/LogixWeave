@@ -679,13 +679,38 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
             </Link>
           </Button>
         )}
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <HeartPulse className="h-8 w-8 text-amber-500" />
             Health Coach
           </h1>
           <p className="text-muted-foreground">{projectName}</p>
         </div>
+        {(result || loading) && (
+          <div className="flex items-center gap-2">
+            {result && !loading && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                onClick={exportPDF}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+              onClick={fetchRecommendations}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              {loading ? "Analyzing..." : "Run Analysis"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Begin state — shown before first analysis */}
@@ -720,33 +745,6 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {/* Action buttons — shown after analysis */}
-      {(result || loading) && (
-        <div className="flex justify-end gap-2">
-          {result && !loading && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-              onClick={exportPDF}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-            onClick={fetchRecommendations}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            {loading ? "Analyzing..." : "Run Analysis"}
-          </Button>
-        </div>
       )}
 
       {/* Loading */}
