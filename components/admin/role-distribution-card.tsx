@@ -60,8 +60,8 @@ export function RoleDistributionCard() {
           <CardDescription>Breakdown of user roles across the platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-[280px]">
-            <Skeleton className="h-[200px] w-[200px] rounded-full" />
+          <div className="flex items-center justify-center h-[180px]">
+            <Skeleton className="h-[120px] w-[120px] rounded-full" />
           </div>
         </CardContent>
       </Card>
@@ -77,15 +77,15 @@ export function RoleDistributionCard() {
         <CardDescription>Breakdown of user roles across the platform</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="45%"
-                innerRadius={60}
-                outerRadius={90}
+                cy="42%"
+                innerRadius={40}
+                outerRadius={65}
                 paddingAngle={data.length > 1 ? 3 : 0}
                 dataKey="count"
                 nameKey="role"
@@ -129,11 +129,11 @@ export function RoleDistributionCard() {
                 ))}
               </Pie>
               {/* Center label */}
-              <text x="50%" y="38%" textAnchor="middle" dominantBaseline="central">
-                <tspan x="50%" className="fill-foreground text-xl font-bold">
+              <text x="50%" y="35%" textAnchor="middle" dominantBaseline="central">
+                <tspan x="50%" className="fill-foreground text-base font-bold">
                   {totalUsers.toLocaleString()}
                 </tspan>
-                <tspan x="50%" dy="1.3em" className="fill-muted-foreground text-[11px]">
+                <tspan x="50%" dy="1.2em" className="fill-muted-foreground text-[10px]">
                   total users
                 </tspan>
               </text>

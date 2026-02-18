@@ -224,9 +224,6 @@ export default async function AdminDashboardPage() {
       {/* User Role Distribution */}
       <RoleDistributionCard />
 
-      {/* Security Dashboard (inline collapsible) */}
-      <SecurityDashboardSection />
-
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -266,6 +263,9 @@ export default async function AdminDashboardPage() {
           <AdminFeedbackTable feedback={feedbackItems} />
         </CardContent>
       </Card>
+
+      {/* Security Dashboard (inline collapsible) */}
+      <SecurityDashboardSection />
     </div>
   );
 }
