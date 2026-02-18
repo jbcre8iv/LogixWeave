@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import { LeaveProjectButton } from "@/components/projects/leave-project-button";
 import { AIChatProvider } from "@/components/ai/ai-chat-provider";
 import { AIChatSidebar } from "@/components/ai/ai-chat-sidebar";
 import { AIChatButton } from "@/components/ai/ai-chat-button";
@@ -23,7 +24,7 @@ export default async function ProjectLayout({
   // Check if project has any parsed files
   const { data: project } = await supabase
     .from("projects")
-    .select("id, created_by, is_archived, project_files(id, parsing_status)")
+    .select("id, name, created_by, is_archived, project_files(id, parsing_status)")
     .eq("id", projectId)
     .single();
 
@@ -40,9 +41,12 @@ export default async function ProjectLayout({
               <p className="text-sm text-muted-foreground mb-6">
                 The project owner has archived this project. Contact them if you need access restored.
               </p>
-              <Button asChild>
-                <Link href="/dashboard/projects">Back to Projects</Link>
-              </Button>
+              <div className="flex items-center justify-center gap-3">
+                <Button asChild>
+                  <Link href="/dashboard/projects">Back to Projects</Link>
+                </Button>
+                <LeaveProjectButton projectId={projectId} projectName={project.name} />
+              </div>
             </CardContent>
           </Card>
         </div>
