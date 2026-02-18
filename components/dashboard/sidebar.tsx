@@ -54,7 +54,7 @@ const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
   {
     label: "Analyze",
     items: [
-      { name: "Analysis", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
+      { name: "Overview", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
       { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
     ],
   },

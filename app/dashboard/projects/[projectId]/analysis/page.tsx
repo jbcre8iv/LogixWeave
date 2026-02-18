@@ -10,6 +10,7 @@ import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
 import { AnimatedCount } from "@/components/analysis/animated-count";
 import { analyzeExportTypes } from "@/lib/partial-export";
+import { ActivityLog } from "@/components/projects/activity-log";
 
 function formatTimeAgo(date: string): string {
   const now = Date.now();
@@ -346,7 +347,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Analysis</h1>
+          <h1 className="text-3xl font-bold">Overview</h1>
           <div className="flex items-center gap-2 text-muted-foreground">
             <span>{project.name}</span>
             <span className="text-muted-foreground/40">—</span>
@@ -497,6 +498,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           </div>
         </>
       )}
+
+      <ActivityLog projectId={projectId} />
     </div>
   );
 }
