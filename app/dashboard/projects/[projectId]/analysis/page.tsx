@@ -390,6 +390,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                 <ExportXLSXButton
                   filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
                   sheets={exportSheets}
+                  pdfTargetId="overview-snapshot"
+                  pdfFilename={`overview_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}`}
                 />
                 <p className="text-xs text-muted-foreground">Export overview</p>
               </div>
@@ -412,7 +414,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           </CardContent>
         </Card>
       ) : (
-        <>
+        <div id="overview-snapshot" className="space-y-6">
           {/* Health Score */}
           <HealthScore projectId={projectId} stats={stats} partialExportInfo={partialExportInfo} />
 
@@ -482,8 +484,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             topTags={topTags}
             projectId={projectId}
           />
-
-        </>
+        </div>
       )}
 
       <ActivityLog projectId={projectId} />
