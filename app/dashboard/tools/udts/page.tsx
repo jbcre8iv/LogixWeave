@@ -72,6 +72,7 @@ export default async function GlobalUDTsPage() {
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="UDT Count"
+          statColumnHeader="UDTs"
         />
       ) : (
         <Card>

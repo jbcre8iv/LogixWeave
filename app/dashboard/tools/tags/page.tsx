@@ -72,6 +72,7 @@ export default async function GlobalTagExplorerPage() {
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="Tag Count"
+          statColumnHeader="Tags"
         />
       ) : (
         <Card>

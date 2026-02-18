@@ -72,6 +72,7 @@ export default async function GlobalIOPage() {
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="Module Count"
+          statColumnHeader="Modules"
         />
       ) : (
         <Card>

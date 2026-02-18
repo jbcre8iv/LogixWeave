@@ -72,6 +72,7 @@ export default async function GlobalAOIsPage() {
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="AOI Count"
+          statColumnHeader="AOIs"
         />
       ) : (
         <Card>

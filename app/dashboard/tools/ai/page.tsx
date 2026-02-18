@@ -82,6 +82,7 @@ export default async function GlobalAIPage() {
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="File Count"
+          statColumnHeader="Files"
         />
       ) : (
         <Card>

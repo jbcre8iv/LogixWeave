@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,13 +53,16 @@ interface ToolProjectGridProps {
   items: ToolProjectItem[];
   searchPlaceholder?: string;
   statSortLabel?: string;
+  statColumnHeader?: string;
 }
 
 export function ToolProjectGrid({
   items,
   searchPlaceholder = "Search projects...",
   statSortLabel = "Stat Count",
+  statColumnHeader = "Stat",
 }: ToolProjectGridProps) {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("toolProjectViewMode");
@@ -234,54 +238,65 @@ export function ToolProjectGrid({
         </div>
       )}
 
-      {/* List view */}
+      {/* List view — matches Projects page table design */}
       {filteredAndSorted.length > 0 && viewMode === "list" && (
         <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
-          <Table>
+          <Table className="table-fixed">
+            <colgroup>
+              <col />
+              <col className="w-[150px]" />
+              <col className="w-[70px]" />
+              <col className="w-[100px]" />
+            </colgroup>
             <TableHeader>
               <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead>Stat</TableHead>
-                <TableHead className="text-center">Health</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>{statColumnHeader}</TableHead>
+                <TableHead>Health</TableHead>
+                <TableHead className="text-right pr-4">{filteredAndSorted[0]?.actionLabel || "Action"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSorted.map((item) => (
-                <TableRow key={item.id} className="group">
+                <TableRow
+                  key={item.id}
+                  className="cursor-pointer"
+                  onClick={() => router.push(item.href)}
+                >
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <FolderOpen
-                        className={`h-4 w-4 ${item.iconClassName || "text-primary"}`}
+                        className={`h-4 w-4 shrink-0 ${item.iconClassName || "text-primary"}`}
                       />
-                      <span className="font-medium">{item.name}</span>
+                      <span className="font-medium truncate">{item.name}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 text-muted-foreground">
                       {item.statIcon}
-                      {item.statLabel}
+                      <span>{item.statLabel}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center">
+                  <TableCell>
+                    {item.healthScore !== null ? (
                       <MiniHealthRing
                         score={item.healthScore}
+                        size={32}
                         approximate={item.hasPartialExports}
                       />
-                    </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/60">No Data</span>
+                    )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right pr-4">
                     <Button
                       variant="ghost"
                       size="sm"
                       className={item.actionClassName}
-                      asChild
+                      tabIndex={-1}
                     >
-                      <Link href={item.href}>
-                        {item.actionLabel}{" "}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
+                      {item.actionLabel}{" "}
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>

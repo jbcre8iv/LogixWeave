@@ -61,6 +61,7 @@ export default async function GlobalAnalysisPage() {
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="File Count"
+          statColumnHeader="Files"
         />
       ) : (
         <Card>
