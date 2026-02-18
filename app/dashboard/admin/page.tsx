@@ -14,6 +14,7 @@ import { AdminUsersTable } from "@/components/admin/admin-users-table";
 import { AdminProjectsTable } from "@/components/admin/admin-projects-table";
 import { AdminFeedbackTable } from "@/components/admin/admin-feedback-table";
 import { SecurityDashboardSection } from "@/components/admin/security-dashboard-section";
+import { RoleDistributionCard } from "@/components/admin/role-distribution-card";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -219,6 +220,9 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* User Role Distribution */}
+      <RoleDistributionCard />
 
       {/* Security Dashboard (inline collapsible) */}
       <SecurityDashboardSection />
