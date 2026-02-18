@@ -678,7 +678,7 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
         <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <HeartPulse className="h-8 w-8 text-amber-500" />
-            Project Health Coach
+            Project Health Analysis
           </h1>
           <p className="text-muted-foreground">{projectName}</p>
         </div>
