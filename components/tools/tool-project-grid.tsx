@@ -114,7 +114,7 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
           ))}
         </div>
       ) : (
-        <div className="rounded-md border bg-card">
+        <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
           <Table>
             <TableHeader>
               <TableRow>
