@@ -90,8 +90,14 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
     ? folders.find((f) => f.id === currentFolderId)
     : null;
 
-  // Filter files and folders for current view
-  const visibleFiles = files.filter((f) => f.folder_id === currentFolderId);
+  // Build set of valid folder IDs
+  const folderIds = new Set(folders.map((f) => f.id));
+
+  // Filter files for current view — treat orphaned folder_id as root
+  const visibleFiles = files.filter((f) => {
+    const effectiveFolderId = f.folder_id && folderIds.has(f.folder_id) ? f.folder_id : null;
+    return effectiveFolderId === currentFolderId;
+  });
   const visibleFolders = currentFolderId === null ? folders : [];
 
   // Drag and drop handlers
@@ -301,7 +307,7 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
   };
 
   const filesInFolder = (folderId: string) =>
-    files.filter((f) => f.folder_id === folderId).length;
+    files.filter((f) => f.folder_id === folderId && folderIds.has(folderId)).length;
 
   return (
     <div className="space-y-4">
