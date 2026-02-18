@@ -87,6 +87,10 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
         const wasDark = htmlEl.classList.contains("dark");
         if (wasDark) htmlEl.classList.remove("dark");
 
+        // Reveal any PDF-only headers inside the target
+        const pdfHeaders = target.querySelectorAll<HTMLElement>("[data-pdf-header]");
+        pdfHeaders.forEach((el) => el.style.display = "block");
+
         let dataUrl: string;
         try {
           dataUrl = await toPng(target, {
@@ -94,6 +98,7 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
             backgroundColor: "#ffffff",
           });
         } finally {
+          pdfHeaders.forEach((el) => el.style.display = "");
           if (wasDark) htmlEl.classList.add("dark");
         }
 

@@ -415,6 +415,27 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         </Card>
       ) : (
         <div id="overview-snapshot" className="space-y-6">
+          {/* PDF-only header (hidden on screen, visible in snapshot capture) */}
+          <div className="hidden" data-pdf-header>
+            <h1 className="text-3xl font-bold">Overview</h1>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span>{project.name}</span>
+              <span className="text-muted-foreground/40">—</span>
+              <span className="text-xs text-muted-foreground/70">
+                {ownerName}
+                {" · "}
+                Created {new Date(project.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                {" · "}
+                Modified {formatTimeAgo(project.updated_at)}
+                {" · "}
+                {project.project_files.length} {project.project_files.length === 1 ? "file" : "files"}
+              </span>
+            </div>
+            {project.description && (
+              <p className="text-sm text-muted-foreground/80 mt-1">{project.description}</p>
+            )}
+          </div>
+
           {/* Health Score */}
           <HealthScore projectId={projectId} stats={stats} partialExportInfo={partialExportInfo} />
 
