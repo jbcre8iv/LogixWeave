@@ -1,5 +1,8 @@
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Lock } from "lucide-react";
 import { AIChatProvider } from "@/components/ai/ai-chat-provider";
 import { AIChatSidebar } from "@/components/ai/ai-chat-sidebar";
 import { AIChatButton } from "@/components/ai/ai-chat-button";
@@ -28,7 +31,22 @@ export default async function ProjectLayout({
   if (project?.is_archived) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.id !== project.created_by) {
-      notFound();
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md w-full">
+            <CardContent className="py-12 text-center">
+              <Lock className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-lg font-semibold mb-2">Project is no longer accessible</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                The project owner has archived this project. Contact them if you need access restored.
+              </p>
+              <Button asChild>
+                <Link href="/dashboard/projects">Back to Projects</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
     }
   }
 
