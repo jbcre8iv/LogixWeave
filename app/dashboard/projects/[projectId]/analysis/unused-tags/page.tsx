@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { BackButton } from "@/components/back-button";
 import { TagFilters } from "@/components/tools/tag-filters";
 import { TagTable } from "@/components/tools/tag-table";
 import { ExportCSVButton } from "@/components/export-csv-button";
@@ -44,11 +45,7 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}/analysis`}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <BackButton />
           <div>
             <h1 className="text-3xl font-bold">Unused Tags</h1>
             <p className="text-muted-foreground">{project.name}</p>
@@ -143,11 +140,7 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}/analysis`}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <BackButton />
           <div>
             <h1 className="text-3xl font-bold">Unused Tags</h1>
             <p className="text-muted-foreground">{project.name}</p>
