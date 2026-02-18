@@ -20,7 +20,7 @@ export default function TwitterImage() {
         }}
       >
         {/* Weave icon */}
-        <svg viewBox="0 0 64 64" width="120" height="120">
+        <svg viewBox="0 0 64 64" width="180" height="180">
           <defs>
             <linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#3B82F6" />
@@ -51,13 +51,12 @@ export default function TwitterImage() {
           style={{
             display: "flex",
             alignItems: "baseline",
-            marginTop: 32,
-            gap: 0,
+            marginTop: 24,
           }}
         >
           <span
             style={{
-              fontSize: 64,
+              fontSize: 96,
               fontWeight: 700,
               background: "linear-gradient(135deg, #3B82F6, #8B5CF6)",
               backgroundClip: "text",
@@ -68,7 +67,7 @@ export default function TwitterImage() {
           </span>
           <span
             style={{
-              fontSize: 64,
+              fontSize: 96,
               fontWeight: 700,
               color: "#e2e8f0",
             }}
@@ -80,24 +79,12 @@ export default function TwitterImage() {
         {/* Tagline */}
         <p
           style={{
-            fontSize: 28,
+            fontSize: 40,
             color: "#94a3b8",
-            marginTop: 16,
-            letterSpacing: -0.5,
+            marginTop: 12,
           }}
         >
           The Studio 5000 Toolkit for PLC analysis
-        </p>
-
-        {/* Domain */}
-        <p
-          style={{
-            fontSize: 18,
-            color: "#64748b",
-            marginTop: 40,
-          }}
-        >
-          www.logixweave.com
         </p>
       </div>
     ),
