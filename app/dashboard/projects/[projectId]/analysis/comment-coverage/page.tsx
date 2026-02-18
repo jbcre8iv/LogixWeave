@@ -185,23 +185,39 @@ export default async function CommentCoveragePage({ params }: CommentCoveragePag
         <ExportCSVButton
           filename="comment_coverage.csv"
           data={[
-            ["Level", "Program", "Routine", "Total Rungs", "Commented Rungs", "Coverage %"],
-            ["Overall", "", "", String(totalRungs), String(commentedRungs), `${coveragePercent}%`],
+            ["Level", "Program", "Routine", "Rung #", "Comment", "Total Rungs", "Commented Rungs", "Coverage %"],
+            ["Overall", "", "", "", "", String(totalRungs), String(commentedRungs), `${coveragePercent}%`],
             ...byProgram.map((p) => [
               "Program",
               p.name,
+              "",
+              "",
               "",
               String(p.totalRungs),
               String(p.commentedRungs),
               `${p.coveragePercent}%`,
             ]),
-            ...byRoutine.map((r) => [
-              "Routine",
-              r.programName,
-              r.routineName,
-              String(r.totalRungs),
-              String(r.commentedRungs),
-              `${r.coveragePercent}%`,
+            ...byRoutine.flatMap((r) => [
+              [
+                "Routine",
+                r.programName,
+                r.routineName,
+                "",
+                "",
+                String(r.totalRungs),
+                String(r.commentedRungs),
+                `${r.coveragePercent}%`,
+              ],
+              ...(routineRungs[`${r.programName}::${r.routineName}`] || []).map((rung) => [
+                "Rung",
+                r.programName,
+                r.routineName,
+                String(rung.number),
+                rung.comment || "",
+                "",
+                "",
+                "",
+              ]),
             ]),
           ]}
         />
