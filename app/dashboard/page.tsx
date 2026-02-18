@@ -44,15 +44,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .order("updated_at", { ascending: false })
     .limit(5);
 
-  // Get shared projects (only accepted invites)
+  // Get shared projects (only accepted invites, exclude archived)
   const { data: sharedProjects, count: sharedCount } = await supabase
     .from("project_shares")
     .select(`
       permission,
-      projects:project_id(id, name, updated_at)
+      projects:project_id!inner(id, name, updated_at)
     `, { count: "exact" })
     .or(`shared_with_user_id.eq.${user?.id},shared_with_email.eq.${user?.email}`)
     .not("accepted_at", "is", null)
+    .eq("projects.is_archived", false)
     .limit(5);
 
   // Get pending invites count

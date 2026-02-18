@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AIChatProvider } from "@/components/ai/ai-chat-provider";
 import { AIChatSidebar } from "@/components/ai/ai-chat-sidebar";
@@ -19,9 +20,17 @@ export default async function ProjectLayout({
   // Check if project has any parsed files
   const { data: project } = await supabase
     .from("projects")
-    .select("id, project_files(id, parsing_status)")
+    .select("id, created_by, is_archived, project_files(id, parsing_status)")
     .eq("id", projectId)
     .single();
+
+  // Block non-owners from accessing archived projects
+  if (project?.is_archived) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id !== project.created_by) {
+      notFound();
+    }
+  }
 
   const hasData =
     project?.project_files?.some(
