@@ -7,7 +7,7 @@ import {
   FolderOpen,
   FileText,
   Shield,
-  Building2,
+
   MessageSquare,
 } from "lucide-react";
 import { AdminUsersTable } from "@/components/admin/admin-users-table";
@@ -159,23 +159,13 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
             <CardTitle className="text-3xl flex items-center gap-2">
               <Users className="h-6 w-6 text-muted-foreground" />
               {users.length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Organizations</CardDescription>
-            <CardTitle className="text-3xl flex items-center gap-2">
-              <Building2 className="h-6 w-6 text-muted-foreground" />
-              {organizations.length}
             </CardTitle>
           </CardHeader>
         </Card>
