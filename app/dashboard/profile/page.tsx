@@ -84,6 +84,7 @@ export default async function ProfilePage() {
               firstName={profile?.first_name || null}
               lastName={profile?.last_name || null}
               email={user?.email || ""}
+              role={(user?.user_metadata?.role as string) || null}
             />
           </CardContent>
         </Card>
