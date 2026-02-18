@@ -235,7 +235,7 @@ function ProjectListTable({
   };
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
       <Table className="table-fixed">
         <colgroup>
           <col className="w-[40px]" />
