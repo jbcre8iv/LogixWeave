@@ -11,6 +11,7 @@ import { Download, ChevronDown, FileSpreadsheet, FileText, FileImage } from "luc
 import * as XLSX from "xlsx";
 import { getTimestampSuffix } from "@/lib/utils";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export interface ExportSheet {
   name: string;
@@ -67,54 +68,61 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
     downloadBlob(blob, `${baseFilename}_${getTimestampSuffix()}.csv`);
   };
 
-  const handleExportPDF = async () => {
-    if (!pdfTargetId) return;
+  const handleExportPDF = () => {
+    if (!pdfTargetId || exporting) return;
     const target = document.getElementById(pdfTargetId);
     if (!target) return;
 
     setExporting(true);
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
-      const { addPdfBranding } = await import("@/lib/pdf-branding");
 
-      const canvas = await html2canvas(target, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-      });
+    // Run async work outside the event handler to avoid Radix swallowing errors
+    setTimeout(async () => {
+      try {
+        const html2canvas = (await import("html2canvas")).default;
+        const { jsPDF } = await import("jspdf");
+        const { addPdfBranding } = await import("@/lib/pdf-branding");
 
-      const imgData = canvas.toDataURL("image/png");
-      const doc = new jsPDF({ orientation: "landscape", format: "letter", unit: "mm" });
+        const canvas = await html2canvas(target, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#09090b",
+        });
 
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      const topMargin = 22; // space for logo branding
-      const bottomMargin = 18; // space for footer branding
-      const availableWidth = pageWidth - margin * 2;
-      const availableHeight = pageHeight - topMargin - bottomMargin;
+        const imgData = canvas.toDataURL("image/png");
+        const doc = new jsPDF({ orientation: "landscape", format: "letter", unit: "mm" });
 
-      const imgAspect = canvas.width / canvas.height;
-      let imgWidth = availableWidth;
-      let imgHeight = imgWidth / imgAspect;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        const topMargin = 22; // space for logo branding
+        const bottomMargin = 18; // space for footer branding
+        const availableWidth = pageWidth - margin * 2;
+        const availableHeight = pageHeight - topMargin - bottomMargin;
 
-      if (imgHeight > availableHeight) {
-        imgHeight = availableHeight;
-        imgWidth = imgHeight * imgAspect;
+        const imgAspect = canvas.width / canvas.height;
+        let imgWidth = availableWidth;
+        let imgHeight = imgWidth / imgAspect;
+
+        if (imgHeight > availableHeight) {
+          imgHeight = availableHeight;
+          imgWidth = imgHeight * imgAspect;
+        }
+
+        const x = (pageWidth - imgWidth) / 2;
+        const y = topMargin + (availableHeight - imgHeight) / 2;
+        doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+
+        await addPdfBranding(doc);
+
+        const pdfBase = (pdfFilename || baseFilename).replace(/\.[^.]+$/, "");
+        doc.save(`${pdfBase}_${getTimestampSuffix()}.pdf`);
+      } catch (err) {
+        console.error("PDF export failed:", err);
+        toast.error("PDF export failed. Please try again.");
+      } finally {
+        setExporting(false);
       }
-
-      const x = (pageWidth - imgWidth) / 2;
-      const y = topMargin + (availableHeight - imgHeight) / 2;
-      doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-
-      await addPdfBranding(doc);
-
-      const pdfBase = (pdfFilename || baseFilename).replace(/\.[^.]+$/, "");
-      doc.save(`${pdfBase}_${getTimestampSuffix()}.pdf`);
-    } finally {
-      setExporting(false);
-    }
+    }, 0);
   };
 
   return (
