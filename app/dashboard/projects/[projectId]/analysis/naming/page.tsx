@@ -20,6 +20,7 @@ interface NamingPageProps {
   params: Promise<{ projectId: string }>;
   searchParams: Promise<{
     severity?: string;
+    ruleSet?: string;
   }>;
 }
 
@@ -77,20 +78,32 @@ function validateTag(
 
 export default async function NamingValidationPage({ params, searchParams }: NamingPageProps) {
   const { projectId } = await params;
-  const { severity: severityFilter } = await searchParams;
+  const { severity: severityFilter, ruleSet: ruleSetParam } = await searchParams;
 
   const supabase = await createClient();
 
-  // Get project info
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("id, name, organization_id, project_files(id)")
-    .eq("id", projectId)
-    .single();
+  // Get project info and current user in parallel
+  const [{ data: project, error: projectError }, { data: { user } }] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id, name, organization_id, project_files(id)")
+      .eq("id", projectId)
+      .single(),
+    supabase.auth.getUser(),
+  ]);
 
   if (projectError || !project) {
     notFound();
   }
+
+  // Detect cross-org viewing
+  const { data: viewerMembership } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", user!.id)
+    .single();
+  const viewerOrgId = viewerMembership?.organization_id ?? null;
+  const isCrossOrg = !!viewerOrgId && viewerOrgId !== project.organization_id;
 
   // Fetch naming_rule_set_id separately (column may not exist pre-migration)
   const { data: projectRuleSetRow } = await supabase
@@ -102,19 +115,39 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
+  // Determine which org to fetch rule sets from
+  const useProjectOwnerRules = isCrossOrg && ruleSetParam === "project-default";
+  const ruleSetOrgId = isCrossOrg && !useProjectOwnerRules
+    ? viewerOrgId
+    : project.organization_id;
+
   // Fetch all rule sets for the picker (may be empty pre-migration)
   const { data: allRuleSets } = await supabase
     .from("naming_rule_sets")
     .select("id, name, is_default")
-    .eq("organization_id", project.organization_id)
+    .eq("organization_id", ruleSetOrgId)
     .order("is_default", { ascending: false })
     .order("name");
 
   // Resolve effective rule set
-  let effectiveRuleSetId = projectRuleSetId;
-  if (!effectiveRuleSetId) {
-    const defaultSet = allRuleSets?.find((rs) => rs.is_default);
-    effectiveRuleSetId = defaultSet?.id ?? null;
+  let effectiveRuleSetId: string | null = null;
+  if (isCrossOrg) {
+    if (ruleSetParam && ruleSetParam !== "project-default") {
+      // Explicit rule set selected via URL param — validate it exists
+      const matchedSet = allRuleSets?.find((rs) => rs.id === ruleSetParam);
+      effectiveRuleSetId = matchedSet?.id ?? null;
+    }
+    if (!effectiveRuleSetId) {
+      // Use org default from whichever org we're fetching from
+      const defaultSet = allRuleSets?.find((rs) => rs.is_default);
+      effectiveRuleSetId = defaultSet?.id ?? null;
+    }
+  } else {
+    effectiveRuleSetId = projectRuleSetId;
+    if (!effectiveRuleSetId) {
+      const defaultSet = allRuleSets?.find((rs) => rs.is_default);
+      effectiveRuleSetId = defaultSet?.id ?? null;
+    }
   }
 
   const effectiveRuleSet = allRuleSets?.find((rs) => rs.id === effectiveRuleSetId);
@@ -163,7 +196,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     const { data } = await supabase
       .from("naming_rules")
       .select("id, name, pattern, applies_to, severity")
-      .eq("organization_id", project.organization_id)
+      .eq("organization_id", ruleSetOrgId)
       .eq("is_active", true);
     rules = data || [];
   }
@@ -184,17 +217,49 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
         </div>
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              No active naming rules found in the current rule set.
-            </p>
-            <div className="flex items-center justify-center gap-2">
-              <Button asChild>
-                <Link href="/dashboard/settings/naming-rules">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configure Naming Rules
-                </Link>
-              </Button>
-            </div>
+            {isCrossOrg ? (
+              <>
+                <p className="text-muted-foreground mb-2">
+                  {useProjectOwnerRules
+                    ? "The project owner has no naming rules configured."
+                    : "You don\u2019t have any naming rules configured yet."}
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {useProjectOwnerRules
+                    ? "You can configure your own rules and apply them to this shared project."
+                    : "Create naming rules in your organization settings to validate tags on shared projects."}
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button asChild>
+                    <Link href="/dashboard/settings/naming-rules">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configure Naming Rules
+                    </Link>
+                  </Button>
+                  {!useProjectOwnerRules && (
+                    <Button variant="outline" asChild>
+                      <Link href={`?ruleSet=project-default${severityFilter ? `&severity=${severityFilter}` : ""}`}>
+                        Try project owner&apos;s rules
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground mb-4">
+                  No active naming rules found in the current rule set.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button asChild>
+                    <Link href="/dashboard/settings/naming-rules">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configure Naming Rules
+                    </Link>
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -254,6 +319,24 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     }
   };
 
+  // Build severity filter URLs that preserve the ruleSet param
+  const buildFilterUrl = (severity: string) => {
+    const params = new URLSearchParams();
+    params.set("severity", severity);
+    if (ruleSetParam) params.set("ruleSet", ruleSetParam);
+    return `?${params.toString()}`;
+  };
+
+  const buildClearFilterUrl = () => {
+    if (ruleSetParam) return `?ruleSet=${encodeURIComponent(ruleSetParam)}`;
+    return "?";
+  };
+
+  // Determine the picker's currentRuleSetId for cross-org
+  const pickerCurrentRuleSetId = isCrossOrg
+    ? (ruleSetParam === "project-default" ? "project-default" : (ruleSetParam || null))
+    : projectRuleSetId;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -309,7 +392,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             </CardTitle>
           </CardHeader>
         </Card>
-        <Link href={`?severity=error`}>
+        <Link href={buildFilterUrl("error")}>
           <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${severityFilter === "error" ? "border-primary" : ""}`}>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -320,7 +403,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             </CardHeader>
           </Card>
         </Link>
-        <Link href={`?severity=warning`}>
+        <Link href={buildFilterUrl("warning")}>
           <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${severityFilter === "warning" ? "border-primary" : ""}`}>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -331,7 +414,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             </CardHeader>
           </Card>
         </Link>
-        <Link href={`?severity=info`}>
+        <Link href={buildFilterUrl("info")}>
           <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${severityFilter === "info" ? "border-primary" : ""}`}>
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
@@ -353,7 +436,12 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
               {effectiveRuleSet && (
                 <Badge variant="outline">
                   Rule set: {effectiveRuleSet.name}
-                  {!projectRuleSetId && " (org default)"}
+                  {!isCrossOrg && !projectRuleSetId && " (org default)"}
+                </Badge>
+              )}
+              {isCrossOrg && (
+                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                  {useProjectOwnerRules ? "Using project owner\u2019s rules" : "Using your rules"}
                 </Badge>
               )}
             </div>
@@ -361,11 +449,14 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
               <RuleSetPicker
                 projectId={projectId}
                 ruleSets={allRuleSets || []}
-                currentRuleSetId={projectRuleSetId}
+                currentRuleSetId={pickerCurrentRuleSetId}
+                mode={isCrossOrg ? "preview" : "persist"}
+                isCrossOrg={isCrossOrg}
+                currentSeverityFilter={severityFilter}
               />
               {severityFilter && severityFilter !== "all" && (
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="?">Clear Filter</Link>
+                  <Link href={buildClearFilterUrl()}>Clear Filter</Link>
                 </Button>
               )}
             </div>

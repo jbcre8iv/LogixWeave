@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -22,13 +22,40 @@ interface RuleSetPickerProps {
   ruleSets: RuleSet[];
   currentRuleSetId: string | null;
   className?: string;
+  mode?: "persist" | "preview";
+  isCrossOrg?: boolean;
+  currentSeverityFilter?: string;
 }
 
-export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId, className }: RuleSetPickerProps) {
+export function RuleSetPicker({
+  projectId,
+  ruleSets,
+  currentRuleSetId,
+  className,
+  mode = "persist",
+  isCrossOrg = false,
+  currentSeverityFilter,
+}: RuleSetPickerProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleChange = async (value: string) => {
+    if (mode === "preview") {
+      const params = new URLSearchParams();
+      if (value === "org-default") {
+        // No ruleSet param needed — page will use viewer's default
+      } else {
+        params.set("ruleSet", value);
+      }
+      if (currentSeverityFilter && currentSeverityFilter !== "all") {
+        params.set("severity", currentSeverityFilter);
+      }
+      const qs = params.toString();
+      router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+      return;
+    }
+
     setIsUpdating(true);
     try {
       const ruleSetId = value === "org-default" ? null : value;
@@ -59,9 +86,16 @@ export function RuleSetPicker({ projectId, ruleSets, currentRuleSetId, className
       <SelectContent>
         <SelectItem value="org-default">
           <span className="flex items-center gap-2">
-            Use organization default
+            {isCrossOrg ? "Use your org default" : "Use organization default"}
           </span>
         </SelectItem>
+        {isCrossOrg && (
+          <SelectItem value="project-default">
+            <span className="flex items-center gap-2">
+              Use project owner&apos;s rules
+            </span>
+          </SelectItem>
+        )}
         {ruleSets.filter((rs) => !rs.is_default).map((rs) => (
           <SelectItem key={rs.id} value={rs.id}>
             <span className="flex items-center gap-2">

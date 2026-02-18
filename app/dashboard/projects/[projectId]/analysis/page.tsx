@@ -62,6 +62,17 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       .single(),
   ]);
 
+  // Detect cross-org viewing
+  const { data: viewerMembership } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", user!.id)
+    .single();
+  const isCrossOrg = viewerMembership?.organization_id
+    ? viewerMembership.organization_id !== project.organization_id
+    : false;
+  const viewerOrgId = viewerMembership?.organization_id ?? null;
+
   const isOwner = user?.id === project.created_by;
   const ownerName = isOwner
     ? "You"
@@ -107,29 +118,20 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   ];
   let routineCoverageChart: Array<{ routine: string; coverage: number; commented: number; total: number }> = [];
   let topTags: Array<{ name: string; count: number }> = [];
-  let effectiveRuleSetName: string | null = null;
 
   if (fileIds.length > 0) {
     // Resolve effective rule set for naming rules
-    let effectiveRuleSetId = projectRuleSetId;
+    // For cross-org viewers, use their org's rules instead of the project's org
+    const rulesOrgId = isCrossOrg && viewerOrgId ? viewerOrgId : project.organization_id;
+    let effectiveRuleSetId = isCrossOrg ? null : projectRuleSetId;
     if (!effectiveRuleSetId) {
       const { data: defaultSet } = await supabase
         .from("naming_rule_sets")
         .select("id")
-        .eq("organization_id", project.organization_id)
+        .eq("organization_id", rulesOrgId)
         .eq("is_default", true)
         .single();
       effectiveRuleSetId = defaultSet?.id ?? null;
-    }
-
-    // Fetch the effective rule set name for display
-    if (effectiveRuleSetId) {
-      const { data: ruleSet } = await supabase
-        .from("naming_rule_sets")
-        .select("name")
-        .eq("id", effectiveRuleSetId)
-        .single();
-      effectiveRuleSetName = ruleSet?.name ?? null;
     }
 
     // Build naming rules query — use rule_set_id if available, fall back to organization_id
@@ -142,7 +144,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       : supabase
           .from("naming_rules")
           .select("id, name, pattern, applies_to, severity")
-          .eq("organization_id", project.organization_id)
+          .eq("organization_id", rulesOrgId)
           .eq("is_active", true);
 
     const [tagsResult, referencesResult, rungsResult, rulesResult] = await Promise.all([
@@ -374,13 +376,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                   Naming Validation
                 </Link>
               </Button>
-              {effectiveRuleSetName ? (
-                <Link href={`/dashboard/projects/${projectId}/analysis/naming`} className="text-xs text-muted-foreground hover:underline">
-                  Rule set: {effectiveRuleSetName}
-                </Link>
-              ) : (
-                <p className="text-xs text-muted-foreground">Impacts health score</p>
-              )}
+              <p className="text-xs text-muted-foreground">Affects health score</p>
             </div>
             <div className="flex flex-col items-center gap-1">
               <ExportXLSXButton
