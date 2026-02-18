@@ -18,6 +18,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "LogixWeave - Studio 5000 Toolkit",
   description: "Parse, analyze, and document your Studio 5000 PLC projects",
+  metadataBase: new URL("https://www.logixweave.com"),
+  openGraph: {
+    title: "LogixWeave - Studio 5000 Toolkit",
+    description: "Parse, analyze, and document your Studio 5000 PLC projects",
+    siteName: "LogixWeave",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LogixWeave - Studio 5000 Toolkit",
+    description: "Parse, analyze, and document your Studio 5000 PLC projects",
+  },
 };
 
 export default function RootLayout({
