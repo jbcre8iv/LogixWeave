@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,14 @@ import {
 } from "@/components/ui/table";
 import {
   FolderOpen,
+  FileText,
   LayoutGrid,
   List,
   ArrowRight,
   ArrowUpDown,
   Search,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
@@ -42,6 +45,7 @@ export interface ToolProjectItem {
   href: string;
   healthScore: number | null;
   hasPartialExports?: boolean;
+  files: Array<{ id: string; file_name: string }>;
   statIcon: React.ReactNode;
   statLabel: string;
   statValue: number;
@@ -75,7 +79,17 @@ export function ToolProjectGrid({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [sortDesc, setSortDesc] = useState(true);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const preSearchViewMode = useRef<"grid" | "list" | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const handleSearchChange = (query: string) => {
     if (query.trim() && !searchQuery.trim() && viewMode === "grid") {
@@ -103,7 +117,8 @@ export function ToolProjectGrid({
       result = result.filter(
         (item) =>
           item.name.toLowerCase().includes(query) ||
-          (item.description && item.description.toLowerCase().includes(query))
+          (item.description && item.description.toLowerCase().includes(query)) ||
+          item.files.some((f) => f.file_name.toLowerCase().includes(query))
       );
     }
 
@@ -128,6 +143,14 @@ export function ToolProjectGrid({
 
     return result;
   }, [items, searchQuery, sortBy, sortDesc]);
+
+  const getMatchingFiles = (item: ToolProjectItem) => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return item.files
+      .filter((f) => f.file_name.toLowerCase().includes(query))
+      .map((f) => f.file_name);
+  };
 
   return (
     <div className="space-y-4">
@@ -255,9 +278,9 @@ export function ToolProjectGrid({
             <colgroup>
               <col />
               <col className="hidden md:table-column w-[30%]" />
-              <col className="w-[70px]" />
-              <col className="w-[70px]" />
-              <col className="w-[100px]" />
+              <col className="w-[80px]" />
+              <col className="w-[80px]" />
+              <col className="w-[110px]" />
             </colgroup>
             <TableHeader>
               <TableRow>
@@ -269,42 +292,94 @@ export function ToolProjectGrid({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSorted.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className="cursor-pointer"
-                  onClick={() => router.push(item.href)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <FolderOpen
-                        className={`h-4 w-4 shrink-0 ${item.iconClassName || "text-primary"}`}
-                      />
-                      <span className="font-medium truncate">{item.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-muted-foreground line-clamp-1">
-                      {item.description || "-"}
-                    </span>
-                  </TableCell>
-                  <TableCell>{item.statValue}</TableCell>
-                  <TableCell>
-                    {item.healthScore !== null ? (
-                      <MiniHealthRing
-                        score={item.healthScore}
-                        size={32}
-                        approximate={item.hasPartialExports}
-                      />
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground/60">No Data</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(item.updatedAt).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredAndSorted.map((item) => {
+                const hasFiles = item.files.length > 0;
+                const isExpanded = expandedIds.has(item.id);
+                const matchingFiles = getMatchingFiles(item);
+
+                return (
+                  <Fragment key={item.id}>
+                    <TableRow
+                      className="cursor-pointer"
+                      onClick={() => router.push(item.href)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {hasFiles ? (
+                            <button
+                              className="p-0.5 -ml-1 rounded hover:bg-accent shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpand(item.id);
+                              }}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="w-5 shrink-0" />
+                          )}
+                          <FolderOpen
+                            className={`h-4 w-4 shrink-0 ${item.iconClassName || "text-primary"}`}
+                          />
+                          <span className="font-medium truncate">{item.name}</span>
+                        </div>
+                        {matchingFiles.length > 0 && (
+                          <div className="ml-11 mt-1 space-y-0.5">
+                            {matchingFiles.map((name) => (
+                              <div key={name} className="flex items-center gap-1.5 text-xs text-primary">
+                                <FileText className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-muted-foreground line-clamp-1">
+                          {item.description || "-"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{item.statValue}</TableCell>
+                      <TableCell>
+                        {item.healthScore !== null ? (
+                          <MiniHealthRing
+                            score={item.healthScore}
+                            size={32}
+                            approximate={item.hasPartialExports}
+                          />
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/60">No Data</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(item.updatedAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && item.files.map((file) => (
+                      <TableRow
+                        key={`file-${file.id}`}
+                        className="cursor-pointer bg-muted/30 hover:bg-muted/50"
+                        onClick={() => router.push(item.href)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2 ml-7 text-sm text-muted-foreground">
+                            <FileText className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{file.file_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell" />
+                        <TableCell />
+                        <TableCell />
+                        <TableCell />
+                      </TableRow>
+                    ))}
+                  </Fragment>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

@@ -16,7 +16,7 @@ export default async function GlobalAIPage() {
       name,
       description,
       updated_at,
-      project_files(id, parsing_status)
+      project_files(id, file_name, parsing_status)
     `)
     .eq("is_archived", false)
     .order("name");
@@ -24,10 +24,11 @@ export default async function GlobalAIPage() {
   const projectsWithData = (projects || [])
     .map((project) => {
       const completedFiles = project.project_files?.filter(
-        (f: { parsing_status: string }) => f.parsing_status === "completed"
+        (f: { id: string; file_name: string; parsing_status: string }) => f.parsing_status === "completed"
       ) || [];
       return {
         ...project,
+        completedFiles: completedFiles as Array<{ id: string; file_name: string; parsing_status: string }>,
         completedFileCount: completedFiles.length,
       };
     })
@@ -77,6 +78,7 @@ export default async function GlobalAIPage() {
             statIcon: <Sparkles className="h-4 w-4 text-amber-500" />,
             statLabel: `${project.completedFileCount} file${project.completedFileCount === 1 ? "" : "s"}`,
             statValue: project.completedFileCount,
+            files: project.completedFiles,
             actionLabel: "Open",
             cardClassName: "hover:bg-amber-500/10 hover:border-amber-500/30",
             iconClassName: "text-amber-500",

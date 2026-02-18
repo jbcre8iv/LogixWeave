@@ -16,14 +16,14 @@ export default async function GlobalIOPage() {
       name,
       description,
       updated_at,
-      project_files(id)
+      project_files(id, file_name)
     `)
     .eq("is_archived", false)
     .order("name");
 
   const projectsWithStats = await Promise.all(
     (projects || []).map(async (project) => {
-      const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
+      const fileIds = project.project_files?.map((f: { id: string; file_name: string }) => f.id) || [];
       let moduleCount = 0;
 
       if (fileIds.length > 0) {
@@ -66,6 +66,7 @@ export default async function GlobalIOPage() {
             statIcon: <HardDrive className="h-4 w-4" />,
             statLabel: `${project.moduleCount} modules`,
             statValue: project.moduleCount,
+            files: (project.project_files || []) as Array<{ id: string; file_name: string }>,
             actionLabel: "Explore",
           }))}
           searchPlaceholder="Search projects..."
