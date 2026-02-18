@@ -355,22 +355,23 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           )}
         </div>
         {fileIds.length > 0 && (
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col items-center gap-1">
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
                   <FileCheck className="h-3.5 w-3.5 mr-1.5" />
                   Naming Validation
                 </Link>
               </Button>
+              <p className="text-xs text-muted-foreground">Impacts health score</p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
               <ExportXLSXButton
                 filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
                 sheets={exportSheets}
               />
+              <p className="text-xs text-muted-foreground">Export overview</p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Naming validation impacts health score
-            </p>
           </div>
         )}
       </div>
