@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, FileCheck, Star, Share2, Archive } from "lucide-react";
+import { ArrowRight, FileCheck } from "lucide-react";
+import { ProjectActions } from "@/components/projects/project-actions";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
@@ -44,7 +45,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id, name, description, created_by, created_at, updated_at, organization_id, project_files(id, target_type, target_name)")
+    .select("id, name, description, created_by, created_at, updated_at, organization_id, is_favorite, project_files(id, target_type, target_name)")
     .eq("id", projectId)
     .single();
 
@@ -368,15 +369,12 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           )}
         </div>
         <div className="flex items-start gap-2">
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Star className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8">
-            <Archive className="h-4 w-4" />
-          </Button>
+          <ProjectActions
+            projectId={projectId}
+            projectName={project.name}
+            isFavorite={project.is_favorite}
+            isOwner={isOwner}
+          />
           {fileIds.length > 0 && (
             <>
               <div className="flex flex-col items-center gap-1">
