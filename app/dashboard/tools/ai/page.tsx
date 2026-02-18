@@ -74,11 +74,14 @@ export default async function GlobalAIPage() {
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
             statIcon: <Sparkles className="h-4 w-4 text-amber-500" />,
             statLabel: `${project.completedFileCount} file${project.completedFileCount === 1 ? "" : "s"}`,
+            statValue: project.completedFileCount,
             actionLabel: "Open",
             cardClassName: "hover:bg-amber-500/10 hover:border-amber-500/30",
             iconClassName: "text-amber-500",
             actionClassName: "text-amber-600 hover:text-amber-700 hover:bg-amber-500/10",
           }))}
+          searchPlaceholder="Search projects..."
+          statSortLabel="File Count"
         />
       ) : (
         <Card>

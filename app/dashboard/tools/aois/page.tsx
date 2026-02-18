@@ -67,8 +67,11 @@ export default async function GlobalAOIsPage() {
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
             statIcon: <Package className="h-4 w-4" />,
             statLabel: `${project.aoiCount} AOIs`,
+            statValue: project.aoiCount,
             actionLabel: "View",
           }))}
+          searchPlaceholder="Search projects..."
+          statSortLabel="AOI Count"
         />
       ) : (
         <Card>

@@ -67,8 +67,11 @@ export default async function GlobalIOPage() {
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
             statIcon: <HardDrive className="h-4 w-4" />,
             statLabel: `${project.moduleCount} modules`,
+            statValue: project.moduleCount,
             actionLabel: "Explore",
           }))}
+          searchPlaceholder="Search projects..."
+          statSortLabel="Module Count"
         />
       ) : (
         <Card>

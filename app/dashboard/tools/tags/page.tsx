@@ -67,8 +67,11 @@ export default async function GlobalTagExplorerPage() {
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
             statIcon: <Tags className="h-4 w-4" />,
             statLabel: `${project.tagCount} tags`,
+            statValue: project.tagCount,
             actionLabel: "Explore",
           }))}
+          searchPlaceholder="Search projects..."
+          statSortLabel="Tag Count"
         />
       ) : (
         <Card>

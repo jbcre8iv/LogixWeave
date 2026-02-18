@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -12,8 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FolderOpen, LayoutGrid, List, ArrowRight } from "lucide-react";
+import {
+  FolderOpen,
+  LayoutGrid,
+  List,
+  ArrowRight,
+  ArrowUpDown,
+  Search,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
+
+type SortOption = "name" | "stat" | "health";
 
 export interface ToolProjectItem {
   id: string;
@@ -23,6 +41,7 @@ export interface ToolProjectItem {
   hasPartialExports?: boolean;
   statIcon: React.ReactNode;
   statLabel: string;
+  statValue: number;
   actionLabel: string;
   cardClassName?: string;
   iconClassName?: string;
@@ -31,9 +50,15 @@ export interface ToolProjectItem {
 
 interface ToolProjectGridProps {
   items: ToolProjectItem[];
+  searchPlaceholder?: string;
+  statSortLabel?: string;
 }
 
-export function ToolProjectGrid({ items }: ToolProjectGridProps) {
+export function ToolProjectGrid({
+  items,
+  searchPlaceholder = "Search projects...",
+  statSortLabel = "Stat Count",
+}: ToolProjectGridProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("toolProjectViewMode");
@@ -41,15 +66,95 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
     }
     return "grid";
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("name");
+  const [sortDesc, setSortDesc] = useState(false);
+  const preSearchViewMode = useRef<"grid" | "list" | null>(null);
+
+  const handleSearchChange = (query: string) => {
+    if (query.trim() && !searchQuery.trim() && viewMode === "grid") {
+      preSearchViewMode.current = viewMode;
+      setViewMode("list");
+    }
+    if (!query.trim() && searchQuery.trim() && preSearchViewMode.current !== null) {
+      setViewMode(preSearchViewMode.current);
+      preSearchViewMode.current = null;
+    }
+    setSearchQuery(query);
+  };
 
   const handleViewModeChange = (mode: "grid" | "list") => {
     setViewMode(mode);
+    preSearchViewMode.current = null;
     localStorage.setItem("toolProjectViewMode", mode);
   };
 
+  const filteredAndSorted = useMemo(() => {
+    let result = [...items];
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((item) => item.name.toLowerCase().includes(query));
+    }
+
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "stat":
+          comparison = a.statValue - b.statValue;
+          break;
+        case "health":
+          comparison = (a.healthScore ?? -1) - (b.healthScore ?? -1);
+          break;
+      }
+      return sortDesc ? -comparison : comparison;
+    });
+
+    return result;
+  }, [items, searchQuery, sortBy, sortDesc]);
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      {/* Search and sort toolbar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="stat">{statSortLabel}</SelectItem>
+              <SelectItem value="health">Health Score</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSortDesc(!sortDesc)}
+          >
+            <ArrowUpDown className={cn("h-4 w-4", sortDesc && "rotate-180")} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Count + view toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">
+          {filteredAndSorted.length} project{filteredAndSorted.length !== 1 ? "s" : ""}
+        </span>
         <div className="flex items-center border rounded-md">
           <Button
             variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -70,9 +175,23 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
         </div>
       </div>
 
-      {viewMode === "grid" ? (
+      {/* No results */}
+      {filteredAndSorted.length === 0 && searchQuery && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Search className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No results found</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              No projects match &ldquo;{searchQuery}&rdquo;. Try a different search term.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Grid view */}
+      {filteredAndSorted.length > 0 && viewMode === "grid" && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
+          {filteredAndSorted.map((item) => (
             <Link key={item.id} href={item.href}>
               <Card
                 className={`h-full transition-colors ${item.cardClassName || "hover:bg-accent/50"}`}
@@ -113,7 +232,10 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
             </Link>
           ))}
         </div>
-      ) : (
+      )}
+
+      {/* List view */}
+      {filteredAndSorted.length > 0 && viewMode === "list" && (
         <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
           <Table>
             <TableHeader>
@@ -125,7 +247,7 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {filteredAndSorted.map((item) => (
                 <TableRow key={item.id} className="group">
                   <TableCell>
                     <div className="flex items-center gap-2">

@@ -67,8 +67,11 @@ export default async function GlobalUDTsPage() {
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
             statIcon: <Layers className="h-4 w-4" />,
             statLabel: `${project.udtCount} UDTs`,
+            statValue: project.udtCount,
             actionLabel: "View",
           }))}
+          searchPlaceholder="Search projects..."
+          statSortLabel="UDT Count"
         />
       ) : (
         <Card>

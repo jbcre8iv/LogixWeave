@@ -56,8 +56,11 @@ export default async function GlobalAnalysisPage() {
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
             statIcon: <BarChart3 className="h-4 w-4" />,
             statLabel: `${project.completedFileCount} file${project.completedFileCount === 1 ? "" : "s"}`,
+            statValue: project.completedFileCount,
             actionLabel: "Analyze",
           }))}
+          searchPlaceholder="Search projects..."
+          statSortLabel="File Count"
         />
       ) : (
         <Card>
