@@ -124,9 +124,8 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
                   cy="64"
                   r={radius}
                   fill="none"
-                  stroke="currentColor"
                   strokeWidth="8"
-                  className="text-muted/30"
+                  className="stroke-muted-foreground/20"
                 />
                 <circle
                   cx="64"
