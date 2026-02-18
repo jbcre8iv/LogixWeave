@@ -41,7 +41,7 @@ export default async function FileComparePage() {
       {/* How it works section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-muted/30">
-          <CardContent className="pt-6">
+          <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <GitCompare className="h-5 w-5 text-primary" />
@@ -57,7 +57,7 @@ export default async function FileComparePage() {
         </Card>
 
         <Card className="bg-muted/30">
-          <CardContent className="pt-6">
+          <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <FolderOpen className="h-5 w-5 text-primary" />
@@ -73,7 +73,7 @@ export default async function FileComparePage() {
         </Card>
 
         <Card className="bg-muted/30">
-          <CardContent className="pt-6">
+          <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <History className="h-5 w-5 text-primary" />
@@ -89,7 +89,7 @@ export default async function FileComparePage() {
         </Card>
 
         <Card className="bg-muted/30">
-          <CardContent className="pt-6">
+          <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <FileCode2 className="h-5 w-5 text-primary" />
