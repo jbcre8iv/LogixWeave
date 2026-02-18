@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GitCompare, ArrowRight, FileCheck } from "lucide-react";
+import { ArrowRight, FileCheck } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
@@ -326,23 +326,6 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       .map(([name, count]) => ({ name, count }));
   }
 
-  const analysisTools = [
-    {
-      title: "Tag Cross-Reference",
-      description: "See where each tag is used across routines and rungs",
-      href: `/dashboard/projects/${projectId}/analysis/tag-xref`,
-      icon: GitCompare,
-      stat: `${stats.totalReferences.toLocaleString()} references`,
-    },
-    {
-      title: "Naming Validation",
-      description: "Check tag names against organization naming rules",
-      href: `/dashboard/projects/${projectId}/analysis/naming`,
-      icon: FileCheck,
-      stat: "Run validation",
-    },
-  ];
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -372,14 +355,17 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           )}
         </div>
         {fileIds.length > 0 && (
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
+                <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                Naming Validation
+              </Link>
+            </Button>
             <ExportXLSXButton
               filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
               sheets={exportSheets}
             />
-            <p className="text-xs text-muted-foreground">
-              Exports all analysis results
-            </p>
           </div>
         )}
       </div>
@@ -430,7 +416,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardDescription>Tag References</CardDescription>
+                    <CardDescription>Tag Cross-References</CardDescription>
                     <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   </div>
                   <CardTitle className="text-3xl"><AnimatedCount value={stats.totalReferences} /></CardTitle>
@@ -469,33 +455,6 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             projectId={projectId}
           />
 
-          {/* Deep Dive Tools */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3">Additional Insights</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 -mt-3">
-            {analysisTools.map((tool) => (
-              <Link key={tool.href} href={tool.href}>
-                <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <tool.icon className="h-5 w-5 text-muted-foreground" />
-                        <CardTitle className="text-lg">{tool.title}</CardTitle>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                    </div>
-                    <CardDescription>{tool.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {tool.stat}
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
         </>
       )}
 
