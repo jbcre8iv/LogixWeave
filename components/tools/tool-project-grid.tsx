@@ -114,7 +114,7 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
           ))}
         </div>
       ) : (
-        <Card>
+        <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -166,7 +166,7 @@ export function ToolProjectGrid({ items }: ToolProjectGridProps) {
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </div>
       )}
     </div>
   );
