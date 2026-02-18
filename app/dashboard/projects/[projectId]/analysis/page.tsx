@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, FileCheck } from "lucide-react";
+import { ArrowRight, FileCheck, Star, Share2, Archive } from "lucide-react";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
@@ -367,26 +367,37 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             <p className="text-sm text-muted-foreground/80 mt-1">{project.description}</p>
           )}
         </div>
-        {fileIds.length > 0 && (
-          <div className="flex items-start gap-2">
-            <div className="flex flex-col items-center gap-1">
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
-                  <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                  Naming Validation
-                </Link>
-              </Button>
-              <p className="text-xs text-muted-foreground">Affects health score</p>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <ExportXLSXButton
-                filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
-                sheets={exportSheets}
-              />
-              <p className="text-xs text-muted-foreground">Export overview</p>
-            </div>
-          </div>
-        )}
+        <div className="flex items-start gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Star className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Share2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Archive className="h-4 w-4" />
+          </Button>
+          {fileIds.length > 0 && (
+            <>
+              <div className="flex flex-col items-center gap-1">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
+                    <FileCheck className="h-3.5 w-3.5 mr-1.5" />
+                    Naming Validation
+                  </Link>
+                </Button>
+                <p className="text-xs text-muted-foreground">Affects health score</p>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <ExportXLSXButton
+                  filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
+                  sheets={exportSheets}
+                />
+                <p className="text-xs text-muted-foreground">Export overview</p>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {fileIds.length === 0 ? (
