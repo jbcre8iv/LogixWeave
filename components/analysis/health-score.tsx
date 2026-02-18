@@ -45,10 +45,10 @@ function getGrade(score: number): { letter: string; feedback: string } {
   return { letter: "F", feedback: "Needs work — significant cleanup recommended" };
 }
 
-function getColor(score: number): { ring: string; text: string; bg: string; progress: string } {
-  if (score >= 80) return { ring: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500", progress: "[&_[data-slot=progress-indicator]]:bg-emerald-500" };
-  if (score >= 50) return { ring: "stroke-yellow-500", text: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-500", progress: "[&_[data-slot=progress-indicator]]:bg-yellow-500" };
-  return { ring: "stroke-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", progress: "[&_[data-slot=progress-indicator]]:bg-red-500" };
+function getColor(score: number): { ringHex: string; text: string; bg: string; progress: string } {
+  if (score >= 80) return { ringHex: "#10b981", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500", progress: "[&_[data-slot=progress-indicator]]:bg-emerald-500" };
+  if (score >= 50) return { ringHex: "#eab308", text: "text-yellow-600 dark:text-yellow-400", bg: "bg-yellow-500", progress: "[&_[data-slot=progress-indicator]]:bg-yellow-500" };
+  return { ringHex: "#ef4444", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", progress: "[&_[data-slot=progress-indicator]]:bg-red-500" };
 }
 
 export function HealthScore({ projectId, stats, partialExportInfo }: HealthScoreProps) {
@@ -125,7 +125,8 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
                   r={radius}
                   fill="none"
                   strokeWidth="8"
-                  className="stroke-muted-foreground/20"
+                  stroke="#d4d4d8"
+                  opacity={0.3}
                 />
                 <circle
                   cx="64"
@@ -134,7 +135,7 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
                   fill="none"
                   strokeWidth="8"
                   strokeLinecap="round"
-                  className={color.ring}
+                  stroke={color.ringHex}
                   strokeDasharray={circumference}
                   strokeDashoffset={offset}
                   transform="rotate(-90 64 64)"
