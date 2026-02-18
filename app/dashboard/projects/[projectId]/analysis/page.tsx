@@ -107,6 +107,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   ];
   let routineCoverageChart: Array<{ routine: string; coverage: number; commented: number; total: number }> = [];
   let topTags: Array<{ name: string; count: number }> = [];
+  let effectiveRuleSetName: string | null = null;
 
   if (fileIds.length > 0) {
     // Resolve effective rule set for naming rules
@@ -119,6 +120,16 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         .eq("is_default", true)
         .single();
       effectiveRuleSetId = defaultSet?.id ?? null;
+    }
+
+    // Fetch the effective rule set name for display
+    if (effectiveRuleSetId) {
+      const { data: ruleSet } = await supabase
+        .from("naming_rule_sets")
+        .select("name")
+        .eq("id", effectiveRuleSetId)
+        .single();
+      effectiveRuleSetName = ruleSet?.name ?? null;
     }
 
     // Build naming rules query — use rule_set_id if available, fall back to organization_id
@@ -363,7 +374,13 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                   Naming Validation
                 </Link>
               </Button>
-              <p className="text-xs text-muted-foreground">Impacts health score</p>
+              {effectiveRuleSetName ? (
+                <Link href={`/dashboard/projects/${projectId}/analysis/naming`} className="text-xs text-muted-foreground hover:underline">
+                  Rule set: {effectiveRuleSetName}
+                </Link>
+              ) : (
+                <p className="text-xs text-muted-foreground">Impacts health score</p>
+              )}
             </div>
             <div className="flex flex-col items-center gap-1">
               <ExportXLSXButton
