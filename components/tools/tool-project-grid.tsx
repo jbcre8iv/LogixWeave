@@ -32,11 +32,13 @@ import {
 import { cn } from "@/lib/utils";
 import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
 
-type SortOption = "name" | "stat" | "health";
+type SortOption = "updated" | "name" | "stat" | "health";
 
 export interface ToolProjectItem {
   id: string;
   name: string;
+  description: string | null;
+  updatedAt: string;
   href: string;
   healthScore: number | null;
   hasPartialExports?: boolean;
@@ -71,8 +73,8 @@ export function ToolProjectGrid({
     return "grid";
   });
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("name");
-  const [sortDesc, setSortDesc] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("updated");
+  const [sortDesc, setSortDesc] = useState(true);
   const preSearchViewMode = useRef<"grid" | "list" | null>(null);
 
   const handleSearchChange = (query: string) => {
@@ -98,12 +100,19 @@ export function ToolProjectGrid({
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter((item) => item.name.toLowerCase().includes(query));
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          (item.description && item.description.toLowerCase().includes(query))
+      );
     }
 
     result.sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
+        case "updated":
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
         case "name":
           comparison = a.name.localeCompare(b.name);
           break;
@@ -139,6 +148,7 @@ export function ToolProjectGrid({
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="updated">Last Updated</SelectItem>
               <SelectItem value="name">Name</SelectItem>
               <SelectItem value="stat">{statSortLabel}</SelectItem>
               <SelectItem value="health">Health Score</SelectItem>
@@ -238,20 +248,24 @@ export function ToolProjectGrid({
         </div>
       )}
 
-      {/* List view — same table structure as Projects page */}
+      {/* List view — same columns as Projects page */}
       {filteredAndSorted.length > 0 && viewMode === "list" && (
         <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
           <Table className="table-fixed">
             <colgroup>
               <col />
+              <col className="hidden md:table-column w-[30%]" />
               <col className="w-[70px]" />
               <col className="w-[70px]" />
+              <col className="w-[100px]" />
             </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead className="hidden md:table-cell">Description</TableHead>
                 <TableHead>{statColumnHeader}</TableHead>
                 <TableHead>Health</TableHead>
+                <TableHead>Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -269,6 +283,11 @@ export function ToolProjectGrid({
                       <span className="font-medium truncate">{item.name}</span>
                     </div>
                   </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <span className="text-muted-foreground line-clamp-1">
+                      {item.description || "-"}
+                    </span>
+                  </TableCell>
                   <TableCell>{item.statValue}</TableCell>
                   <TableCell>
                     {item.healthScore !== null ? (
@@ -280,6 +299,9 @@ export function ToolProjectGrid({
                     ) : (
                       <span className="text-[10px] text-muted-foreground/60">No Data</span>
                     )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(item.updatedAt).toLocaleDateString()}
                   </TableCell>
                 </TableRow>
               ))}

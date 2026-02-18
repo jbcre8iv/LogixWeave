@@ -9,18 +9,18 @@ import { ToolProjectGrid } from "@/components/tools/tool-project-grid";
 export default async function GlobalAIPage() {
   const supabase = await createClient();
 
-  // Get all projects with their file counts
   const { data: projects } = await supabase
     .from("projects")
     .select(`
       id,
       name,
+      description,
+      updated_at,
       project_files(id, parsing_status)
     `)
     .eq("is_archived", false)
     .order("name");
 
-  // Filter to projects with completed parsing
   const projectsWithData = (projects || [])
     .map((project) => {
       const completedFiles = project.project_files?.filter(
@@ -69,6 +69,8 @@ export default async function GlobalAIPage() {
           items={projectsWithData.map((project) => ({
             id: project.id,
             name: project.name,
+            description: project.description,
+            updatedAt: project.updated_at,
             href: `/dashboard/projects/${project.id}/ai`,
             healthScore: healthScores.get(project.id)?.overall ?? null,
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,

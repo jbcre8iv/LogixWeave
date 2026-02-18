@@ -9,18 +9,18 @@ import { ToolProjectGrid } from "@/components/tools/tool-project-grid";
 export default async function GlobalUDTsPage() {
   const supabase = await createClient();
 
-  // Get all projects with their file counts
   const { data: projects } = await supabase
     .from("projects")
     .select(`
       id,
       name,
+      description,
+      updated_at,
       project_files(id)
     `)
     .eq("is_archived", false)
     .order("name");
 
-  // Get UDT counts for each project
   const projectsWithStats = await Promise.all(
     (projects || []).map(async (project) => {
       const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
@@ -34,11 +34,7 @@ export default async function GlobalUDTsPage() {
         udtCount = count || 0;
       }
 
-      return {
-        ...project,
-        fileCount: project.project_files?.length || 0,
-        udtCount,
-      };
+      return { ...project, udtCount };
     })
   );
 
@@ -62,6 +58,8 @@ export default async function GlobalUDTsPage() {
           items={projectsWithUDTs.map((project) => ({
             id: project.id,
             name: project.name,
+            description: project.description,
+            updatedAt: project.updated_at,
             href: `/dashboard/projects/${project.id}/udts?from=tools`,
             healthScore: healthScores.get(project.id)?.overall ?? null,
             hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
