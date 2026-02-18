@@ -133,6 +133,53 @@ function highlightViolation(tagName: string, pattern: string): React.ReactNode {
   }
 }
 
+/**
+ * Generates a human-readable reason for why a tag violates a naming rule.
+ * Extracts the non-matching characters and categorizes them.
+ */
+function describeViolation(tagName: string, pattern: string, ruleName: string): string {
+  try {
+    const stripped = pattern.replace(/^\^/, "").replace(/\$$/, "");
+    if (!stripped) return `Does not match the "${ruleName}" pattern`;
+
+    const regex = new RegExp(stripped, "g");
+    const matches: Array<{ start: number; end: number }> = [];
+    let match;
+
+    while ((match = regex.exec(tagName)) !== null) {
+      if (match[0].length === 0) { regex.lastIndex++; continue; }
+      matches.push({ start: match.index, end: match.index + match[0].length });
+    }
+
+    // Collect non-matching segments
+    const nonMatching: string[] = [];
+    let lastEnd = 0;
+    for (const { start, end } of matches) {
+      if (start > lastEnd) nonMatching.push(tagName.slice(lastEnd, start));
+      lastEnd = end;
+    }
+    if (lastEnd < tagName.length) nonMatching.push(tagName.slice(lastEnd));
+
+    if (nonMatching.length === 0) return `Does not match the "${ruleName}" pattern`;
+
+    const chars = nonMatching.join("");
+    const types: string[] = [];
+    if (/[a-z]/.test(chars)) types.push("lowercase");
+    if (/[A-Z]/.test(chars)) types.push("uppercase");
+    if (/_/.test(chars)) types.push("underscore");
+    if (/\d/.test(chars)) types.push("numeric");
+    if (/[^a-zA-Z0-9_]/.test(chars)) types.push("special");
+
+    const quoted = nonMatching.map((s) => `"${s}"`).join(", ");
+
+    if (types.length === 0) return `Does not match the "${ruleName}" pattern`;
+
+    return `Contains ${types.join("/")} characters (${quoted}) not permitted by this rule`;
+  } catch {
+    return `Does not match the "${ruleName}" pattern`;
+  }
+}
+
 export default async function NamingValidationPage({ params, searchParams }: NamingPageProps) {
   const { projectId } = await params;
   const { severity: severityFilter, ruleSet: ruleSetParam } = await searchParams;
@@ -413,12 +460,13 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             <ExportCSVButton
               filename="naming_validation.csv"
               data={[
-                ["Severity", "Tag Name", "Scope", "Rule"],
+                ["Severity", "Tag Name", "Scope", "Rule", "Reason"],
                 ...allViolations.map((v) => [
                   v.severity,
                   v.tagName,
                   v.tagScope,
                   v.ruleName,
+                  describeViolation(v.tagName, v.pattern, v.ruleName),
                 ]),
               ]}
             />
@@ -540,6 +588,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                     <TableHead>Tag Name</TableHead>
                     <TableHead>Scope</TableHead>
                     <TableHead>Rule</TableHead>
+                    <TableHead>Reason</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -557,6 +606,9 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {violation.ruleName}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {describeViolation(violation.tagName, violation.pattern, violation.ruleName)}
                       </TableCell>
                     </TableRow>
                   ))}
