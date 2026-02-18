@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderOpen, BarChart3, ArrowRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { BarChart3 } from "lucide-react";
 import { getProjectHealthScores } from "@/lib/health-scores";
-import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
+import { ToolProjectGrid } from "@/components/tools/tool-project-grid";
 
 export default async function GlobalAnalysisPage() {
   const supabase = await createClient();
@@ -47,36 +47,18 @@ export default async function GlobalAnalysisPage() {
       </div>
 
       {projectsWithData.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projectsWithData.map((project) => (
-            <Link key={project.id} href={`/dashboard/projects/${project.id}/analysis?from=tools`}>
-              <Card className="h-full transition-colors hover:bg-accent/50">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FolderOpen className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
-                    </div>
-                    <MiniHealthRing score={healthScores.get(project.id)?.overall ?? null} approximate={healthScores.get(project.id)?.hasPartialExports} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <BarChart3 className="h-4 w-4" />
-                        {project.completedFileCount} file{project.completedFileCount === 1 ? "" : "s"}
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      Analyze <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <ToolProjectGrid
+          items={projectsWithData.map((project) => ({
+            id: project.id,
+            name: project.name,
+            href: `/dashboard/projects/${project.id}/analysis?from=tools`,
+            healthScore: healthScores.get(project.id)?.overall ?? null,
+            hasPartialExports: healthScores.get(project.id)?.hasPartialExports,
+            statIcon: <BarChart3 className="h-4 w-4" />,
+            statLabel: `${project.completedFileCount} file${project.completedFileCount === 1 ? "" : "s"}`,
+            actionLabel: "Analyze",
+          }))}
+        />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
