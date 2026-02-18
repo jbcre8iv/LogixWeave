@@ -238,22 +238,20 @@ export function ToolProjectGrid({
         </div>
       )}
 
-      {/* List view — matches Projects page table design */}
+      {/* List view — same table structure as Projects page */}
       {filteredAndSorted.length > 0 && viewMode === "list" && (
         <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
           <Table className="table-fixed">
             <colgroup>
               <col />
-              <col className="w-[150px]" />
               <col className="w-[70px]" />
-              <col className="w-[100px]" />
+              <col className="w-[70px]" />
             </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>{statColumnHeader}</TableHead>
                 <TableHead>Health</TableHead>
-                <TableHead className="text-right pr-4">{filteredAndSorted[0]?.actionLabel || "Action"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,12 +269,7 @@ export function ToolProjectGrid({
                       <span className="font-medium truncate">{item.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      {item.statIcon}
-                      <span>{item.statLabel}</span>
-                    </div>
-                  </TableCell>
+                  <TableCell>{item.statValue}</TableCell>
                   <TableCell>
                     {item.healthScore !== null ? (
                       <MiniHealthRing
@@ -287,17 +280,6 @@ export function ToolProjectGrid({
                     ) : (
                       <span className="text-[10px] text-muted-foreground/60">No Data</span>
                     )}
-                  </TableCell>
-                  <TableCell className="text-right pr-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={item.actionClassName}
-                      tabIndex={-1}
-                    >
-                      {item.actionLabel}{" "}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
