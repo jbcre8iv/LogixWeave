@@ -82,10 +82,20 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
         const { jsPDF } = await import("jspdf");
         const { addPdfBranding } = await import("@/lib/pdf-branding");
 
-        const dataUrl = await toPng(target, {
-          pixelRatio: 2,
-          backgroundColor: "#09090b",
-        });
+        // Temporarily switch to light mode for a clean PDF
+        const htmlEl = document.documentElement;
+        const wasDark = htmlEl.classList.contains("dark");
+        if (wasDark) htmlEl.classList.remove("dark");
+
+        let dataUrl: string;
+        try {
+          dataUrl = await toPng(target, {
+            pixelRatio: 2,
+            backgroundColor: "#ffffff",
+          });
+        } finally {
+          if (wasDark) htmlEl.classList.add("dark");
+        }
 
         const doc = new jsPDF({ orientation: "landscape", format: "letter", unit: "mm" });
 
