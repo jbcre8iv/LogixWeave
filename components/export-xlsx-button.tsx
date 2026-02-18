@@ -78,17 +78,15 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
     // Run async work outside the event handler to avoid Radix swallowing errors
     setTimeout(async () => {
       try {
-        const html2canvas = (await import("html2canvas")).default;
+        const { toPng } = await import("html-to-image");
         const { jsPDF } = await import("jspdf");
         const { addPdfBranding } = await import("@/lib/pdf-branding");
 
-        const canvas = await html2canvas(target, {
-          scale: 2,
-          useCORS: true,
+        const dataUrl = await toPng(target, {
+          pixelRatio: 2,
           backgroundColor: "#09090b",
         });
 
-        const imgData = canvas.toDataURL("image/png");
         const doc = new jsPDF({ orientation: "landscape", format: "letter", unit: "mm" });
 
         const pageWidth = doc.internal.pageSize.getWidth();
@@ -99,7 +97,15 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
         const availableWidth = pageWidth - margin * 2;
         const availableHeight = pageHeight - topMargin - bottomMargin;
 
-        const imgAspect = canvas.width / canvas.height;
+        // Load image to get natural dimensions
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Failed to load captured image"));
+          img.src = dataUrl;
+        });
+
+        const imgAspect = img.width / img.height;
         let imgWidth = availableWidth;
         let imgHeight = imgWidth / imgAspect;
 
@@ -110,7 +116,7 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
 
         const x = (pageWidth - imgWidth) / 2;
         const y = topMargin + (availableHeight - imgHeight) / 2;
-        doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+        doc.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
 
         await addPdfBranding(doc);
 
@@ -118,7 +124,8 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
         doc.save(`${pdfBase}_${getTimestampSuffix()}.pdf`);
       } catch (err) {
         console.error("PDF export failed:", err);
-        toast.error("PDF export failed. Please try again.");
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(`PDF export failed: ${msg}`);
       } finally {
         setExporting(false);
       }
