@@ -276,8 +276,8 @@ export function ToolProjectGrid({
         <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
           <Table className="table-fixed">
             <colgroup>
-              <col />
-              <col className="hidden md:table-column w-[30%]" />
+              <col className="w-[30%]" />
+              <col className="hidden md:table-column" />
               <col className="w-[80px]" />
               <col className="w-[80px]" />
               <col className="w-[110px]" />

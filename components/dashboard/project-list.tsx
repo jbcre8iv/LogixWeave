@@ -239,8 +239,8 @@ function ProjectListTable({
       <Table className="table-fixed">
         <colgroup>
           <col className="w-[40px]" />
-          <col />
-          <col className="hidden md:table-column w-[30%]" />
+          <col className="w-[30%]" />
+          <col className="hidden md:table-column" />
           {showOwner && <col className="hidden sm:table-column w-[140px]" />}
           <col className="w-[70px]" />
           <col className="w-[70px]" />
