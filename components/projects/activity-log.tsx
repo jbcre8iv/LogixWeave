@@ -17,8 +17,7 @@ import {
   Sparkles,
   Settings,
   FolderPlus,
-  ChevronLeft,
-  ChevronRight,
+  ChevronDown,
   Loader2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -113,34 +112,46 @@ const PAGE_SIZE = 15;
 export function ActivityLog({ projectId }: ActivityLogProps) {
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [offset, setOffset] = useState(0);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const fetchActivities = async (loadMore = false) => {
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const currentOffset = loadMore ? offset + PAGE_SIZE : 0;
+      const response = await fetch(
+        `/api/projects/${projectId}/activity?limit=${PAGE_SIZE}&offset=${currentOffset}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (loadMore) {
+          setActivities((prev) => [...prev, ...data.activities]);
+        } else {
+          setActivities(data.activities);
+        }
+        setTotal(data.total);
+        setOffset(currentOffset);
+      }
+    } catch (error) {
+      console.error("Failed to fetch activity log:", error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      setLoading(true);
-      try {
-        const offset = (page - 1) * PAGE_SIZE;
-        const response = await fetch(
-          `/api/projects/${projectId}/activity?limit=${PAGE_SIZE}&offset=${offset}`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setActivities(data.activities);
-          setTotal(data.total);
-        }
-      } catch (error) {
-        console.error("Failed to fetch activity log:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchActivities();
-  }, [projectId, page]);
+  }, [projectId]);
+
+  const hasMore = activities.length < total;
 
   if (loading) {
     return (
@@ -211,28 +222,25 @@ export function ActivityLog({ projectId }: ActivityLogProps) {
                 </div>
               ))}
             </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-4 border-t">
+            {hasMore && (
+              <div className="mt-4 text-center">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage((p) => p - 1)}
-                  disabled={page <= 1}
+                  onClick={() => fetchActivities(true)}
+                  disabled={loadingMore}
                 >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="mr-2 h-4 w-4" />
+                      Load More
+                    </>
+                  )}
                 </Button>
               </div>
             )}
