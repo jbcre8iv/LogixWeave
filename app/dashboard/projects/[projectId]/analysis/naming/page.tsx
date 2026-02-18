@@ -1,3 +1,4 @@
+import React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -36,6 +37,7 @@ interface Violation {
   ruleId: string;
   ruleName: string;
   severity: string;
+  pattern: string;
   tagName: string;
   tagScope: string;
   message: string;
@@ -63,6 +65,7 @@ function validateTag(
           ruleId: rule.id,
           ruleName: rule.name,
           severity: rule.severity,
+          pattern: rule.pattern,
           tagName,
           tagScope,
           message: `Tag "${tagName}" does not match rule "${rule.name}"`,
@@ -74,6 +77,60 @@ function validateTag(
   }
 
   return violations;
+}
+
+/**
+ * Highlights the non-matching portions of a tag name in red.
+ * Strips anchors from the regex pattern, finds all matching segments
+ * within the tag, and wraps everything else in a red span.
+ */
+function highlightViolation(tagName: string, pattern: string): React.ReactNode {
+  try {
+    // Strip ^ and $ anchors so the pattern can find partial matches
+    const stripped = pattern.replace(/^\^/, "").replace(/\$$/, "");
+    if (!stripped) return <span className="text-red-500">{tagName}</span>;
+
+    const regex = new RegExp(stripped, "g");
+    const matches: Array<{ start: number; end: number }> = [];
+    let match;
+
+    while ((match = regex.exec(tagName)) !== null) {
+      if (match[0].length === 0) {
+        regex.lastIndex++;
+        continue;
+      }
+      matches.push({ start: match.index, end: match.index + match[0].length });
+    }
+
+    if (matches.length === 0) {
+      return <span className="text-red-500">{tagName}</span>;
+    }
+
+    const segments: React.ReactNode[] = [];
+    let lastEnd = 0;
+
+    for (const { start, end } of matches) {
+      if (start > lastEnd) {
+        segments.push(
+          <span key={`v-${lastEnd}`} className="text-red-500">{tagName.slice(lastEnd, start)}</span>
+        );
+      }
+      segments.push(
+        <span key={`m-${start}`}>{tagName.slice(start, end)}</span>
+      );
+      lastEnd = end;
+    }
+
+    if (lastEnd < tagName.length) {
+      segments.push(
+        <span key={`v-${lastEnd}`} className="text-red-500">{tagName.slice(lastEnd)}</span>
+      );
+    }
+
+    return <>{segments}</>;
+  } catch {
+    return tagName;
+  }
 }
 
 export default async function NamingValidationPage({ params, searchParams }: NamingPageProps) {
@@ -494,7 +551,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                           {getSeverityBadge(violation.severity)}
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{violation.tagName}</TableCell>
+                      <TableCell className="font-mono text-sm">{highlightViolation(violation.tagName, violation.pattern)}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{violation.tagScope}</Badge>
                       </TableCell>
