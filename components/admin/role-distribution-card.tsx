@@ -54,14 +54,13 @@ export function RoleDistributionCard() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-1">
           <CardTitle className="text-base">User Role Distribution</CardTitle>
-          <CardDescription>Breakdown of user roles across the platform</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[180px]">
-            <Skeleton className="h-[120px] w-[120px] rounded-full" />
+        <CardContent className="flex-1 pb-3">
+          <div className="flex items-center justify-center h-[160px]">
+            <Skeleton className="h-[100px] w-[100px] rounded-full" />
           </div>
         </CardContent>
       </Card>
@@ -71,21 +70,20 @@ export function RoleDistributionCard() {
   if (data.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-1">
         <CardTitle className="text-base">User Role Distribution</CardTitle>
-        <CardDescription>Breakdown of user roles across the platform</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-[200px]">
+      <CardContent className="flex-1 pb-3">
+        <div className="h-[160px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="42%"
-                innerRadius={40}
-                outerRadius={65}
+                cy="45%"
+                innerRadius={35}
+                outerRadius={55}
                 paddingAngle={data.length > 1 ? 3 : 0}
                 dataKey="count"
                 nameKey="role"
@@ -129,11 +127,11 @@ export function RoleDistributionCard() {
                 ))}
               </Pie>
               {/* Center label */}
-              <text x="50%" y="35%" textAnchor="middle" dominantBaseline="central">
-                <tspan x="50%" className="fill-foreground text-base font-bold">
+              <text x="50%" y="38%" textAnchor="middle" dominantBaseline="central">
+                <tspan x="50%" className="fill-foreground text-sm font-bold">
                   {totalUsers.toLocaleString()}
                 </tspan>
-                <tspan x="50%" dy="1.2em" className="fill-muted-foreground text-[10px]">
+                <tspan x="50%" dy="1.2em" className="fill-muted-foreground text-[9px]">
                   total users
                 </tspan>
               </text>

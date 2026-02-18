@@ -159,7 +159,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Users</CardDescription>
@@ -219,10 +219,12 @@ export default async function AdminDashboardPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
 
-      {/* User Role Distribution */}
-      <RoleDistributionCard />
+        {/* User Role Distribution */}
+        <div className="xl:col-span-2">
+          <RoleDistributionCard />
+        </div>
+      </div>
 
       {/* Users Table */}
       <Card>
