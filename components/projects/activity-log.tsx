@@ -19,6 +19,7 @@ import {
   FolderPlus,
   ChevronDown,
   Loader2,
+  Copy,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -58,6 +59,7 @@ const actionIcons: Record<string, React.ReactNode> = {
   tag_exported: <Download className="h-4 w-4" />,
   documentation_exported: <Download className="h-4 w-4" />,
   ai_analysis_run: <Sparkles className="h-4 w-4" />,
+  project_duplicated: <Copy className="h-4 w-4" />,
 };
 
 const actionColors: Record<string, string> = {
@@ -74,6 +76,7 @@ const actionColors: Record<string, string> = {
   tag_exported: "bg-blue-500/10 text-blue-600",
   documentation_exported: "bg-blue-500/10 text-blue-600",
   ai_analysis_run: "bg-purple-500/10 text-purple-600",
+  project_duplicated: "bg-blue-500/10 text-blue-600",
 };
 
 function getUserDisplayName(activity: ActivityEntry): string {
@@ -127,6 +130,7 @@ function getActionDescription(action: string, targetName?: string | null, metada
     tag_exported: "exported tags",
     documentation_exported: targetName ? `exported as ${targetName}` : "exported documentation",
     ai_analysis_run: targetName ? `ran ${targetName}` : "ran AI analysis",
+    project_duplicated: targetName ? `duplicated from "${targetName}"` : "duplicated a project",
   };
 
   return descriptions[action] || action.replace(/_/g, " ");

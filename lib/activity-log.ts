@@ -15,7 +15,8 @@ export type ActivityAction =
   | "member_left"
   | "tag_exported"
   | "documentation_exported"
-  | "ai_analysis_run";
+  | "ai_analysis_run"
+  | "project_duplicated";
 
 export type TargetType = "project" | "file" | "share" | "export" | "analysis";
 
@@ -88,6 +89,7 @@ export function getActionDescription(action: ActivityAction, targetName?: string
     tag_exported: "exported tags",
     documentation_exported: targetName ? `exported documentation as ${targetName}` : "exported documentation",
     ai_analysis_run: targetName ? `ran AI analysis: ${targetName}` : "ran AI analysis",
+    project_duplicated: targetName ? `duplicated from "${targetName}"` : "duplicated a project",
   };
 
   return descriptions[action] || action;

@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
 import { EditProjectDialog } from "@/components/dashboard/edit-project-dialog";
-import { Star, Pencil, Share2, Archive, Trash2, Loader2 } from "lucide-react";
+import { DuplicateProjectDialog } from "@/components/dashboard/duplicate-project-dialog";
+import { Star, Pencil, Share2, Copy, Archive, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProjectActionsProps {
@@ -31,6 +32,7 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
   const [optimisticFavorite, setOptimisticFavorite] = useState(isFavorite);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -108,6 +110,9 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShareDialogOpen(true)}>
             <Share2 className="h-4 w-4" />
           </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setDuplicateDialogOpen(true)}>
+            <Copy className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setArchiveDialogOpen(true)}>
             <Archive className="h-4 w-4" />
           </Button>
@@ -133,6 +138,15 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
           projectName={projectName}
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
+        />
+      )}
+
+      {isOwner && (
+        <DuplicateProjectDialog
+          projectId={projectId}
+          projectName={projectName}
+          open={duplicateDialogOpen}
+          onOpenChange={setDuplicateDialogOpen}
         />
       )}
 

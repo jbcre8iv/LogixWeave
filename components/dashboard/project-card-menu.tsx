@@ -22,12 +22,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
 import { EditProjectDialog } from "@/components/dashboard/edit-project-dialog";
+import { DuplicateProjectDialog } from "@/components/dashboard/duplicate-project-dialog";
 import {
   MoreVertical,
   FolderOpen,
   Star,
   Pencil,
   Share2,
+  Copy,
   Archive,
   Trash2,
   LogOut,
@@ -60,6 +62,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const handleArchive = async (e: React.MouseEvent) => {
@@ -174,6 +177,10 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
                 <Share2 className="h-4 w-4" />
                 Share
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDuplicateDialogOpen(true)}>
+                <Copy className="h-4 w-4" />
+                Duplicate
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setArchiveDialogOpen(true)}>
                 <Archive className="h-4 w-4" />
                 Archive
@@ -221,6 +228,16 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
           projectName={project.name}
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
+        />
+      )}
+
+      {/* Duplicate dialog */}
+      {isOwner && (
+        <DuplicateProjectDialog
+          projectId={project.id}
+          projectName={project.name}
+          open={duplicateDialogOpen}
+          onOpenChange={setDuplicateDialogOpen}
         />
       )}
 
