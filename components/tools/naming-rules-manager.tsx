@@ -50,6 +50,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, MoreHorizontal, Star, FolderPlus } from "lucide-react";
 
 interface NamingRule {
@@ -91,6 +93,36 @@ const SEVERITY_OPTIONS = [
   { value: "info", label: "Info", icon: Info, color: "text-blue-500" },
 ];
 
+const RULE_TEMPLATES = [
+  {
+    category: "General Hygiene",
+    templates: [
+      { name: "No Spaces in Names", description: "Tag names must not contain whitespace characters", pattern: "^[^\\s]+$", severity: "error" },
+      { name: "Start with Letter", description: "Tag names must begin with a letter", pattern: "^[A-Za-z]", severity: "error" },
+      { name: "Alphanumeric & Underscores Only", description: "Tag names may only contain letters, digits, and underscores", pattern: "^[A-Za-z0-9_]+$", severity: "error" },
+      { name: "Max Length 40 Characters", description: "Tag names must not exceed 40 characters", pattern: "^.{1,40}$", severity: "error" },
+      { name: "No Consecutive Underscores", description: "Tag names should not contain double underscores (e.g., My__Tag)", pattern: "^(?!.*__)", severity: "warning" },
+      { name: "No Trailing Underscore", description: "Tag names should not end with an underscore", pattern: "[^_]$", severity: "warning" },
+    ],
+  },
+  {
+    category: "Naming Style",
+    templates: [
+      { name: "UPPER_CASE with Underscores", description: "Tags should follow UPPER_CASE naming (e.g., MOTOR_RUN)", pattern: "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$", severity: "info" },
+      { name: "Mixed_Case with Underscores", description: "Tags should follow Mixed_Case naming (e.g., Motor_Run)", pattern: "^[A-Za-z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$", severity: "info" },
+      { name: "CamelCase", description: "Tags should follow CamelCase naming (e.g., MotorRun)", pattern: "^[A-Z][a-zA-Z0-9]*$", severity: "info" },
+    ],
+  },
+  {
+    category: "Prefix Conventions",
+    templates: [
+      { name: "I/O Type Prefix (DI_, DO_, AI_, AO_)", description: "Tags should start with an I/O type prefix", pattern: "^(DI|DO|AI|AO)_", severity: "warning" },
+      { name: "Equipment Type Prefix (MTR_, VLV_, PMP_, etc.)", description: "Tags should start with an equipment type prefix", pattern: "^(MTR|VLV|PMP|TNK|FAN|CVR|HX|CMP)_", severity: "warning" },
+      { name: "Area Prefix (e.g., A01_)", description: "Tags should start with an area code prefix (letter + digits + underscore)", pattern: "^[A-Z]\\d{1,3}_", severity: "warning" },
+    ],
+  },
+];
+
 export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: NamingRulesManagerProps) {
   const router = useRouter();
   const [ruleSets, setRuleSets] = useState<NamingRuleSet[]>(initialRuleSets);
@@ -109,6 +141,8 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
   const [deleteSet, setDeleteSet] = useState<NamingRuleSet | null>(null);
   const [setFormData, setSetFormData] = useState({ name: "", description: "" });
 
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
+
   const [ruleFormData, setRuleFormData] = useState({
     name: "",
     description: "",
@@ -117,6 +151,17 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     severity: "warning",
     is_active: true,
   });
+
+  const handleSelectTemplate = (template: { name: string; description: string; pattern: string; severity: string }) => {
+    setSelectedTemplateName(template.name);
+    setRuleFormData((prev) => ({
+      ...prev,
+      name: template.name,
+      description: template.description,
+      pattern: template.pattern,
+      severity: template.severity,
+    }));
+  };
 
   const resetRuleForm = () => {
     setRuleFormData({
@@ -127,6 +172,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       severity: "warning",
       is_active: true,
     });
+    setSelectedTemplateName(null);
     setError(null);
   };
 
@@ -256,6 +302,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       severity: rule.severity,
       is_active: rule.is_active,
     });
+    setSelectedTemplateName(null);
     setError(null);
   };
 
@@ -380,12 +427,45 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
         </div>
       )}
 
+      {/* Template picker */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Quick Start from Template</Label>
+        {RULE_TEMPLATES.map((group) => (
+          <div key={group.category} className="space-y-1.5">
+            <p className="text-xs text-muted-foreground font-medium">{group.category}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {group.templates.map((template) => (
+                <button
+                  key={template.name}
+                  type="button"
+                  onClick={() => handleSelectTemplate(template)}
+                  className={cn(
+                    "inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                    "hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                    selectedTemplateName === template.name
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground"
+                  )}
+                >
+                  {template.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Separator />
+
       <div className="space-y-2">
         <Label htmlFor="rule-name">Rule Name</Label>
         <Input
           id="rule-name"
           value={ruleFormData.name}
-          onChange={(e) => setRuleFormData({ ...ruleFormData, name: e.target.value })}
+          onChange={(e) => {
+            setRuleFormData({ ...ruleFormData, name: e.target.value });
+            setSelectedTemplateName(null);
+          }}
           placeholder="e.g., No Spaces in Names"
         />
       </div>
@@ -406,7 +486,10 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
         <Input
           id="rule-pattern"
           value={ruleFormData.pattern}
-          onChange={(e) => setRuleFormData({ ...ruleFormData, pattern: e.target.value })}
+          onChange={(e) => {
+            setRuleFormData({ ...ruleFormData, pattern: e.target.value });
+            setSelectedTemplateName(null);
+          }}
           placeholder="e.g., ^[^\s]+$"
           className="font-mono"
         />
@@ -625,7 +708,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                             Add Rule
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Add Naming Rule</DialogTitle>
                             <DialogDescription>
@@ -746,7 +829,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                                       <Pencil className="h-4 w-4" />
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent>
+                                  <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
                                     <DialogHeader>
                                       <DialogTitle>Edit Naming Rule</DialogTitle>
                                       <DialogDescription>
