@@ -52,7 +52,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, MoreHorizontal, Star, FolderPlus, X } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, MoreHorizontal, Star, FolderPlus, X, Sparkles, Loader2 } from "lucide-react";
 
 interface NamingRule {
   id: string;
@@ -145,6 +145,14 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
   const [selectedTemplateNames, setSelectedTemplateNames] = useState<string[]>([]);
 
+  // AI regex helper state
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResult, setAiResult] = useState<{
+    name: string; description: string; pattern: string; severity: string;
+  } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const [ruleFormData, setRuleFormData] = useState({
     name: "",
     description: "",
@@ -198,6 +206,48 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    setAiError(null);
+    setAiResult(null);
+    try {
+      const response = await fetch("/api/ai/naming-regex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: aiPrompt.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate regex");
+      }
+      setAiResult(data);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Failed to generate regex");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleApplyAiResult = () => {
+    if (!aiResult) return;
+    setRuleFormData((prev) => ({
+      ...prev,
+      name: aiResult.name,
+      description: aiResult.description,
+      pattern: aiResult.pattern,
+      severity: aiResult.severity,
+    }));
+    setSelectedTemplateNames([]);
+    setAiPrompt("");
+    setAiResult(null);
+    setAiError(null);
+  };
+
+  const handleDismissAiResult = () => {
+    setAiResult(null);
+  };
+
   const resetRuleForm = () => {
     setRuleFormData({
       name: "",
@@ -208,6 +258,9 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       is_active: true,
     });
     setSelectedTemplateNames([]);
+    setAiPrompt("");
+    setAiResult(null);
+    setAiError(null);
     setError(null);
   };
 
@@ -553,6 +606,67 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       </div>
 
       <Separator />
+
+      {/* AI Regex Helper — hidden in batch mode */}
+      {!isBatchMode && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-amber-500" />
+            <Label className="text-sm font-medium">AI Rule Helper</Label>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAiGenerate();
+                }
+              }}
+              placeholder="Describe a naming pattern..."
+              className="border-amber-500/20 focus-visible:ring-amber-500/30"
+              disabled={aiLoading}
+            />
+            <Button
+              type="button"
+              onClick={handleAiGenerate}
+              disabled={aiLoading || !aiPrompt.trim()}
+              className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+            >
+              {aiLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Generate"
+              )}
+            </Button>
+          </div>
+          {aiError && (
+            <p className="text-sm text-destructive">{aiError}</p>
+          )}
+          {aiResult && (
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{aiResult.name}</p>
+                {getSeverityBadge(aiResult.severity)}
+              </div>
+              <p className="text-xs text-muted-foreground">{aiResult.description}</p>
+              <code className="block text-xs font-mono bg-muted/50 rounded px-2 py-1">
+                {aiResult.pattern}
+              </code>
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" onClick={handleApplyAiResult} className="bg-amber-500 hover:bg-amber-600 text-white">
+                  Apply
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleDismissAiResult}>
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
+          <Separator />
+        </div>
+      )}
 
       {isBatchMode ? (
         <>

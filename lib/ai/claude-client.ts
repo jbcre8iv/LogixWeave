@@ -74,7 +74,7 @@ export interface HealthRecommendationResult {
  * Extract JSON from Claude responses that may include markdown fences or prose.
  * Tries three strategies: direct parse, code-fence extraction, brace scanning.
  */
-function extractJSON<T>(text: string): T {
+export function extractJSON<T>(text: string): T {
   const trimmed = text.trim();
 
   // Strategy 1: Direct parse
