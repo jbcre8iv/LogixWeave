@@ -346,8 +346,8 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                     Configure Naming Rules
                   </Link>
                 </Button>
-                <div className="flex items-center justify-center gap-3 pt-2 border-t">
-                  <span className="text-xs text-muted-foreground">Or switch rule set:</span>
+                <div className="flex flex-col items-center gap-2 pt-2 border-t">
+                  <span className="text-xs text-muted-foreground">Or switch rule set</span>
                   <RuleSetPicker
                     projectId={projectId}
                     ruleSets={allRuleSets || []}
@@ -370,8 +370,8 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                   </Link>
                 </Button>
                 {(allRuleSets || []).length > 1 && (
-                  <div className="flex items-center justify-center gap-3 pt-2 border-t">
-                    <span className="text-xs text-muted-foreground">Or switch rule set:</span>
+                  <div className="flex flex-col items-center gap-2 pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">Or switch rule set</span>
                     <RuleSetPicker
                       projectId={projectId}
                       ruleSets={allRuleSets || []}
