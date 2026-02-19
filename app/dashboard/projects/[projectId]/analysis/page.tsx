@@ -121,6 +121,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     totalReferences: 0,
   };
 
+  let namingViolationCount = 0;
   let exportSheets: ExportSheet[] = [];
   let usageBreakdown = [
     { name: "Read", value: 0 },
@@ -196,31 +197,29 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
     const commentedRungs = rungs.filter((r) => r.comment && r.comment.trim() !== "").length;
 
-    // Compute naming violation count for health score
-    let namingViolationTags: number | undefined;
-    if (namingAffectsHealthScore) {
-      if (namingRules.length > 0) {
-        const violatingTagNames = new Set<string>();
-        for (const tag of allTags) {
-          for (const rule of namingRules) {
-            const appliesToTag =
-              rule.applies_to === "all" ||
-              (rule.applies_to === "controller" && tag.scope === "Controller") ||
-              (rule.applies_to === "program" && tag.scope !== "Controller");
-            if (!appliesToTag) continue;
-            try {
-              if (!new RegExp(rule.pattern).test(tag.name)) {
-                violatingTagNames.add(tag.name);
-                break;
-              }
-            } catch { continue; }
-          }
+    // Always compute naming violation count (needed for instant client-side toggle)
+    namingViolationCount = 0;
+    if (namingRules.length > 0) {
+      const violatingTagNames = new Set<string>();
+      for (const tag of allTags) {
+        for (const rule of namingRules) {
+          const appliesToTag =
+            rule.applies_to === "all" ||
+            (rule.applies_to === "controller" && tag.scope === "Controller") ||
+            (rule.applies_to === "program" && tag.scope !== "Controller");
+          if (!appliesToTag) continue;
+          try {
+            if (!new RegExp(rule.pattern).test(tag.name)) {
+              violatingTagNames.add(tag.name);
+              break;
+            }
+          } catch { continue; }
         }
-        namingViolationTags = violatingTagNames.size;
-      } else {
-        namingViolationTags = 0;
       }
+      namingViolationCount = violatingTagNames.size;
     }
+    // Only include in stats for initial server render when toggle is on
+    const namingViolationTags = namingAffectsHealthScore ? namingViolationCount : undefined;
 
     stats = {
       totalTags: allTags.length,
@@ -470,7 +469,11 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             projectId={projectId}
             stats={stats}
             partialExportInfo={partialExportInfo}
-            footer={<NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} />}
+            namingHealthEnabled={namingAffectsHealthScore}
+            namingViolationCount={namingViolationCount}
+            footer={(onNamingToggle) => (
+              <NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} onToggle={onNamingToggle} />
+            )}
           />
 
           {/* Summary Stats */}

@@ -10,15 +10,17 @@ import { Button } from "@/components/ui/button";
 interface NamingHealthToggleProps {
   projectId: string;
   enabled: boolean;
+  onToggle?: (enabled: boolean) => void;
 }
 
-export function NamingHealthToggle({ projectId, enabled: initialEnabled }: NamingHealthToggleProps) {
+export function NamingHealthToggle({ projectId, enabled: initialEnabled, onToggle }: NamingHealthToggleProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const handleToggle = async (checked: boolean) => {
     setEnabled(checked);
+    onToggle?.(checked);
     try {
       const res = await fetch(`/api/projects/${projectId}/naming-health-toggle`, {
         method: "PATCH",
@@ -27,6 +29,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
       });
       if (!res.ok) {
         setEnabled(!checked);
+        onToggle?.(!checked);
         return;
       }
       startTransition(() => {
@@ -34,6 +37,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
       });
     } catch {
       setEnabled(!checked);
+      onToggle?.(!checked);
     }
   };
 

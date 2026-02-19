@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { Sparkles, Info } from "lucide-react";
 import type { PartialExportInfo } from "@/lib/partial-export";
@@ -18,7 +18,9 @@ interface HealthScoreProps {
     namingViolationTags?: number;
   };
   partialExportInfo?: PartialExportInfo;
-  footer?: React.ReactNode;
+  namingHealthEnabled?: boolean;
+  namingViolationCount?: number;
+  footer?: React.ReactNode | ((onNamingToggle: (enabled: boolean) => void) => React.ReactNode);
 }
 
 function computeScore(stats: HealthScoreProps["stats"]) {
@@ -63,14 +65,31 @@ function getColor(score: number): { ringHex: string; text: string; bg: string; p
   return { ringHex: "#ef4444", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", progress: "[&_[data-slot=progress-indicator]]:bg-red-500" };
 }
 
-export function HealthScore({ projectId, stats, partialExportInfo, footer }: HealthScoreProps) {
-  const scores = computeScore(stats);
+export function HealthScore({ projectId, stats, partialExportInfo, namingHealthEnabled, namingViolationCount, footer }: HealthScoreProps) {
+  const [isNamingEnabled, setIsNamingEnabled] = useState(namingHealthEnabled ?? (stats.namingViolationTags !== undefined));
+
+  // Build effective stats based on local toggle state
+  const effectiveStats = useMemo(() => {
+    if (isNamingEnabled && namingViolationCount !== undefined) {
+      return { ...stats, namingViolationTags: namingViolationCount };
+    }
+    const { namingViolationTags: _, ...rest } = stats;
+    return rest as typeof stats;
+  }, [stats, isNamingEnabled, namingViolationCount]);
+
+  const scores = computeScore(effectiveStats);
   const { overall, tagEfficiency, documentation, tagUsage } = scores;
   const namingCompliance = "namingCompliance" in scores ? scores.namingCompliance : undefined;
   const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
   const [animated, setAnimated] = useState(false);
   const [displayScore, setDisplayScore] = useState(0);
+  const prevOverallRef = useRef<number | null>(null);
+  const hasAnimated = useRef(false);
+
+  const handleNamingToggle = (enabled: boolean) => {
+    setIsNamingEnabled(enabled);
+  };
 
   useEffect(() => {
     const timeout = setTimeout(() => setAnimated(true), 300);
@@ -79,14 +98,16 @@ export function HealthScore({ projectId, stats, partialExportInfo, footer }: Hea
 
   useEffect(() => {
     if (!animated) return;
-    const duration = 1200;
+    const fromScore = hasAnimated.current ? (prevOverallRef.current ?? 0) : 0;
+    const duration = hasAnimated.current ? 300 : 1200;
+    hasAnimated.current = true;
+    prevOverallRef.current = overall;
     const start = performance.now();
     const step = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out curve
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayScore(Math.round(eased * overall));
+      setDisplayScore(Math.round(fromScore + eased * (overall - fromScore)));
       if (progress < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
@@ -202,7 +223,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, footer }: Hea
       </CardContent>
       {footer && (
         <div className="px-6 -mt-4 -mb-4">
-          {footer}
+          {typeof footer === "function" ? footer(handleNamingToggle) : footer}
         </div>
       )}
     </Card>
