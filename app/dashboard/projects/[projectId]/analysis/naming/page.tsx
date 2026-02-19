@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, AlertCircle, AlertTriangle, Info, CheckCircle, Settings } from "lucide-react";
+import { ArrowLeft, AlertCircle, AlertTriangle, Info, CheckCircle, Settings, Layers } from "lucide-react";
 import { ExportCSVButton } from "@/components/export-csv-button";
 import { RuleSetPicker } from "@/components/tools/rule-set-picker";
 
@@ -41,6 +41,28 @@ interface Violation {
   tagName: string;
   tagScope: string;
   message: string;
+}
+
+interface ScopeConflict {
+  tagName: string;
+  programs: string[];
+}
+
+function detectScopeConflicts(tags: { name: string; scope: string }[]): ScopeConflict[] {
+  const scopeMap = new Map<string, Set<string>>();
+  for (const tag of tags) {
+    if (!scopeMap.has(tag.name)) scopeMap.set(tag.name, new Set());
+    scopeMap.get(tag.name)!.add(tag.scope);
+  }
+
+  const conflicts: ScopeConflict[] = [];
+  for (const [name, scopes] of scopeMap) {
+    if (scopes.has("Controller") && scopes.size > 1) {
+      const programs = [...scopes].filter(s => s !== "Controller").sort();
+      conflicts.push({ tagName: name, programs });
+    }
+  }
+  return conflicts.sort((a, b) => a.tagName.localeCompare(b.tagName));
 }
 
 function validateTag(
@@ -400,6 +422,9 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     .select("name, scope")
     .in("file_id", fileIds);
 
+  // Detect scope conflicts
+  const scopeConflicts = detectScopeConflicts(tags || []);
+
   // Validate all tags
   const allViolations: Violation[] = [];
   for (const tag of tags || []) {
@@ -475,7 +500,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {allViolations.length > 0 && (
+          {(allViolations.length > 0 || scopeConflicts.length > 0) && (
             <ExportCSVButton
               filename="naming_validation.csv"
               data={[
@@ -486,6 +511,13 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                   v.tagScope,
                   v.ruleName,
                   describeViolation(v.tagName, v.pattern, v.ruleName),
+                ]),
+                ...scopeConflicts.map((c) => [
+                  "scope-conflict",
+                  c.tagName,
+                  `Controller + ${c.programs.join(", ")}`,
+                  "Scope Conflict",
+                  `Tag exists in both Controller and program scope(s): ${c.programs.join(", ")}`,
                 ]),
               ]}
             />
@@ -557,6 +589,12 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>Checked {tags?.length || 0} tags against {rules.length} active rules</span>
+              {scopeConflicts.length > 0 && (
+                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                  <Layers className="h-3 w-3 mr-1" />
+                  {scopeConflicts.length} scope conflict{scopeConflicts.length === 1 ? "" : "s"}
+                </Badge>
+              )}
               {effectiveRuleSet && (
                 <Badge variant="outline">
                   Rule set: {effectiveRuleSet.name}
@@ -587,6 +625,49 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
           </div>
         </CardContent>
       </Card>
+
+      {/* Scope Conflicts */}
+      {scopeConflicts.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-500">
+              <Layers className="h-5 w-5" />
+              Scope Conflicts
+              <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 ml-1">
+                {scopeConflicts.length}
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              These tags exist in both Controller scope and one or more Program scopes.
+              The program-scoped tag shadows the controller tag within that program.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tag Name</TableHead>
+                  <TableHead>Shadowed In</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {scopeConflicts.map((conflict) => (
+                  <TableRow key={conflict.tagName}>
+                    <TableCell className="font-mono text-sm">{conflict.tagName}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {conflict.programs.map((program) => (
+                          <Badge key={program} variant="secondary">{program}</Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Violations Table */}
       {filteredViolations.length > 0 ? (

@@ -18,6 +18,28 @@ interface Violation {
   message: string;
 }
 
+interface ScopeConflict {
+  tagName: string;
+  programs: string[];
+}
+
+function detectScopeConflicts(tags: { name: string; scope: string }[]): ScopeConflict[] {
+  const scopeMap = new Map<string, Set<string>>();
+  for (const tag of tags) {
+    if (!scopeMap.has(tag.name)) scopeMap.set(tag.name, new Set());
+    scopeMap.get(tag.name)!.add(tag.scope);
+  }
+
+  const conflicts: ScopeConflict[] = [];
+  for (const [name, scopes] of scopeMap) {
+    if (scopes.has("Controller") && scopes.size > 1) {
+      const programs = [...scopes].filter(s => s !== "Controller").sort();
+      conflicts.push({ tagName: name, programs });
+    }
+  }
+  return conflicts.sort((a, b) => a.tagName.localeCompare(b.tagName));
+}
+
 function validateTag(
   tagName: string,
   tagScope: string,
@@ -158,6 +180,9 @@ export async function GET(request: Request) {
       });
     }
 
+    // Detect scope conflicts
+    const scopeConflicts = detectScopeConflicts(tags);
+
     // Validate all tags
     const allViolations: Violation[] = [];
     for (const tag of tags) {
@@ -177,10 +202,12 @@ export async function GET(request: Request) {
       warnings: allViolations.filter((v) => v.severity === "warning").length,
       info: allViolations.filter((v) => v.severity === "info").length,
       total: allViolations.length,
+      scopeConflicts: scopeConflicts.length,
     };
 
     return NextResponse.json({
       violations: filteredViolations,
+      scopeConflicts,
       summary,
       tagsChecked: tags.length,
       rulesApplied: rules.length,
