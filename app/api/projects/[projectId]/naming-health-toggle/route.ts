@@ -18,31 +18,21 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const serviceSupabase = createServiceClient();
-
-    const { data: project } = await serviceSupabase
+    // Verify user can access this project (RLS enforces ownership/sharing)
+    const { data: project } = await supabase
       .from("projects")
-      .select("id, organization_id")
+      .select("id")
       .eq("id", projectId)
       .single();
 
     if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
-    }
-
-    const { data: membership } = await serviceSupabase
-      .from("organization_members")
-      .select("role")
-      .eq("organization_id", project.organization_id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (!membership) {
-      return NextResponse.json({ error: "Permission denied" }, { status: 403 });
+      return NextResponse.json({ error: "Project not found or access denied" }, { status: 404 });
     }
 
     const { enabled } = await request.json();
 
+    // Use service client for the update to bypass RLS
+    const serviceSupabase = createServiceClient();
     const { error } = await serviceSupabase
       .from("projects")
       .update({ naming_affects_health_score: !!enabled })
