@@ -536,73 +536,86 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           />
 
           {/* Summary Stats */}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-            <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
-              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription>Total Tags</CardDescription>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                  </div>
-                  <CardTitle className="text-3xl"><AnimatedCount value={stats.totalTags} /></CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
-            <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
-              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription>Total Rungs</CardDescription>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                  </div>
-                  <CardTitle className="text-3xl"><AnimatedCount value={stats.totalRungs} /></CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
-            <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
-              <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription>Tag Cross-References</CardDescription>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                  </div>
-                  <CardTitle className="text-3xl"><AnimatedCount value={stats.totalReferences} /></CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
-            <Link href={`/dashboard/projects/${projectId}/analysis/unused-tags`}>
-              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription>Unused Tags</CardDescription>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                  </div>
-                  <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.unusedTags} /></CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
-            <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
-              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription>Comment Coverage</CardDescription>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                  </div>
-                  <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.commentCoverage} suffix="%" /></CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
-            <Link href={`/dashboard/projects/${projectId}/analysis/tasks`}>
-              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${totalTasks === 0 ? "border-yellow-500/50" : ""}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardDescription>Tasks</CardDescription>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-                  </div>
-                  <CardTitle className={`text-3xl ${totalTasks === 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={totalTasks} /></CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Counts */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 px-1">Counts</h3>
+              <div className="grid gap-3 grid-cols-3">
+                <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
+                  <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardDescription>Tags</CardDescription>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+                      <CardTitle className="text-3xl"><AnimatedCount value={stats.totalTags} /></CardTitle>
+                    </CardHeader>
+                  </Card>
+                </Link>
+                <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
+                  <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardDescription>Rungs</CardDescription>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+                      <CardTitle className="text-3xl"><AnimatedCount value={stats.totalRungs} /></CardTitle>
+                    </CardHeader>
+                  </Card>
+                </Link>
+                <Link href={`/dashboard/projects/${projectId}/analysis/tasks`}>
+                  <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${totalTasks === 0 ? "border-yellow-500/50" : ""}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardDescription>Tasks</CardDescription>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+                      <CardTitle className={`text-3xl ${totalTasks === 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={totalTasks} /></CardTitle>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </div>
+            </div>
+
+            {/* Quality */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 px-1">Quality</h3>
+              <div className="grid gap-3 grid-cols-3">
+                <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
+                  <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardDescription>Cross-References</CardDescription>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+                      <CardTitle className="text-3xl"><AnimatedCount value={stats.totalReferences} /></CardTitle>
+                    </CardHeader>
+                  </Card>
+                </Link>
+                <Link href={`/dashboard/projects/${projectId}/analysis/unused-tags`}>
+                  <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.unusedTags > 0 ? "border-yellow-500/50" : ""}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardDescription>Unused Tags</CardDescription>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+                      <CardTitle className={`text-3xl ${stats.unusedTags > 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.unusedTags} /></CardTitle>
+                    </CardHeader>
+                  </Card>
+                </Link>
+                <Link href={`/dashboard/projects/${projectId}/analysis/comment-coverage`}>
+                  <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${stats.commentCoverage < 50 ? "border-yellow-500/50" : ""}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardDescription>Comments</CardDescription>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                      </div>
+                      <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.commentCoverage} suffix="%" /></CardTitle>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Visual Charts */}
