@@ -305,19 +305,34 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     rules = data || [];
   }
 
+  // Determine the picker's currentRuleSetId for cross-org
+  const pickerCurrentRuleSetId = isCrossOrg
+    ? (ruleSetParam === "project-default" ? "project-default" : (ruleSetParam || null))
+    : projectRuleSetId;
+
   if (rules.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={`/dashboard/projects/${projectId}/analysis`}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Naming Validation</h1>
-            <p className="text-muted-foreground">{project.name}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={`/dashboard/projects/${projectId}/analysis`}>
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Naming Validation</h1>
+              <p className="text-muted-foreground">{project.name}</p>
+            </div>
           </div>
+          <RuleSetPicker
+            projectId={projectId}
+            ruleSets={allRuleSets || []}
+            currentRuleSetId={pickerCurrentRuleSetId}
+            mode={isCrossOrg ? "preview" : "persist"}
+            isCrossOrg={isCrossOrg}
+            currentSeverityFilter={severityFilter}
+          />
         </div>
         <Card>
           <CardContent className="py-12 text-center">
@@ -435,11 +450,6 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     if (ruleSetParam) return `?ruleSet=${encodeURIComponent(ruleSetParam)}`;
     return "?";
   };
-
-  // Determine the picker's currentRuleSetId for cross-org
-  const pickerCurrentRuleSetId = isCrossOrg
-    ? (ruleSetParam === "project-default" ? "project-default" : (ruleSetParam || null))
-    : projectRuleSetId;
 
   return (
     <div className="space-y-6">
