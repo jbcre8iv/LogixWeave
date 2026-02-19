@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, FileCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { ProjectActions } from "@/components/projects/project-actions";
 import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -415,14 +415,6 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           />
           {fileIds.length > 0 && (
             <>
-              <div className="flex flex-col items-center gap-1">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
-                    <FileCheck className="h-3.5 w-3.5 mr-1.5" />
-                    Naming Validation
-                  </Link>
-                </Button>
-              </div>
               <div className="flex flex-col items-center gap-1">
                 <ExportXLSXButton
                   filename={`full_analysis_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`}
