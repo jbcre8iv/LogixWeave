@@ -570,7 +570,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
         </div>
       )}
 
-      {/* Template picker */}
+      {/* Template picker — dropdown per category */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Quick Start from Template</Label>
@@ -580,29 +580,42 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             </span>
           )}
         </div>
-        {RULE_TEMPLATES.map((group) => (
-          <div key={group.category} className="space-y-1.5">
-            <p className="text-xs text-muted-foreground font-medium">{group.category}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {group.templates.map((template) => (
-                <button
-                  key={template.name}
-                  type="button"
-                  onClick={() => handleTemplateClick(template)}
-                  className={cn(
-                    "inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                    selectedTemplateNames.includes(template.name)
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground"
+        <div className="flex flex-wrap gap-2">
+          {RULE_TEMPLATES.map((group) => (
+            <DropdownMenu key={group.category}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-xs">
+                  {group.category}
+                  {!editingRule && selectedTemplateNames.some((n) =>
+                    group.templates.some((t) => t.name === n)
+                  ) && (
+                    <Badge variant="secondary" className="ml-1.5 text-[10px] px-1 py-0">
+                      {selectedTemplateNames.filter((n) =>
+                        group.templates.some((t) => t.name === n)
+                      ).length}
+                    </Badge>
                   )}
-                >
-                  {template.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-64">
+                {group.templates.map((template) => (
+                  <DropdownMenuItem
+                    key={template.name}
+                    onClick={() => handleTemplateClick(template)}
+                    className={cn(
+                      selectedTemplateNames.includes(template.name) && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium">{template.name}</span>
+                      <span className="text-xs text-muted-foreground">{template.description}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ))}
+        </div>
       </div>
 
       <Separator />
@@ -627,7 +640,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                   handleAiGenerate();
                 }
               }}
-              placeholder="Describe a naming convention in plain English..."
+              placeholder="Describe a naming convention in your own words..."
               className="border-amber-500/20 focus-visible:ring-amber-500/30"
               disabled={aiLoading}
             />
