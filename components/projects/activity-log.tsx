@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -141,7 +141,7 @@ export function ActivityLog({ projectId }: ActivityLogProps) {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
 
-  const fetchActivities = async (loadMore = false) => {
+  const fetchActivities = useCallback(async (loadMore = false) => {
     if (loadMore) {
       setLoadingMore(true);
     } else {
@@ -170,11 +170,18 @@ export function ActivityLog({ projectId }: ActivityLogProps) {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [projectId, offset]);
 
   useEffect(() => {
     fetchActivities();
   }, [projectId]);
+
+  // Re-fetch when project is edited
+  useEffect(() => {
+    const handler = () => fetchActivities();
+    window.addEventListener("project-updated", handler);
+    return () => window.removeEventListener("project-updated", handler);
+  }, [fetchActivities]);
 
   const hasMore = activities.length < total;
 
