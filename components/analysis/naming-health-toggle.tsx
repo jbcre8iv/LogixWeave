@@ -44,29 +44,28 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
 
   return (
     <div className="rounded-lg border border-dashed p-3">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3">
         <Button variant="outline" size="sm" className="flex-shrink-0 mt-0.5" asChild>
           <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
             <FileCheck className="h-3.5 w-3.5 mr-1.5" />
             Naming Validation
           </Link>
         </Button>
-        <div className="flex items-start gap-2.5">
-          <div className="text-right space-y-0.5">
-            <label className="text-sm font-medium cursor-pointer" htmlFor="naming-health-toggle">
-              Include in health score
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Naming rule violations affect the Naming Compliance metric (20% of score).
-            </p>
-          </div>
-          <Switch
-            id="naming-health-toggle"
-            checked={enabled}
-            onCheckedChange={handleToggle}
-            disabled={isPending}
-            className="mt-0.5"
-          />
+        <span className="w-px self-stretch bg-border" />
+        <Switch
+          id="naming-health-toggle"
+          checked={enabled}
+          onCheckedChange={handleToggle}
+          disabled={isPending}
+          className="mt-1 flex-shrink-0"
+        />
+        <div className="space-y-0.5">
+          <label className="text-sm font-medium cursor-pointer" htmlFor="naming-health-toggle">
+            Include in health score
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Naming rule violations affect the Naming Compliance metric (20% of score).
+          </p>
         </div>
       </div>
     </div>
