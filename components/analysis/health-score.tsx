@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { Sparkles, Info } from "lucide-react";
 import type { PartialExportInfo } from "@/lib/partial-export";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+
+const NamingToggleContext = createContext<((enabled: boolean) => void) | null>(null);
+export function useNamingToggle() {
+  return useContext(NamingToggleContext);
+}
 
 interface HealthScoreProps {
   projectId: string;
@@ -20,7 +25,7 @@ interface HealthScoreProps {
   partialExportInfo?: PartialExportInfo;
   namingHealthEnabled?: boolean;
   namingViolationCount?: number;
-  footer?: React.ReactNode | ((onNamingToggle: (enabled: boolean) => void) => React.ReactNode);
+  footer?: React.ReactNode;
 }
 
 function computeScore(stats: HealthScoreProps["stats"]) {
@@ -222,9 +227,11 @@ export function HealthScore({ projectId, stats, partialExportInfo, namingHealthE
         </div>
       </CardContent>
       {footer && (
-        <div className="px-6 -mt-4 -mb-4">
-          {typeof footer === "function" ? footer(handleNamingToggle) : footer}
-        </div>
+        <NamingToggleContext.Provider value={handleNamingToggle}>
+          <div className="px-6 -mt-4 -mb-4">
+            {footer}
+          </div>
+        </NamingToggleContext.Provider>
       )}
     </Card>
   );

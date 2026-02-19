@@ -471,9 +471,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             partialExportInfo={partialExportInfo}
             namingHealthEnabled={namingAffectsHealthScore}
             namingViolationCount={namingViolationCount}
-            footer={(onNamingToggle) => (
-              <NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} onToggle={onNamingToggle} />
-            )}
+            footer={<NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} />}
           />
 
           {/* Summary Stats */}

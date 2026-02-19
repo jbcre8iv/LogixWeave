@@ -6,21 +6,22 @@ import Link from "next/link";
 import { FileCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { useNamingToggle } from "@/components/analysis/health-score";
 
 interface NamingHealthToggleProps {
   projectId: string;
   enabled: boolean;
-  onToggle?: (enabled: boolean) => void;
 }
 
-export function NamingHealthToggle({ projectId, enabled: initialEnabled, onToggle }: NamingHealthToggleProps) {
+export function NamingHealthToggle({ projectId, enabled: initialEnabled }: NamingHealthToggleProps) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const onScoreToggle = useNamingToggle();
 
   const handleToggle = async (checked: boolean) => {
     setEnabled(checked);
-    onToggle?.(checked);
+    onScoreToggle?.(checked);
     try {
       const res = await fetch(`/api/projects/${projectId}/naming-health-toggle`, {
         method: "PATCH",
@@ -29,7 +30,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled, onToggl
       });
       if (!res.ok) {
         setEnabled(!checked);
-        onToggle?.(!checked);
+        onScoreToggle?.(!checked);
         return;
       }
       startTransition(() => {
@@ -37,7 +38,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled, onToggl
       });
     } catch {
       setEnabled(!checked);
-      onToggle?.(!checked);
+      onScoreToggle?.(!checked);
     }
   };
 
