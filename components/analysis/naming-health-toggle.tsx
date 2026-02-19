@@ -35,7 +35,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
   };
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border p-3">
+    <div className="flex items-start gap-3 rounded-lg border border-dashed p-3">
       <Switch
         checked={enabled}
         onCheckedChange={handleToggle}

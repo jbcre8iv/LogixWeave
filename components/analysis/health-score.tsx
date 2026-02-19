@@ -18,6 +18,7 @@ interface HealthScoreProps {
     namingViolationTags?: number;
   };
   partialExportInfo?: PartialExportInfo;
+  footer?: React.ReactNode;
 }
 
 function computeScore(stats: HealthScoreProps["stats"]) {
@@ -62,7 +63,7 @@ function getColor(score: number): { ringHex: string; text: string; bg: string; p
   return { ringHex: "#ef4444", text: "text-red-600 dark:text-red-400", bg: "bg-red-500", progress: "[&_[data-slot=progress-indicator]]:bg-red-500" };
 }
 
-export function HealthScore({ projectId, stats, partialExportInfo }: HealthScoreProps) {
+export function HealthScore({ projectId, stats, partialExportInfo, footer }: HealthScoreProps) {
   const scores = computeScore(stats);
   const { overall, tagEfficiency, documentation, tagUsage } = scores;
   const namingCompliance = "namingCompliance" in scores ? scores.namingCompliance : undefined;
@@ -199,6 +200,11 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
           </div>
         </div>
       </CardContent>
+      {footer && (
+        <div className="px-6 pb-5 -mt-1">
+          {footer}
+        </div>
+      )}
     </Card>
   );
 }

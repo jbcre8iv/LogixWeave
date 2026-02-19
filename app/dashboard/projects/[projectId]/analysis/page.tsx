@@ -474,8 +474,12 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           </div>
 
           {/* Health Score */}
-          <HealthScore projectId={projectId} stats={stats} partialExportInfo={partialExportInfo} />
-          <NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} />
+          <HealthScore
+            projectId={projectId}
+            stats={stats}
+            partialExportInfo={partialExportInfo}
+            footer={<NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} />}
+          />
 
           {/* Summary Stats */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
