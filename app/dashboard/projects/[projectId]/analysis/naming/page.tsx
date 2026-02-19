@@ -327,63 +327,69 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
         <Card>
           <CardContent className="py-12 text-center">
             {isCrossOrg ? (
-              <>
-                <p className="text-muted-foreground mb-2">
-                  {useProjectOwnerRules
-                    ? "The project owner has no naming rules configured."
-                    : "You don\u2019t have any naming rules configured yet."}
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {useProjectOwnerRules
-                    ? "You can configure your own rules and apply them to this shared project."
-                    : "Create naming rules in your settings to validate tags on shared projects."}
-                </p>
-                <div className="flex items-center justify-center gap-3">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-muted-foreground">
+                    {useProjectOwnerRules
+                      ? "The project owner has no naming rules configured."
+                      : "You don\u2019t have any naming rules configured yet."}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {useProjectOwnerRules
+                      ? "You can configure your own rules and apply them to this shared project."
+                      : "Create naming rules in your settings to validate tags on shared projects."}
+                  </p>
+                </div>
+                <Button asChild>
+                  <Link href="/dashboard/settings/naming-rules">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configure Naming Rules
+                  </Link>
+                </Button>
+                <div className="flex items-center justify-center gap-3 pt-2 border-t">
+                  <span className="text-xs text-muted-foreground">Or switch rule set:</span>
                   <RuleSetPicker
                     projectId={projectId}
                     ruleSets={allRuleSets || []}
                     currentRuleSetId={pickerCurrentRuleSetId}
-                    mode={isCrossOrg ? "preview" : "persist"}
+                    mode="preview"
                     isCrossOrg={isCrossOrg}
                     currentSeverityFilter={severityFilter}
                   />
-                  <Button asChild>
-                    <Link href="/dashboard/settings/naming-rules">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configure Naming Rules
-                    </Link>
-                  </Button>
                   {!useProjectOwnerRules && (
-                    <Button variant="outline" asChild>
+                    <Button variant="ghost" size="sm" asChild>
                       <Link href={`?ruleSet=project-default${severityFilter ? `&severity=${severityFilter}` : ""}`}>
                         Try project owner&apos;s rules
                       </Link>
                     </Button>
                   )}
                 </div>
-              </>
+              </div>
             ) : (
-              <>
-                <p className="text-muted-foreground mb-4">
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
                   No active naming rules found in the current rule set.
                 </p>
-                <div className="flex items-center justify-center gap-3">
-                  <RuleSetPicker
-                    projectId={projectId}
-                    ruleSets={allRuleSets || []}
-                    currentRuleSetId={pickerCurrentRuleSetId}
-                    mode={isCrossOrg ? "preview" : "persist"}
-                    isCrossOrg={isCrossOrg}
-                    currentSeverityFilter={severityFilter}
-                  />
-                  <Button asChild>
-                    <Link href="/dashboard/settings/naming-rules">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configure Naming Rules
-                    </Link>
-                  </Button>
-                </div>
-              </>
+                <Button asChild>
+                  <Link href="/dashboard/settings/naming-rules">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configure Naming Rules
+                  </Link>
+                </Button>
+                {(allRuleSets || []).length > 1 && (
+                  <div className="flex items-center justify-center gap-3 pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">Or switch rule set:</span>
+                    <RuleSetPicker
+                      projectId={projectId}
+                      ruleSets={allRuleSets || []}
+                      currentRuleSetId={pickerCurrentRuleSetId}
+                      mode="persist"
+                      isCrossOrg={isCrossOrg}
+                      currentSeverityFilter={severityFilter}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
