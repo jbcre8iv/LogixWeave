@@ -38,7 +38,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
   };
 
   return (
-    <div className="rounded-lg border border-dashed p-3 space-y-2">
+    <div className="rounded-lg border border-dashed p-3 space-y-3">
       <Button variant="outline" size="sm" asChild>
         <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
           <FileCheck className="h-3.5 w-3.5 mr-1.5" />
