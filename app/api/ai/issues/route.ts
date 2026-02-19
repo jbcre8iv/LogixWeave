@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { findIssues, generateHash, AILanguage } from "@/lib/ai/claude-client";
+import { logActivity } from "@/lib/activity-log";
 
 export async function POST(request: Request) {
   try {
@@ -166,6 +167,15 @@ export async function POST(request: Request) {
       output_tokens: 1000,
       total_tokens: 2000,
       cached: false,
+    });
+
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "ai_analysis_run",
+      targetType: "analysis",
+      targetName: "issues",
     });
 
     return NextResponse.json({

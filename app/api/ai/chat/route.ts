@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { logActivity } from "@/lib/activity-log";
 import { AILanguage, AI_LANGUAGES } from "@/lib/ai/claude-client";
 
 interface ChatMessage {
@@ -322,6 +323,15 @@ Available tools (use exact URLs below):
           .eq("id", conversationId);
       }
     }
+
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "ai_analysis_run",
+      targetType: "analysis",
+      targetName: "chat",
+    });
 
     return NextResponse.json({
       reply: textContent.text,

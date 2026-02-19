@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 export async function createOrganization(name: string, userId: string) {
   // Use service client to bypass RLS for initial organization setup
@@ -125,6 +126,16 @@ export async function createProject(formData: FormData): Promise<{ error?: strin
     return { error: `Failed to create project: ${error.message}` };
   }
 
+  await logActivity({
+    projectId: project.id,
+    userId: user.id,
+    userEmail: user.email,
+    action: "project_created",
+    targetType: "project",
+    targetId: project.id,
+    targetName: project.name,
+  });
+
   revalidatePath("/dashboard/projects");
   redirect(`/dashboard/projects/${project.id}`);
 }
@@ -158,6 +169,16 @@ export async function updateProject(projectId: string, formData: FormData) {
   if (error) {
     throw new Error(error.message);
   }
+
+  await logActivity({
+    projectId,
+    userId: user.id,
+    userEmail: user.email,
+    action: "project_updated",
+    targetType: "project",
+    targetId: projectId,
+    targetName: name.trim(),
+  });
 
   revalidatePath(`/dashboard/projects/${projectId}`);
   revalidatePath("/dashboard/projects");

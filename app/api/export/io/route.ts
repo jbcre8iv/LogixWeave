@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 export async function GET(request: Request) {
   try {
@@ -117,6 +118,15 @@ export async function GET(request: Request) {
     const csv = [headers.join(","), ...rows].join("\n");
 
     const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, "_")}_io_modules_${new Date().toISOString().split("T")[0]}.csv`;
+
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "tag_exported",
+      targetType: "export",
+      targetName: "I/O modules",
+    });
 
     return new NextResponse(csv, {
       headers: {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 interface DocumentationSection {
   tags?: boolean;
@@ -331,6 +332,15 @@ export async function POST(request: Request) {
 
     const date = new Date().toISOString().split("T")[0];
     const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, "_")}_Documentation_${date}.md`;
+
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "documentation_exported",
+      targetType: "export",
+      targetName: "markdown",
+    });
 
     return new NextResponse(markdown, {
       headers: {

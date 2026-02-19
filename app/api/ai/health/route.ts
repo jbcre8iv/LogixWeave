@@ -5,6 +5,7 @@ import {
   generateHash,
   AILanguage,
 } from "@/lib/ai/claude-client";
+import { logActivity } from "@/lib/activity-log";
 import { analyzeExportTypes } from "@/lib/partial-export";
 
 export async function POST(request: Request) {
@@ -442,6 +443,15 @@ export async function POST(request: Request) {
       health_scores: healthScores,
       tokens_used: 2000,
     }).then(() => {});
+
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "ai_analysis_run",
+      targetType: "analysis",
+      targetName: "health",
+    });
 
     return NextResponse.json({
       result,

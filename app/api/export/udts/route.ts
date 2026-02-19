@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logActivity } from "@/lib/activity-log";
 
 function escapeCSV(value: string | null | undefined): string {
   if (value === null || value === undefined) return "";
@@ -103,6 +104,15 @@ export async function GET(request: Request) {
 
     const date = new Date().toISOString().split("T")[0];
     const filename = `${project.name.replace(/[^a-zA-Z0-9]/g, "_")}_UDTs_${date}.csv`;
+
+    await logActivity({
+      projectId,
+      userId: user.id,
+      userEmail: user.email,
+      action: "tag_exported",
+      targetType: "export",
+      targetName: "UDTs",
+    });
 
     return new NextResponse(csv, {
       headers: {
