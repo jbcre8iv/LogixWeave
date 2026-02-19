@@ -325,9 +325,9 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
           </div>
         </div>
         <Card>
-          <CardContent className="py-12 text-center">
+          <CardContent className="py-16 text-center">
             {isCrossOrg ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
                   <p className="text-muted-foreground">
                     {useProjectOwnerRules
@@ -340,13 +340,15 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                       : "Create naming rules in your settings to validate tags on shared projects."}
                   </p>
                 </div>
-                <Button asChild>
-                  <Link href="/dashboard/settings/naming-rules">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configure Naming Rules
-                  </Link>
-                </Button>
-                <div className="flex flex-col items-center gap-2 pt-2 border-t">
+                <div>
+                  <Button asChild>
+                    <Link href="/dashboard/settings/naming-rules">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configure Naming Rules
+                    </Link>
+                  </Button>
+                </div>
+                <div className="flex flex-col items-center gap-2.5 pt-6 border-t">
                   <span className="text-xs text-muted-foreground">Or switch rule set</span>
                   <RuleSetPicker
                     projectId={projectId}
@@ -359,18 +361,20 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <p className="text-muted-foreground">
                   No active naming rules found in the current rule set.
                 </p>
-                <Button asChild>
-                  <Link href="/dashboard/settings/naming-rules">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configure Naming Rules
-                  </Link>
-                </Button>
+                <div>
+                  <Button asChild>
+                    <Link href="/dashboard/settings/naming-rules">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configure Naming Rules
+                    </Link>
+                  </Button>
+                </div>
                 {(allRuleSets || []).length > 1 && (
-                  <div className="flex flex-col items-center gap-2 pt-2 border-t">
+                  <div className="flex flex-col items-center gap-2.5 pt-6 border-t">
                     <span className="text-xs text-muted-foreground">Or switch rule set</span>
                     <RuleSetPicker
                       projectId={projectId}
