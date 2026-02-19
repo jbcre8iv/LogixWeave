@@ -1088,29 +1088,11 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       {/* Active rule set content */}
       {activeRuleSet && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          {activeRuleSet.description && (
             <p className="text-sm text-muted-foreground">
-              {activeRuleSet.description && activeRuleSet.description}
-              {activeRuleSet.description && " \u00b7 "}
-              {activeRuleSet.naming_rules.length} rule{activeRuleSet.naming_rules.length === 1 ? "" : "s"}
+              {activeRuleSet.description}
             </p>
-            {isAdmin && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  setEditingSet(activeRuleSet);
-                  setSetFormData({
-                    name: activeRuleSet.name,
-                    description: activeRuleSet.description || "",
-                  });
-                }}
-              >
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              </Button>
-            )}
-          </div>
+          )}
 
           {/* Rules table */}
           {activeRuleSet.naming_rules.length === 0 ? (
