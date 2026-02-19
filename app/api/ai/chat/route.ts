@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       .map((v: { id: string }) => v.id);
 
     // Gather project context in parallel (filter by version_id for current versions only)
-    const [tagsResult, routinesResult, udtsResult, aoisResult, rungsResult, refsResult] =
+    const [tagsResult, routinesResult, udtsResult, aoisResult, rungsResult, refsResult, tasksResult] =
       await Promise.all([
         supabase
           .from("parsed_tags")
@@ -116,6 +116,10 @@ export async function POST(request: Request) {
           .select("tag_name, routine_name, program_name, rung_number, usage_type")
           .in("file_id", fileIds)
           .limit(1000),
+        supabase
+          .from("parsed_tasks")
+          .select("name, type, rate, priority, watchdog, scheduled_programs")
+          .in("version_id", versionIds),
       ]);
 
     const tags = tagsResult.data || [];
@@ -124,6 +128,7 @@ export async function POST(request: Request) {
     const aois = aoisResult.data || [];
     const rungs = rungsResult.data || [];
     const tagRefs = refsResult.data || [];
+    const tasks = tasksResult.data || [];
 
     // Build system prompt
     const languageInstruction =
@@ -144,6 +149,7 @@ export async function POST(request: Request) {
       unusedTags: `/dashboard/projects/${pid}/analysis/unused-tags`,
       naming: `/dashboard/projects/${pid}/analysis/naming`,
       commentCoverage: `/dashboard/projects/${pid}/analysis/comment-coverage`,
+      tasks: `/dashboard/projects/${pid}/analysis/tasks`,
       explain: `/dashboard/projects/${pid}/ai/explain`,
       issues: `/dashboard/projects/${pid}/ai/issues`,
       search: `/dashboard/projects/${pid}/ai/search`,
@@ -199,6 +205,7 @@ ${routines.map((r) => `- ${r.name} (program: ${r.program_name}, type: ${r.type},
 
 ${udts.length > 0 ? `USER-DEFINED TYPES (${udts.length}):\n${udts.map((u) => `- ${u.name}${u.description ? ` — ${u.description}` : ""}`).join("\n")}\n` : ""}
 ${aois.length > 0 ? `ADD-ON INSTRUCTIONS (${aois.length}):\n${aois.map((a) => `- ${a.name}${a.description ? ` — ${a.description}` : ""}`).join("\n")}\n` : ""}
+${tasks.length > 0 ? `TASKS (${tasks.length}):\n${tasks.map((t) => `- ${t.name} (${t.type}${t.type === "PERIODIC" && t.rate ? `, rate: ${t.rate}ms` : ""}, priority: ${t.priority}${t.watchdog ? `, watchdog: ${t.watchdog}ms` : ""}, programs: ${(t.scheduled_programs || []).join(", ") || "none"})`).join("\n")}\n` : ""}
 LADDER LOGIC (${rungs.length} rungs):
 ${rungsSection}
 
@@ -233,6 +240,7 @@ Available tools (use exact URLs below):
 - Unused Tags: ${toolLinks.unusedTags}
 - Naming Conventions: ${toolLinks.naming}
 - Comment Coverage: ${toolLinks.commentCoverage}
+- Task Configuration: ${toolLinks.tasks}
 - Logic Explainer: ${toolLinks.explain}
 - Issue Finder: ${toolLinks.issues}
 - AI Search: ${toolLinks.search}

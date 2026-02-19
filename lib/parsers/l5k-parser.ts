@@ -5,6 +5,7 @@ import type {
   ParsedRoutine,
   ParsedRung,
   ParsedTagReference,
+  ParsedTask,
   ParsedUDT,
   ParsedUDTMember,
   ParsedAOI,
@@ -628,6 +629,56 @@ function parseL5KPrograms(controllerBlock: string): {
   return { tags, routines, rungs, tagRefs };
 }
 
+function parseL5KTasks(controllerBlock: string): ParsedTask[] {
+  const tasks: ParsedTask[] = [];
+  const taskBlocks = extractBlocks(controllerBlock, "TASK");
+
+  // Filter out TASK blocks that are inside PROGRAM blocks
+  const programBlocks = extractBlocks(controllerBlock, "PROGRAM");
+
+  for (const block of taskBlocks) {
+    const taskStart = controllerBlock.indexOf(block);
+    let isInsideProgram = false;
+    for (const progBlock of programBlocks) {
+      const progStart = controllerBlock.indexOf(progBlock);
+      const progEnd = progStart + progBlock.length;
+      if (taskStart > progStart && taskStart < progEnd) {
+        isInsideProgram = true;
+        break;
+      }
+    }
+    if (isInsideProgram) continue;
+
+    const { name, attrString } = parseBlockHeader(block, "TASK");
+    const attrs = parseAttributes(attrString);
+
+    // Extract scheduled programs from SCHEDULED_PROGRAM lines
+    const scheduledPrograms: string[] = [];
+    const lines = block.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      const spMatch = trimmed.match(/^SCHEDULED_PROGRAM\s+(\S+)/);
+      if (spMatch) {
+        scheduledPrograms.push(spMatch[1]);
+      }
+    }
+
+    tasks.push({
+      name,
+      type: (attrs["Type"] || "CONTINUOUS").toUpperCase(),
+      rate: attrs["Rate"] ? parseInt(attrs["Rate"], 10) : undefined,
+      priority: parseInt(attrs["Priority"] || "10", 10),
+      watchdog: attrs["Watchdog"] ? parseInt(attrs["Watchdog"], 10) : undefined,
+      inhibitTask: attrs["InhibitTask"] === "true",
+      disableUpdateOutputs: attrs["DisableUpdateOutputs"] === "true",
+      description: attrs["Description"],
+      scheduledPrograms,
+    });
+  }
+
+  return tasks;
+}
+
 function parseL5KAOIs(controllerBlock: string): ParsedAOI[] {
   const aois: ParsedAOI[] = [];
   const aoiBlocks = extractBlocks(controllerBlock, "ADD_ON_INSTRUCTION_DEFINITION");
@@ -830,6 +881,7 @@ export function parseL5K(textContent: string): ParsedL5XData {
     tagReferences: [],
     udts: [],
     aois: [],
+    tasks: [],
     metadata: {},
   };
 
@@ -881,6 +933,9 @@ export function parseL5K(textContent: string): ParsedL5XData {
 
     // Parse I/O modules
     result.modules = parseL5KModules(controllerBlock);
+
+    // Parse tasks
+    result.tasks = parseL5KTasks(controllerBlock);
 
     return result;
   } catch (error) {

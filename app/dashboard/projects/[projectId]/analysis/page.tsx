@@ -112,6 +112,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     commentCoverage: number;
     totalReferences: number;
     namingViolationTags?: number;
+    taskConfigScore?: number;
   } = {
     totalTags: 0,
     unusedTags: 0,
@@ -120,6 +121,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     commentCoverage: 0,
     totalReferences: 0,
   };
+
+  let totalTasks = 0;
 
   let namingViolationCount = 0;
   let exportSheets: ExportSheet[] = [];
@@ -159,7 +162,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           .eq("organization_id", rulesOrgId)
           .eq("is_active", true);
 
-    const [tagsResult, referencesResult, rungsResult, rulesResult] = await Promise.all([
+    const [tagsResult, referencesResult, rungsResult, rulesResult, tasksResult, routinesResult] = await Promise.all([
       supabase
         .from("parsed_tags")
         .select("id, name, data_type, scope, description, usage")
@@ -176,12 +179,22 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         .select("id, comment, program_name, routine_name")
         .in("file_id", fileIds),
       namingRulesQuery,
+      supabase
+        .from("parsed_tasks")
+        .select("name, type, rate, priority, watchdog, scheduled_programs, inhibit_task, disable_update_outputs")
+        .in("file_id", fileIds),
+      supabase
+        .from("parsed_routines")
+        .select("program_name")
+        .in("file_id", fileIds),
     ]);
 
     const allTags = tagsResult.data || [];
     const references = referencesResult.data || [];
     const rungs = rungsResult.data || [];
     const namingRules = rulesResult.data || [];
+    const allTasks = tasksResult.data || [];
+    const allRoutines = routinesResult.data || [];
 
     const referencedTagNames = new Set(references.map((r) => r.tag_name));
     const unusedTags = allTags.filter((tag) => {
@@ -221,6 +234,34 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     // Only include in stats for initial server render when toggle is on
     const namingViolationTags = namingAffectsHealthScore ? namingViolationCount : undefined;
 
+    // Compute task config score (only when tasks exist)
+    let taskConfigScore: number | undefined;
+    if (allTasks.length > 0) {
+      let tScore = 100;
+      const emptyTasks = allTasks.filter((t) => !t.scheduled_programs || t.scheduled_programs.length === 0);
+      tScore -= Math.min(40, emptyTasks.length * 20);
+
+      const scheduledProgramNames = new Set(allTasks.flatMap((t) => t.scheduled_programs || []));
+      const allProgramNames = new Set(allRoutines.map((r) => r.program_name));
+      const orphanedPrograms = [...allProgramNames].filter((p) => !scheduledProgramNames.has(p));
+      tScore -= Math.min(50, orphanedPrograms.length * 25);
+
+      const periodicTasks = allTasks.filter((t) => t.type === "PERIODIC");
+      for (const pt of periodicTasks) {
+        if (pt.rate !== null && pt.rate !== undefined && (pt.rate < 1 || pt.rate > 30000)) {
+          tScore -= 15;
+        }
+      }
+      for (const t of allTasks) {
+        if (t.watchdog !== null && t.watchdog !== undefined && t.watchdog > 5000) {
+          tScore -= 10;
+        }
+      }
+      taskConfigScore = Math.max(0, Math.min(100, tScore));
+    }
+
+    totalTasks = allTasks.length;
+
     stats = {
       totalTags: allTags.length,
       unusedTags: unusedTags.length,
@@ -229,6 +270,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       commentCoverage: rungs.length > 0 ? Math.round((commentedRungs / rungs.length) * 100) : 0,
       totalReferences: references.length,
       namingViolationTags,
+      taskConfigScore,
     };
 
     // --- Build multi-sheet XLSX export ---
@@ -332,6 +374,25 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         data: [
           ["Severity", "Tag Name", "Scope", "Rule"],
           ...violations,
+        ],
+      });
+    }
+
+    // Sheet 6: Tasks
+    if (allTasks.length > 0) {
+      exportSheets.push({
+        name: "Tasks",
+        data: [
+          ["Name", "Type", "Rate (ms)", "Priority", "Watchdog (ms)", "Inhibited", "Scheduled Programs"],
+          ...allTasks.map((t) => [
+            t.name,
+            t.type,
+            t.rate != null ? String(t.rate) : "",
+            String(t.priority),
+            t.watchdog != null ? String(t.watchdog) : "",
+            t.inhibit_task ? "Yes" : "No",
+            (t.scheduled_programs || []).join(", "),
+          ]),
         ],
       });
     }
@@ -475,7 +536,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           />
 
           {/* Summary Stats */}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
               <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                 <CardHeader className="pb-2">
@@ -528,6 +589,17 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                     <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                   </div>
                   <CardTitle className={`text-3xl ${stats.commentCoverage < 50 ? "text-yellow-500" : ""}`}><AnimatedCount value={stats.commentCoverage} suffix="%" /></CardTitle>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link href={`/dashboard/projects/${projectId}/analysis/tasks`}>
+              <Card className={`h-full hover:bg-accent/50 transition-colors cursor-pointer group ${totalTasks === 0 ? "border-yellow-500/50" : ""}`}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardDescription>Tasks</CardDescription>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+                  </div>
+                  <CardTitle className={`text-3xl ${totalTasks === 0 ? "text-yellow-500" : ""}`}><AnimatedCount value={totalTasks} /></CardTitle>
                 </CardHeader>
               </Card>
             </Link>

@@ -82,6 +82,18 @@ export interface ParsedAOILocalTag {
   description?: string;
 }
 
+export interface ParsedTask {
+  name: string;
+  type: string;           // "CONTINUOUS" | "PERIODIC" | "EVENT"
+  rate?: number;          // milliseconds (Periodic tasks)
+  priority: number;       // 1-15
+  watchdog?: number;      // ms
+  inhibitTask?: boolean;
+  disableUpdateOutputs?: boolean;
+  description?: string;
+  scheduledPrograms: string[];  // ordered list of program names
+}
+
 export interface ParsedIOModule {
   name: string;
   catalogNumber?: string;
@@ -106,6 +118,7 @@ export interface ParsedL5XData {
   tagReferences: ParsedTagReference[];
   udts: ParsedUDT[];
   aois: ParsedAOI[];
+  tasks: ParsedTask[];
   metadata: {
     projectName?: string;
     processorType?: string;
@@ -176,6 +189,20 @@ export interface L5XAOI {
   };
 }
 
+export interface L5XTask {
+  "@_Name"?: string;
+  "@_Type"?: string;
+  "@_Rate"?: string;
+  "@_Priority"?: string;
+  "@_Watchdog"?: string;
+  "@_InhibitTask"?: string;
+  "@_DisableUpdateOutputs"?: string;
+  Description?: string | { "#text"?: string };
+  ScheduledPrograms?: {
+    ScheduledProgram?: { "@_Name"?: string } | { "@_Name"?: string }[];
+  };
+}
+
 export interface L5XController {
   "@_Name"?: string;
   "@_ProcessorType"?: string;
@@ -194,6 +221,9 @@ export interface L5XController {
   };
   AddOnInstructionDefinitions?: {
     AddOnInstructionDefinition?: L5XAOI | L5XAOI[];
+  };
+  Tasks?: {
+    Task?: L5XTask | L5XTask[];
   };
 }
 

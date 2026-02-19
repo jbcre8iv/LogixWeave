@@ -21,6 +21,7 @@ interface HealthScoreProps {
     totalReferences: number;
     totalRungs: number;
     namingViolationTags?: number;
+    taskConfigScore?: number;
   };
   partialExportInfo?: PartialExportInfo;
   namingHealthEnabled?: boolean;
@@ -39,21 +40,42 @@ function computeScore(stats: HealthScoreProps["stats"]) {
       ? Math.min(100, (stats.totalReferences / stats.totalTags) * 20)
       : 0;
 
-  if (stats.namingViolationTags !== undefined) {
-    const namingCompliance = stats.totalTags > 0
-      ? Math.max(0, ((stats.totalTags - stats.namingViolationTags) / stats.totalTags) * 100)
-      : 100;
-    const overall = Math.round(
-      tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance * 0.2 + tagUsage * 0.2
+  const hasNaming = stats.namingViolationTags !== undefined;
+  const hasTaskConfig = stats.taskConfigScore !== undefined;
+
+  const namingCompliance = hasNaming && stats.totalTags > 0
+    ? Math.max(0, ((stats.totalTags - stats.namingViolationTags!) / stats.totalTags) * 100)
+    : hasNaming ? 100 : undefined;
+
+  const taskConfig = hasTaskConfig ? stats.taskConfigScore : undefined;
+
+  let overall: number;
+  if (hasNaming && hasTaskConfig) {
+    overall = Math.round(
+      tagEfficiency * 0.25 + documentation * 0.25 + namingCompliance! * 0.15 + tagUsage * 0.15 + taskConfig! * 0.2
     );
-    return { overall, tagEfficiency: Math.round(tagEfficiency), documentation: Math.round(documentation), namingCompliance: Math.round(namingCompliance), tagUsage: Math.round(tagUsage) };
+  } else if (hasNaming) {
+    overall = Math.round(
+      tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance! * 0.2 + tagUsage * 0.2
+    );
+  } else if (hasTaskConfig) {
+    overall = Math.round(
+      tagEfficiency * 0.3 + documentation * 0.3 + tagUsage * 0.2 + taskConfig! * 0.2
+    );
+  } else {
+    overall = Math.round(
+      tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
+    );
   }
 
-  const overall = Math.round(
-    tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
-  );
-
-  return { overall, tagEfficiency: Math.round(tagEfficiency), documentation: Math.round(documentation), tagUsage: Math.round(tagUsage) };
+  return {
+    overall,
+    tagEfficiency: Math.round(tagEfficiency),
+    documentation: Math.round(documentation),
+    ...(namingCompliance !== undefined && { namingCompliance: Math.round(namingCompliance) }),
+    tagUsage: Math.round(tagUsage),
+    ...(taskConfig !== undefined && { taskConfig: Math.round(taskConfig) }),
+  };
 }
 
 function getGrade(score: number): { letter: string; feedback: string } {
@@ -85,6 +107,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, namingHealthE
   const scores = computeScore(effectiveStats);
   const { overall, tagEfficiency, documentation, tagUsage } = scores;
   const namingCompliance = "namingCompliance" in scores ? scores.namingCompliance : undefined;
+  const taskConfig = "taskConfig" in scores ? scores.taskConfig : undefined;
   const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
   const [animated, setAnimated] = useState(false);
@@ -129,6 +152,9 @@ export function HealthScore({ projectId, stats, partialExportInfo, namingHealthE
       ? [{ label: "Naming Compliance (rule violations)", value: namingCompliance }]
       : []),
     { label: "Tag Usage (reference density)", value: tagUsage },
+    ...(taskConfig !== undefined
+      ? [{ label: "Task Configuration (program scheduling)", value: taskConfig }]
+      : []),
   ];
 
   return (
@@ -203,7 +229,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, namingHealthE
           <div className="flex-1 w-full space-y-4">
             <div className="mb-1">
               <h3 className="text-lg font-semibold">Project Health</h3>
-              <p className="text-sm text-muted-foreground">Weighted score across tag efficiency, documentation{namingCompliance !== undefined ? ", naming compliance," : ","} and usage</p>
+              <p className="text-sm text-muted-foreground">Weighted score across tag efficiency, documentation{namingCompliance !== undefined ? ", naming compliance," : ","} usage{taskConfig !== undefined ? ", and task configuration" : ""}</p>
             </div>
             {metrics.map((m) => {
               const metricColor = getColor(m.value);

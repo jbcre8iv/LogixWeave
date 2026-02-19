@@ -6,6 +6,7 @@ import type {
   ParsedRoutine,
   ParsedRung,
   ParsedTagReference,
+  ParsedTask,
   ParsedUDT,
   ParsedUDTMember,
   ParsedAOI,
@@ -17,6 +18,7 @@ import type {
   L5XRoutine,
   L5XRung,
   L5XModule,
+  L5XTask,
   L5XUDT,
   L5XUDTMember,
   L5XAOI,
@@ -84,6 +86,24 @@ function parseModule(module: L5XModule): ParsedIOModule {
     connectionInfo: module.Communications
       ? { communications: module.Communications }
       : undefined,
+  };
+}
+
+function parseTask(task: L5XTask): ParsedTask {
+  const scheduledPrograms = ensureArray(task.ScheduledPrograms?.ScheduledProgram)
+    .map((sp) => sp["@_Name"] || "")
+    .filter(Boolean);
+
+  return {
+    name: task["@_Name"] || "",
+    type: (task["@_Type"] || "CONTINUOUS").toUpperCase(),
+    rate: task["@_Rate"] ? parseInt(task["@_Rate"], 10) : undefined,
+    priority: parseInt(task["@_Priority"] || "10", 10),
+    watchdog: task["@_Watchdog"] ? parseInt(task["@_Watchdog"], 10) : undefined,
+    inhibitTask: task["@_InhibitTask"] === "true",
+    disableUpdateOutputs: task["@_DisableUpdateOutputs"] === "true",
+    description: getDescription(task.Description),
+    scheduledPrograms,
   };
 }
 
@@ -275,6 +295,7 @@ export function parseL5X(xmlContent: string): ParsedL5XData {
     tagReferences: [],
     udts: [],
     aois: [],
+    tasks: [],
     metadata: {},
   };
 
@@ -354,6 +375,12 @@ export function parseL5X(xmlContent: string): ParsedL5XData {
     const modules = ensureArray(controller.Modules?.Module);
     for (const module of modules) {
       result.modules.push(parseModule(module));
+    }
+
+    // Parse tasks
+    const tasks = ensureArray(controller.Tasks?.Task);
+    for (const task of tasks) {
+      result.tasks.push(parseTask(task));
     }
 
     return result;

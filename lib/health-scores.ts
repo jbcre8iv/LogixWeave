@@ -7,6 +7,7 @@ interface HealthScores {
   documentation: number;
   namingCompliance?: number;
   tagUsage: number;
+  taskConfig?: number;
   hasPartialExports?: boolean;
 }
 
@@ -16,6 +17,7 @@ function computeScore(stats: {
   commentCoverage: number;
   totalReferences: number;
   namingViolationTags?: number;
+  taskConfigScore?: number;
 }): HealthScores {
   const tagEfficiency =
     stats.totalTags > 0
@@ -27,35 +29,46 @@ function computeScore(stats: {
       ? Math.min(100, (stats.totalReferences / stats.totalTags) * 20)
       : 0;
 
-  // When namingViolationTags is provided, use 4-metric weights (30/30/20/20)
-  // Otherwise fall back to original 3-metric weights (40/35/25)
-  if (stats.namingViolationTags !== undefined) {
-    const namingCompliance = stats.totalTags > 0
-      ? Math.max(0, ((stats.totalTags - stats.namingViolationTags) / stats.totalTags) * 100)
-      : 100;
+  const hasNaming = stats.namingViolationTags !== undefined;
+  const hasTaskConfig = stats.taskConfigScore !== undefined;
 
-    const overall = Math.round(
-      tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance * 0.2 + tagUsage * 0.2
+  const namingCompliance = hasNaming && stats.totalTags > 0
+    ? Math.max(0, ((stats.totalTags - stats.namingViolationTags!) / stats.totalTags) * 100)
+    : hasNaming ? 100 : undefined;
+
+  const taskConfig = hasTaskConfig ? stats.taskConfigScore : undefined;
+
+  // Weight model depends on which optional metrics are present
+  let overall: number;
+  if (hasNaming && hasTaskConfig) {
+    // 5-metric: 25/25/15/15/20
+    overall = Math.round(
+      tagEfficiency * 0.25 + documentation * 0.25 + namingCompliance! * 0.15 + tagUsage * 0.15 + taskConfig! * 0.2
     );
-
-    return {
-      overall,
-      tagEfficiency: Math.round(tagEfficiency),
-      documentation: Math.round(documentation),
-      namingCompliance: Math.round(namingCompliance),
-      tagUsage: Math.round(tagUsage),
-    };
+  } else if (hasNaming) {
+    // 4-metric (naming): 30/30/20/20
+    overall = Math.round(
+      tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance! * 0.2 + tagUsage * 0.2
+    );
+  } else if (hasTaskConfig) {
+    // 4-metric (tasks): 30/30/20/20
+    overall = Math.round(
+      tagEfficiency * 0.3 + documentation * 0.3 + tagUsage * 0.2 + taskConfig! * 0.2
+    );
+  } else {
+    // 3-metric: 40/35/25
+    overall = Math.round(
+      tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
+    );
   }
-
-  const overall = Math.round(
-    tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
-  );
 
   return {
     overall,
     tagEfficiency: Math.round(tagEfficiency),
     documentation: Math.round(documentation),
+    ...(namingCompliance !== undefined && { namingCompliance: Math.round(namingCompliance) }),
     tagUsage: Math.round(tagUsage),
+    ...(taskConfig !== undefined && { taskConfig: Math.round(taskConfig) }),
   };
 }
 
@@ -181,7 +194,7 @@ export async function getProjectHealthScores(
 
     const allFileIds = (files || []).map((f) => f.id);
     if (allFileIds.length > 0) {
-      const [tagsResult, referencesResult, rungsResult] = await Promise.all([
+      const [tagsResult, referencesResult, rungsResult, tasksResult, routinesResult] = await Promise.all([
         supabase
           .from("parsed_tags")
           .select("name, scope, file_id")
@@ -193,6 +206,14 @@ export async function getProjectHealthScores(
         supabase
           .from("parsed_rungs")
           .select("comment, file_id")
+          .in("file_id", allFileIds),
+        supabase
+          .from("parsed_tasks")
+          .select("name, type, rate, priority, watchdog, scheduled_programs, file_id")
+          .in("file_id", allFileIds),
+        supabase
+          .from("parsed_routines")
+          .select("program_name, file_id")
           .in("file_id", allFileIds),
       ]);
 
@@ -252,12 +273,49 @@ export async function getProjectHealthScores(
           }
         }
 
+        // Compute task config score (only when tasks exist)
+        const tasks = (tasksResult.data || []).filter((t) => projFileIds.has(t.file_id));
+        const projectRoutines = (routinesResult.data || []).filter((r) => projFileIds.has(r.file_id));
+        let taskConfigScore: number | undefined;
+
+        if (tasks.length > 0) {
+          let score = 100;
+
+          // Check for empty tasks (no scheduled programs)
+          const emptyTasks = tasks.filter((t) => !t.scheduled_programs || t.scheduled_programs.length === 0);
+          score -= Math.min(40, emptyTasks.length * 20);
+
+          // Check for orphaned programs
+          const scheduledProgramNames = new Set(tasks.flatMap((t) => t.scheduled_programs || []));
+          const allProgramNames = new Set(projectRoutines.map((r) => r.program_name));
+          const orphanedPrograms = [...allProgramNames].filter((p) => !scheduledProgramNames.has(p));
+          score -= Math.min(50, orphanedPrograms.length * 25);
+
+          // Check periodic tasks with unreasonable rates
+          const periodicTasks = tasks.filter((t) => t.type === "PERIODIC");
+          for (const pt of periodicTasks) {
+            if (pt.rate !== null && pt.rate !== undefined && (pt.rate < 1 || pt.rate > 30000)) {
+              score -= 15;
+            }
+          }
+
+          // Check for excessively high watchdog timers
+          for (const t of tasks) {
+            if (t.watchdog !== null && t.watchdog !== undefined && t.watchdog > 5000) {
+              score -= 10;
+            }
+          }
+
+          taskConfigScore = Math.max(0, Math.min(100, score));
+        }
+
         scores.set(projectId, computeScore({
           totalTags: tags.length,
           unusedTags: unusedTags.length,
           commentCoverage,
           totalReferences: references.length,
           namingViolationTags,
+          taskConfigScore,
         }));
       }
     }

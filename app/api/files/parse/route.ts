@@ -97,6 +97,7 @@ export async function POST(request: Request) {
         serviceSupabase.from("tag_references").delete().eq("file_id", fileId),
         serviceSupabase.from("parsed_udts").delete().eq("file_id", fileId),
         serviceSupabase.from("parsed_aois").delete().eq("file_id", fileId),
+        serviceSupabase.from("parsed_tasks").delete().eq("file_id", fileId),
       ]);
 
       // Insert parsed tags in batches
@@ -348,6 +349,30 @@ export async function POST(request: Request) {
         }
       }
 
+      // Insert parsed tasks
+      if (parsed.tasks.length > 0) {
+        const taskRecords = parsed.tasks.map((task) => ({
+          file_id: fileId,
+          version_id: versionId,
+          name: task.name,
+          type: task.type,
+          rate: task.rate,
+          priority: task.priority,
+          watchdog: task.watchdog,
+          inhibit_task: task.inhibitTask,
+          disable_update_outputs: task.disableUpdateOutputs,
+          description: task.description,
+          scheduled_programs: task.scheduledPrograms,
+        }));
+
+        const { error: insertError } = await serviceSupabase
+          .from("parsed_tasks")
+          .insert(taskRecords);
+        if (insertError) {
+          console.error("Error inserting tasks:", insertError);
+        }
+      }
+
       // Update status to completed, and store export type metadata
       await supabase
         .from("project_files")
@@ -375,6 +400,7 @@ export async function POST(request: Request) {
           rungs: parsed.rungs.length,
           udts: parsed.udts.length,
           aois: parsed.aois.length,
+          tasks: parsed.tasks.length,
         },
       });
 
@@ -388,6 +414,7 @@ export async function POST(request: Request) {
           tagReferences: parsed.tagReferences.length,
           udts: parsed.udts.length,
           aois: parsed.aois.length,
+          tasks: parsed.tasks.length,
         },
       });
     } catch (parseError) {
