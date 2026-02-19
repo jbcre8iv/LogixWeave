@@ -313,26 +313,16 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
   if (rules.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={`/dashboard/projects/${projectId}/analysis`}>
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Naming Validation</h1>
-              <p className="text-muted-foreground">{project.name}</p>
-            </div>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/dashboard/projects/${projectId}/analysis`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <p className="text-muted-foreground">{project.name}</p>
           </div>
-          <RuleSetPicker
-            projectId={projectId}
-            ruleSets={allRuleSets || []}
-            currentRuleSetId={pickerCurrentRuleSetId}
-            mode={isCrossOrg ? "preview" : "persist"}
-            isCrossOrg={isCrossOrg}
-            currentSeverityFilter={severityFilter}
-          />
         </div>
         <Card>
           <CardContent className="py-12 text-center">
@@ -348,7 +338,15 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                     ? "You can configure your own rules and apply them to this shared project."
                     : "Create naming rules in your organization settings to validate tags on shared projects."}
                 </p>
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-3">
+                  <RuleSetPicker
+                    projectId={projectId}
+                    ruleSets={allRuleSets || []}
+                    currentRuleSetId={pickerCurrentRuleSetId}
+                    mode={isCrossOrg ? "preview" : "persist"}
+                    isCrossOrg={isCrossOrg}
+                    currentSeverityFilter={severityFilter}
+                  />
                   <Button asChild>
                     <Link href="/dashboard/settings/naming-rules">
                       <Settings className="mr-2 h-4 w-4" />
@@ -369,7 +367,15 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                 <p className="text-muted-foreground mb-4">
                   No active naming rules found in the current rule set.
                 </p>
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-3">
+                  <RuleSetPicker
+                    projectId={projectId}
+                    ruleSets={allRuleSets || []}
+                    currentRuleSetId={pickerCurrentRuleSetId}
+                    mode={isCrossOrg ? "preview" : "persist"}
+                    isCrossOrg={isCrossOrg}
+                    currentSeverityFilter={severityFilter}
+                  />
                   <Button asChild>
                     <Link href="/dashboard/settings/naming-rules">
                       <Settings className="mr-2 h-4 w-4" />
