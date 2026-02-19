@@ -858,7 +858,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       if (!open) resetSetForm();
     }}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="w-[130px]">
           <FolderPlus className="h-4 w-4 mr-2" />
           Add Rule Set
         </Button>
@@ -920,7 +920,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Rule Set</DialogTitle>
+            <DialogTitle>Edit Rule Set</DialogTitle>
             <DialogDescription>
               Update the name and description
             </DialogDescription>
@@ -949,7 +949,36 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <div className="flex gap-2 mr-auto">
+              {editingSet && !editingSet.is_default && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleSetAsDefault(editingSet.id);
+                      setEditingSet(null);
+                    }}
+                  >
+                    <Star className="h-3.5 w-3.5 mr-1.5" />
+                    Set as Default
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setDeleteSet(editingSet);
+                      setEditingSet(null);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Delete
+                  </Button>
+                </>
+              )}
+            </div>
             <Button variant="outline" onClick={() => setEditingSet(null)}>
               Cancel
             </Button>
@@ -962,113 +991,89 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       {/* Tabs for rule sets */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between gap-3">
-          <TabsList className="flex-wrap h-auto">
-            {ruleSets.map((rs) => (
-              <TabsTrigger key={rs.id} value={rs.id} className="gap-1.5">
-                {rs.name}
-                {rs.is_default && (
-                  <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-1">
-                    Default
-                  </Badge>
-                )}
-                <span className="text-xs text-muted-foreground ml-0.5">
-                  ({rs.naming_rules.length})
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {addRuleSetDialog}
-        </div>
+        <TabsList className="flex-wrap h-auto">
+          {ruleSets.map((rs) => (
+            <TabsTrigger key={rs.id} value={rs.id} className="gap-1.5">
+              {rs.name}
+              {rs.is_default && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-1">
+                  Default
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground ml-0.5">
+                ({rs.naming_rules.length})
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
         {ruleSets.map((rs) => (
           <TabsContent key={rs.id} value={rs.id}>
             <div className="space-y-4">
               {/* Tab header with actions */}
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {rs.description && rs.description}
-                  {rs.description && " · "}
-                  {rs.naming_rules.length} rule{rs.naming_rules.length === 1 ? "" : "s"}
-                </p>
                 <div className="flex items-center gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    {rs.description && rs.description}
+                    {rs.description && " · "}
+                    {rs.naming_rules.length} rule{rs.naming_rules.length === 1 ? "" : "s"}
+                  </p>
                   {isAdmin && (
-                    <>
-                      <Dialog open={isAddRuleDialogOpen && activeTab === rs.id} onOpenChange={(open) => {
-                        setIsAddRuleDialogOpen(open);
-                        if (!open) resetRuleForm();
-                      }}>
-                        <DialogTrigger asChild>
-                          <Button size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Rule
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Add Naming Rule</DialogTitle>
-                            <DialogDescription>
-                              Create a new rule in &quot;{rs.name}&quot;
-                            </DialogDescription>
-                          </DialogHeader>
-                          {ruleFormContent}
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsAddRuleDialogOpen(false)}>
-                              Cancel
-                            </Button>
-                            {isBatchMode ? (
-                              <Button onClick={handleBatchAddRules} disabled={isSubmitting}>
-                                {isSubmitting ? "Adding..." : `Add ${selectedTemplateNames.length} Rules`}
-                              </Button>
-                            ) : (
-                              <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
-                                {isSubmitting ? "Saving..." : "Create Rule"}
-                              </Button>
-                            )}
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {!rs.is_default && (
-                            <DropdownMenuItem onClick={() => handleSetAsDefault(rs.id)}>
-                              <Star className="h-4 w-4 mr-2" />
-                              Set as Default
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => {
-                            setEditingSet(rs);
-                            setSetFormData({
-                              name: rs.name,
-                              description: rs.description || "",
-                            });
-                          }}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Rename
-                          </DropdownMenuItem>
-                          {!rs.is_default && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteSet(rs)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Set
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => {
+                        setEditingSet(rs);
+                        setSetFormData({
+                          name: rs.name,
+                          description: rs.description || "",
+                        });
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
                   )}
                 </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Dialog open={isAddRuleDialogOpen && activeTab === rs.id} onOpenChange={(open) => {
+                      setIsAddRuleDialogOpen(open);
+                      if (!open) resetRuleForm();
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="w-[130px]">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Rule
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Add Naming Rule</DialogTitle>
+                          <DialogDescription>
+                            Create a new rule in &quot;{rs.name}&quot;
+                          </DialogDescription>
+                        </DialogHeader>
+                        {ruleFormContent}
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setIsAddRuleDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          {isBatchMode ? (
+                            <Button onClick={handleBatchAddRules} disabled={isSubmitting}>
+                              {isSubmitting ? "Adding..." : `Add ${selectedTemplateNames.length} Rules`}
+                            </Button>
+                          ) : (
+                            <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
+                              {isSubmitting ? "Saving..." : "Create Rule"}
+                            </Button>
+                          )}
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    {addRuleSetDialog}
+                  </div>
+                )}
               </div>
 
               {/* Rules table */}
