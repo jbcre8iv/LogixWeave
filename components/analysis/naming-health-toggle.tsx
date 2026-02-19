@@ -43,18 +43,18 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
   };
 
   return (
-    <div className="rounded-lg border border-dashed p-3 space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <Button variant="outline" size="sm" asChild>
+    <div className="rounded-lg border border-dashed p-3">
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" className="flex-shrink-0" asChild>
           <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
             <FileCheck className="h-3.5 w-3.5 mr-1.5" />
             Naming Validation
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-muted-foreground cursor-pointer" htmlFor="naming-health-toggle">
-            Include in health score
-          </label>
+        <p className="text-xs text-muted-foreground flex-1 min-w-0">
+          When enabled, naming rule violations count toward your Naming Compliance metric (20% of overall score).
+        </p>
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Switch
             id="naming-health-toggle"
             checked={enabled}
@@ -63,11 +63,6 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
           />
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        When enabled, naming rule violations count toward your project health score.
-        Tags that don&apos;t match your configured naming rules will lower the
-        Naming Compliance metric (20% of overall score).
-      </p>
     </div>
   );
 }
