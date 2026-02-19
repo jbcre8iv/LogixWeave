@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileCheck, ArrowRight } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 
 interface NamingHealthToggleProps {
   projectId: string;
@@ -39,18 +38,14 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
 
   return (
     <div className="rounded-lg border border-dashed p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-          <FileCheck className="h-3.5 w-3.5" />
-          Naming Validation
-        </div>
-        <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
-          <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
-            View Rules
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Link>
-        </Button>
-      </div>
+      <Link
+        href={`/dashboard/projects/${projectId}/analysis/naming`}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <FileCheck className="h-3.5 w-3.5" />
+        Naming Validation
+        <ArrowRight className="h-3 w-3" />
+      </Link>
       <div className="flex items-start gap-3">
         <Switch
           checked={enabled}
