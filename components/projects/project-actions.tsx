@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
 import { EditProjectDialog } from "@/components/dashboard/edit-project-dialog";
-import { Star, Pencil, Share2, Archive, Loader2 } from "lucide-react";
+import { Star, Pencil, Share2, Archive, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProjectActionsProps {
@@ -32,7 +32,9 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleToggleFavorite = async () => {
     const prev = optimisticFavorite;
@@ -76,6 +78,23 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
     }
   };
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setDeleteLoading(true);
+    try {
+      const response = await fetch("/api/projects/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [projectId] }),
+      });
+      if (!response.ok) throw new Error("Failed to delete");
+      window.location.href = "/dashboard/projects";
+    } catch {
+      setDeleteLoading(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <>
       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleToggleFavorite}>
@@ -91,6 +110,9 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
           </Button>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setArchiveDialogOpen(true)}>
             <Archive className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteDialogOpen(true)}>
+            <Trash2 className="h-4 w-4" />
           </Button>
         </>
       )}
@@ -132,6 +154,34 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
                 </>
               ) : (
                 "Archive"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete &ldquo;{projectName}&rdquo;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All files and parsed data associated with this project will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
