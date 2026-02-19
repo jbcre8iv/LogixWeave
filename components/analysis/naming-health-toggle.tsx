@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { FileCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface NamingHealthToggleProps {
@@ -23,34 +24,40 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
         body: JSON.stringify({ enabled: checked }),
       });
       if (!res.ok) {
-        setEnabled(!checked); // revert on error
+        setEnabled(!checked);
         return;
       }
       startTransition(() => {
         router.refresh();
       });
     } catch {
-      setEnabled(!checked); // revert on error
+      setEnabled(!checked);
     }
   };
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-dashed p-3">
-      <Switch
-        checked={enabled}
-        onCheckedChange={handleToggle}
-        disabled={isPending}
-        className="mt-0.5"
-      />
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium leading-none">
-          Include in health score
-        </p>
-        <p className="text-xs text-muted-foreground">
-          When enabled, naming rule violations count toward your project health score.
-          Tags that don&apos;t match your configured naming rules will lower the
-          Naming Compliance metric (20% of overall score).
-        </p>
+    <div className="rounded-lg border border-dashed p-3 space-y-2">
+      <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+        <FileCheck className="h-3.5 w-3.5" />
+        Naming Validation
+      </div>
+      <div className="flex items-start gap-3">
+        <Switch
+          checked={enabled}
+          onCheckedChange={handleToggle}
+          disabled={isPending}
+          className="mt-0.5"
+        />
+        <div className="space-y-0.5">
+          <p className="text-sm font-medium leading-none">
+            Include in health score
+          </p>
+          <p className="text-xs text-muted-foreground">
+            When enabled, naming rule violations count toward your project health score.
+            Tags that don&apos;t match your configured naming rules will lower the
+            Naming Compliance metric (20% of overall score).
+          </p>
+        </div>
       </div>
     </div>
   );
