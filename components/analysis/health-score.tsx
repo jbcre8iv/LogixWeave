@@ -201,7 +201,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, footer }: Hea
         </div>
       </CardContent>
       {footer && (
-        <div className="px-6 pb-5 -mt-1">
+        <div className="px-6 pb-4 -mt-2">
           {footer}
         </div>
       )}
