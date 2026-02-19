@@ -52,7 +52,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, MoreHorizontal, Star, FolderPlus } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, MoreHorizontal, Star, FolderPlus, X } from "lucide-react";
 
 interface NamingRule {
   id: string;
@@ -123,6 +123,8 @@ const RULE_TEMPLATES = [
   },
 ];
 
+const ALL_TEMPLATES_FLAT = RULE_TEMPLATES.flatMap((g) => g.templates);
+
 export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: NamingRulesManagerProps) {
   const router = useRouter();
   const [ruleSets, setRuleSets] = useState<NamingRuleSet[]>(initialRuleSets);
@@ -141,7 +143,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
   const [deleteSet, setDeleteSet] = useState<NamingRuleSet | null>(null);
   const [setFormData, setSetFormData] = useState({ name: "", description: "" });
 
-  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
+  const [selectedTemplateNames, setSelectedTemplateNames] = useState<string[]>([]);
 
   const [ruleFormData, setRuleFormData] = useState({
     name: "",
@@ -152,15 +154,48 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     is_active: true,
   });
 
-  const handleSelectTemplate = (template: { name: string; description: string; pattern: string; severity: string }) => {
-    setSelectedTemplateName(template.name);
-    setRuleFormData((prev) => ({
-      ...prev,
-      name: template.name,
-      description: template.description,
-      pattern: template.pattern,
-      severity: template.severity,
-    }));
+  const isBatchMode = !editingRule && selectedTemplateNames.length >= 2;
+
+  const handleTemplateClick = (template: { name: string; description: string; pattern: string; severity: string }) => {
+    if (editingRule) {
+      // Edit mode: single-select, replaces previous
+      setSelectedTemplateNames([template.name]);
+      setRuleFormData((prev) => ({
+        ...prev,
+        name: template.name,
+        description: template.description,
+        pattern: template.pattern,
+        severity: template.severity,
+      }));
+      return;
+    }
+
+    // Add mode: multi-select toggle
+    const isSelected = selectedTemplateNames.includes(template.name);
+    const next = isSelected
+      ? selectedTemplateNames.filter((n) => n !== template.name)
+      : [...selectedTemplateNames, template.name];
+
+    setSelectedTemplateNames(next);
+
+    if (next.length === 1) {
+      const t = ALL_TEMPLATES_FLAT.find((t) => t.name === next[0])!;
+      setRuleFormData((prev) => ({
+        ...prev,
+        name: t.name,
+        description: t.description,
+        pattern: t.pattern,
+        severity: t.severity,
+      }));
+    } else if (next.length === 0) {
+      setRuleFormData((prev) => ({
+        ...prev,
+        name: "",
+        description: "",
+        pattern: "",
+        severity: "warning",
+      }));
+    }
   };
 
   const resetRuleForm = () => {
@@ -172,7 +207,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       severity: "warning",
       is_active: true,
     });
-    setSelectedTemplateName(null);
+    setSelectedTemplateNames([]);
     setError(null);
   };
 
@@ -302,7 +337,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       severity: rule.severity,
       is_active: rule.is_active,
     });
-    setSelectedTemplateName(null);
+    setSelectedTemplateNames([]);
     setError(null);
   };
 
@@ -351,6 +386,61 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       setIsAddRuleDialogOpen(false);
       setEditingRule(null);
+      resetRuleForm();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBatchAddRules = async () => {
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const templates = selectedTemplateNames
+        .map((name) => ALL_TEMPLATES_FLAT.find((t) => t.name === name))
+        .filter(Boolean) as typeof ALL_TEMPLATES_FLAT;
+
+      const createdRules: NamingRule[] = [];
+
+      for (const template of templates) {
+        const response = await fetch("/api/naming-rules", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: template.name,
+            description: template.description,
+            pattern: template.pattern,
+            applies_to: ruleFormData.applies_to,
+            severity: template.severity,
+            is_active: ruleFormData.is_active,
+            rule_set_id: activeTab,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || `Failed to create rule "${template.name}"`);
+        }
+
+        const { rule } = await response.json();
+        createdRules.push(rule);
+      }
+
+      setRuleSets(
+        ruleSets.map((rs) => {
+          if (rs.id !== activeTab) return rs;
+          return {
+            ...rs,
+            naming_rules: [...rs.naming_rules, ...createdRules],
+          };
+        })
+      );
+
+      setIsAddRuleDialogOpen(false);
       resetRuleForm();
       router.refresh();
     } catch (err) {
@@ -429,7 +519,14 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       {/* Template picker */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Quick Start from Template</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Quick Start from Template</Label>
+          {!editingRule && selectedTemplateNames.length >= 2 && (
+            <span className="text-xs text-muted-foreground">
+              {selectedTemplateNames.length} selected
+            </span>
+          )}
+        </div>
         {RULE_TEMPLATES.map((group) => (
           <div key={group.category} className="space-y-1.5">
             <p className="text-xs text-muted-foreground font-medium">{group.category}</p>
@@ -438,11 +535,11 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                 <button
                   key={template.name}
                   type="button"
-                  onClick={() => handleSelectTemplate(template)}
+                  onClick={() => handleTemplateClick(template)}
                   className={cn(
                     "inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
                     "hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                    selectedTemplateName === template.name
+                    selectedTemplateNames.includes(template.name)
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background text-foreground"
                   )}
@@ -457,95 +554,162 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       <Separator />
 
-      <div className="space-y-2">
-        <Label htmlFor="rule-name">Rule Name</Label>
-        <Input
-          id="rule-name"
-          value={ruleFormData.name}
-          onChange={(e) => {
-            setRuleFormData({ ...ruleFormData, name: e.target.value });
-            setSelectedTemplateName(null);
-          }}
-          placeholder="e.g., No Spaces in Names"
-        />
-      </div>
+      {isBatchMode ? (
+        <>
+          {/* Batch preview */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Rules to create ({selectedTemplateNames.length})
+            </Label>
+            <div className="rounded-md border divide-y">
+              {selectedTemplateNames.map((name) => {
+                const t = ALL_TEMPLATES_FLAT.find((tmpl) => tmpl.name === name);
+                if (!t) return null;
+                return (
+                  <div key={name} className="flex items-center justify-between px-3 py-2 gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{t.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{t.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {getSeverityBadge(t.severity)}
+                      <button
+                        type="button"
+                        onClick={() => handleTemplateClick(t)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="rule-description">Description (optional)</Label>
-        <Textarea
-          id="rule-description"
-          value={ruleFormData.description}
-          onChange={(e) => setRuleFormData({ ...ruleFormData, description: e.target.value })}
-          placeholder="Explain what this rule checks for..."
-          rows={2}
-        />
-      </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Applies To (all rules)</Label>
+              <Select
+                value={ruleFormData.applies_to}
+                onValueChange={(value) => setRuleFormData({ ...ruleFormData, applies_to: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {APPLIES_TO_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2 self-end pb-1">
+              <Switch
+                id="batch-is-active"
+                checked={ruleFormData.is_active}
+                onCheckedChange={(checked) => setRuleFormData({ ...ruleFormData, is_active: checked })}
+              />
+              <Label htmlFor="batch-is-active">Active</Label>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Single rule form */}
+          <div className="space-y-2">
+            <Label htmlFor="rule-name">Rule Name</Label>
+            <Input
+              id="rule-name"
+              value={ruleFormData.name}
+              onChange={(e) => {
+                setRuleFormData({ ...ruleFormData, name: e.target.value });
+                setSelectedTemplateNames([]);
+              }}
+              placeholder="e.g., No Spaces in Names"
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="rule-pattern">Regex Pattern</Label>
-        <Input
-          id="rule-pattern"
-          value={ruleFormData.pattern}
-          onChange={(e) => {
-            setRuleFormData({ ...ruleFormData, pattern: e.target.value });
-            setSelectedTemplateName(null);
-          }}
-          placeholder="e.g., ^[^\s]+$"
-          className="font-mono"
-        />
-        <p className="text-xs text-muted-foreground">
-          Tags that match this pattern will pass validation
-        </p>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="rule-description">Description (optional)</Label>
+            <Textarea
+              id="rule-description"
+              value={ruleFormData.description}
+              onChange={(e) => setRuleFormData({ ...ruleFormData, description: e.target.value })}
+              placeholder="Explain what this rule checks for..."
+              rows={2}
+            />
+          </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Applies To</Label>
-          <Select
-            value={ruleFormData.applies_to}
-            onValueChange={(value) => setRuleFormData({ ...ruleFormData, applies_to: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {APPLIES_TO_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="rule-pattern">Regex Pattern</Label>
+            <Input
+              id="rule-pattern"
+              value={ruleFormData.pattern}
+              onChange={(e) => {
+                setRuleFormData({ ...ruleFormData, pattern: e.target.value });
+                setSelectedTemplateNames([]);
+              }}
+              placeholder="e.g., ^[^\s]+$"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tags that match this pattern will pass validation
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <Label>Severity</Label>
-          <Select
-            value={ruleFormData.severity}
-            onValueChange={(value) => setRuleFormData({ ...ruleFormData, severity: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SEVERITY_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Applies To</Label>
+              <Select
+                value={ruleFormData.applies_to}
+                onValueChange={(value) => setRuleFormData({ ...ruleFormData, applies_to: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {APPLIES_TO_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <div className="flex items-center gap-2">
-        <Switch
-          id="rule-is-active"
-          checked={ruleFormData.is_active}
-          onCheckedChange={(checked) => setRuleFormData({ ...ruleFormData, is_active: checked })}
-        />
-        <Label htmlFor="rule-is-active">Active</Label>
-      </div>
+            <div className="space-y-2">
+              <Label>Severity</Label>
+              <Select
+                value={ruleFormData.severity}
+                onValueChange={(value) => setRuleFormData({ ...ruleFormData, severity: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SEVERITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              id="rule-is-active"
+              checked={ruleFormData.is_active}
+              onCheckedChange={(checked) => setRuleFormData({ ...ruleFormData, is_active: checked })}
+            />
+            <Label htmlFor="rule-is-active">Active</Label>
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -720,9 +884,15 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                             <Button variant="outline" onClick={() => setIsAddRuleDialogOpen(false)}>
                               Cancel
                             </Button>
-                            <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
-                              {isSubmitting ? "Saving..." : "Create Rule"}
-                            </Button>
+                            {isBatchMode ? (
+                              <Button onClick={handleBatchAddRules} disabled={isSubmitting}>
+                                {isSubmitting ? "Adding..." : `Add ${selectedTemplateNames.length} Rules`}
+                              </Button>
+                            ) : (
+                              <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
+                                {isSubmitting ? "Saving..." : "Create Rule"}
+                              </Button>
+                            )}
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
