@@ -68,6 +68,6 @@ CREATE POLICY "Shared users can view tasks"
             JOIN project_shares ON project_shares.project_id = project_files.project_id
             WHERE project_files.id = parsed_tasks.file_id
             AND project_shares.shared_with_user_id = auth.uid()
-            AND project_shares.status = 'accepted'
+            AND project_shares.accepted_at IS NOT NULL
         )
     );
