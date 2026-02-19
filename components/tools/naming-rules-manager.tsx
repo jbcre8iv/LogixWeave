@@ -160,7 +160,6 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     applies_to: "all",
     severity: "warning",
     is_active: true,
-    rule_set_id: "",
   });
 
   const isBatchMode = !editingRule && selectedTemplateNames.length >= 2;
@@ -257,7 +256,6 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       applies_to: "all",
       severity: "warning",
       is_active: true,
-      rule_set_id: "",
     });
     setSelectedTemplateNames([]);
     setAiPrompt("");
@@ -391,7 +389,6 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       applies_to: rule.applies_to,
       severity: rule.severity,
       is_active: rule.is_active,
-      rule_set_id: rule.rule_set_id,
     });
     setSelectedTemplateNames([]);
     setError(null);
@@ -410,11 +407,10 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
         return;
       }
 
-      const targetRuleSetId = ruleFormData.rule_set_id || activeTab;
       const method = editingRule ? "PUT" : "POST";
       const body = editingRule
-        ? { id: editingRule.id, ...ruleFormData, rule_set_id: targetRuleSetId }
-        : { ...ruleFormData, rule_set_id: targetRuleSetId };
+        ? { id: editingRule.id, ...ruleFormData }
+        : { ...ruleFormData, rule_set_id: activeTab };
 
       const response = await fetch("/api/naming-rules", {
         method,
@@ -429,32 +425,17 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       const { rule } = await response.json();
 
-      if (editingRule && editingRule.rule_set_id !== targetRuleSetId) {
-        // Rule moved to a different set — remove from old, add to new
-        setRuleSets(
-          ruleSets.map((rs) => {
-            if (rs.id === editingRule.rule_set_id) {
-              return { ...rs, naming_rules: rs.naming_rules.filter((r) => r.id !== rule.id) };
-            }
-            if (rs.id === targetRuleSetId) {
-              return { ...rs, naming_rules: [...rs.naming_rules, rule] };
-            }
-            return rs;
-          })
-        );
-      } else {
-        setRuleSets(
-          ruleSets.map((rs) => {
-            if (rs.id !== targetRuleSetId) return rs;
-            return {
-              ...rs,
-              naming_rules: editingRule
-                ? rs.naming_rules.map((r) => (r.id === rule.id ? rule : r))
-                : [...rs.naming_rules, rule],
-            };
-          })
-        );
-      }
+      setRuleSets(
+        ruleSets.map((rs) => {
+          if (rs.id !== (editingRule?.rule_set_id || activeTab)) return rs;
+          return {
+            ...rs,
+            naming_rules: editingRule
+              ? rs.naming_rules.map((r) => (r.id === rule.id ? rule : r))
+              : [...rs.naming_rules, rule],
+          };
+        })
+      );
 
       setIsAddRuleDialogOpen(false);
       setEditingRule(null);
@@ -472,7 +453,6 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     setIsSubmitting(true);
 
     try {
-      const targetRuleSetId = ruleFormData.rule_set_id || activeTab;
       const templates = selectedTemplateNames
         .map((name) => ALL_TEMPLATES_FLAT.find((t) => t.name === name))
         .filter(Boolean) as typeof ALL_TEMPLATES_FLAT;
@@ -490,7 +470,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             applies_to: ruleFormData.applies_to,
             severity: template.severity,
             is_active: ruleFormData.is_active,
-            rule_set_id: targetRuleSetId,
+            rule_set_id: activeTab,
           }),
         });
 
@@ -505,7 +485,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       setRuleSets(
         ruleSets.map((rs) => {
-          if (rs.id !== targetRuleSetId) return rs;
+          if (rs.id !== activeTab) return rs;
           return {
             ...rs,
             naming_rules: [...rs.naming_rules, ...createdRules],
@@ -737,25 +717,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Rule Set</Label>
-              <Select
-                value={ruleFormData.rule_set_id || activeTab}
-                onValueChange={(value) => setRuleFormData({ ...ruleFormData, rule_set_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ruleSets.map((rs) => (
-                    <SelectItem key={rs.id} value={rs.id}>
-                      {rs.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Applies To (all rules)</Label>
               <Select
@@ -828,26 +790,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Rule Set</Label>
-              <Select
-                value={ruleFormData.rule_set_id || activeTab}
-                onValueChange={(value) => setRuleFormData({ ...ruleFormData, rule_set_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ruleSets.map((rs) => (
-                    <SelectItem key={rs.id} value={rs.id}>
-                      {rs.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Applies To</Label>
               <Select
