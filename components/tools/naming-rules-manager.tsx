@@ -49,10 +49,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, MoreHorizontal, Star, FolderPlus, X, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, AlertTriangle, Info, Star, FolderPlus, X, Sparkles, Loader2, ChevronDown, Check } from "lucide-react";
 
 interface NamingRule {
   id: string;
@@ -857,12 +856,6 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
       setIsAddSetDialogOpen(open);
       if (!open) resetSetForm();
     }}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-[130px]">
-          <FolderPlus className="h-4 w-4 mr-2" />
-          Add Rule Set
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Rule Set</DialogTitle>
@@ -989,190 +982,234 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
         </DialogContent>
       </Dialog>
 
-      {/* Tabs for rule sets */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex-wrap h-auto">
-          {ruleSets.map((rs) => (
-            <TabsTrigger key={rs.id} value={rs.id} className="gap-1.5">
-              {rs.name}
-              {rs.is_default && (
-                <Badge variant="secondary" className="text-[10px] px-1 py-0 ml-1">
+      {/* Rule set switcher dropdown + Add Rule button */}
+      <div className="flex items-center justify-between">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              {activeRuleSet?.name}
+              {activeRuleSet?.is_default && (
+                <Badge variant="secondary" className="text-[10px] px-1 py-0">
                   Default
                 </Badge>
               )}
-              <span className="text-xs text-muted-foreground ml-0.5">
-                ({rs.naming_rules.length})
+              <span className="text-xs text-muted-foreground">
+                {activeRuleSet?.naming_rules.length} rule{activeRuleSet?.naming_rules.length === 1 ? "" : "s"}
               </span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {ruleSets.map((rs) => (
-          <TabsContent key={rs.id} value={rs.id}>
-            <div className="space-y-4">
-              {/* Tab header with actions */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    {rs.description && rs.description}
-                    {rs.description && " · "}
-                    {rs.naming_rules.length} rule{rs.naming_rules.length === 1 ? "" : "s"}
-                  </p>
-                  {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => {
-                        setEditingSet(rs);
-                        setSetFormData({
-                          name: rs.name,
-                          description: rs.description || "",
-                        });
-                      }}
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    </Button>
-                  )}
-                </div>
-                {isAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Dialog open={isAddRuleDialogOpen && activeTab === rs.id} onOpenChange={(open) => {
-                      setIsAddRuleDialogOpen(open);
-                      if (!open) resetRuleForm();
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="w-[130px]">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Rule
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Add Naming Rule</DialogTitle>
-                          <DialogDescription>
-                            Create a new rule in &quot;{rs.name}&quot;
-                          </DialogDescription>
-                        </DialogHeader>
-                        {ruleFormContent}
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setIsAddRuleDialogOpen(false)}>
-                            Cancel
-                          </Button>
-                          {isBatchMode ? (
-                            <Button onClick={handleBatchAddRules} disabled={isSubmitting}>
-                              {isSubmitting ? "Adding..." : `Add ${selectedTemplateNames.length} Rules`}
-                            </Button>
-                          ) : (
-                            <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
-                              {isSubmitting ? "Saving..." : "Create Rule"}
-                            </Button>
-                          )}
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                    {addRuleSetDialog}
-                  </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-72">
+            {ruleSets.map((rs) => (
+              <DropdownMenuItem
+                key={rs.id}
+                onClick={() => setActiveTab(rs.id)}
+                className="flex items-center gap-2"
+              >
+                <Check className={cn("h-4 w-4 shrink-0", rs.id === activeTab ? "opacity-100" : "opacity-0")} />
+                <span className="flex-1 truncate">{rs.name}</span>
+                {rs.is_default && (
+                  <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+                    Default
+                  </Badge>
                 )}
-              </div>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {rs.naming_rules.length}
+                </span>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingSet(rs);
+                      setSetFormData({
+                        name: rs.name,
+                        description: rs.description || "",
+                      });
+                    }}
+                  >
+                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                )}
+              </DropdownMenuItem>
+            ))}
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsAddSetDialogOpen(true)}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  Add Rule Set
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-              {/* Rules table */}
-              {rs.naming_rules.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground rounded-md border border-dashed">
-                  No rules in this set yet.{isAdmin && " Click \u2018Add Rule\u2019 above to create one."}
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Pattern</TableHead>
-                        <TableHead>Applies To</TableHead>
-                        <TableHead>Severity</TableHead>
-                        <TableHead>Active</TableHead>
-                        {isAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rs.naming_rules.map((rule) => (
-                        <TableRow key={rule.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{rule.name}</p>
-                              {rule.description && (
-                                <p className="text-xs text-muted-foreground">{rule.description}</p>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">{rule.pattern}</TableCell>
-                          <TableCell>
-                            {APPLIES_TO_OPTIONS.find((o) => o.value === rule.applies_to)?.label || rule.applies_to}
-                          </TableCell>
-                          <TableCell>{getSeverityBadge(rule.severity)}</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={rule.is_active}
-                              onCheckedChange={() => handleToggleActive(rule)}
-                              disabled={!isAdmin}
-                            />
-                          </TableCell>
-                          {isAdmin && (
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Dialog open={editingRule?.id === rule.id} onOpenChange={(open) => {
-                                  if (!open) {
-                                    setEditingRule(null);
-                                    resetRuleForm();
-                                  }
-                                }}>
-                                  <DialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => openEditRuleDialog(rule)}
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-                                    <DialogHeader>
-                                      <DialogTitle>Edit Naming Rule</DialogTitle>
-                                      <DialogDescription>
-                                        Update the rule configuration
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    {ruleFormContent}
-                                    <DialogFooter>
-                                      <Button variant="outline" onClick={() => setEditingRule(null)}>
-                                        Cancel
-                                      </Button>
-                                      <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
-                                        {isSubmitting ? "Saving..." : "Save Changes"}
-                                      </Button>
-                                    </DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
+        {isAdmin && (
+          <Dialog open={isAddRuleDialogOpen} onOpenChange={(open) => {
+            setIsAddRuleDialogOpen(open);
+            if (!open) resetRuleForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Rule
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add Naming Rule</DialogTitle>
+                <DialogDescription>
+                  Create a new rule in &quot;{activeRuleSet?.name}&quot;
+                </DialogDescription>
+              </DialogHeader>
+              {ruleFormContent}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddRuleDialogOpen(false)}>
+                  Cancel
+                </Button>
+                {isBatchMode ? (
+                  <Button onClick={handleBatchAddRules} disabled={isSubmitting}>
+                    {isSubmitting ? "Adding..." : `Add ${selectedTemplateNames.length} Rules`}
+                  </Button>
+                ) : (
+                  <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
+                    {isSubmitting ? "Saving..." : "Create Rule"}
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {/* Active rule set content */}
+      {activeRuleSet && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">
+              {activeRuleSet.description && activeRuleSet.description}
+              {activeRuleSet.description && " \u00b7 "}
+              {activeRuleSet.naming_rules.length} rule{activeRuleSet.naming_rules.length === 1 ? "" : "s"}
+            </p>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => {
+                  setEditingSet(activeRuleSet);
+                  setSetFormData({
+                    name: activeRuleSet.name,
+                    description: activeRuleSet.description || "",
+                  });
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            )}
+          </div>
+
+          {/* Rules table */}
+          {activeRuleSet.naming_rules.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground rounded-md border border-dashed">
+              No rules in this set yet.{isAdmin && " Click \u2018Add Rule\u2019 above to create one."}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Pattern</TableHead>
+                    <TableHead>Applies To</TableHead>
+                    <TableHead>Severity</TableHead>
+                    <TableHead>Active</TableHead>
+                    {isAdmin && <TableHead className="w-[100px]">Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeRuleSet.naming_rules.map((rule) => (
+                    <TableRow key={rule.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{rule.name}</p>
+                          {rule.description && (
+                            <p className="text-xs text-muted-foreground">{rule.description}</p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{rule.pattern}</TableCell>
+                      <TableCell>
+                        {APPLIES_TO_OPTIONS.find((o) => o.value === rule.applies_to)?.label || rule.applies_to}
+                      </TableCell>
+                      <TableCell>{getSeverityBadge(rule.severity)}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={rule.is_active}
+                          onCheckedChange={() => handleToggleActive(rule)}
+                          disabled={!isAdmin}
+                        />
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Dialog open={editingRule?.id === rule.id} onOpenChange={(open) => {
+                              if (!open) {
+                                setEditingRule(null);
+                                resetRuleForm();
+                              }
+                            }}>
+                              <DialogTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => setDeleteRule(rule)}
+                                  onClick={() => openEditRuleDialog(rule)}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Naming Rule</DialogTitle>
+                                  <DialogDescription>
+                                    Update the rule configuration
+                                  </DialogDescription>
+                                </DialogHeader>
+                                {ruleFormContent}
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => setEditingRule(null)}>
+                                    Cancel
+                                  </Button>
+                                  <Button onClick={handleSubmitRule} disabled={isSubmitting || !ruleFormData.name || !ruleFormData.pattern}>
+                                    {isSubmitting ? "Saving..." : "Save Changes"}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteRule(rule)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+          )}
+        </div>
+      )}
+
+      {/* Add Rule Set dialog */}
+      {addRuleSetDialog}
 
       {/* Delete Rule confirmation */}
       <AlertDialog open={!!deleteRule} onOpenChange={(open) => !open && setDeleteRule(null)}>
