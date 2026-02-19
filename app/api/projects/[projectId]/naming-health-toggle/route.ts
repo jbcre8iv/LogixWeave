@@ -18,7 +18,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: project } = await supabase
+    const serviceSupabase = createServiceClient();
+
+    const { data: project } = await serviceSupabase
       .from("projects")
       .select("id, organization_id")
       .eq("id", projectId)
@@ -28,7 +30,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const { data: membership } = await supabase
+    const { data: membership } = await serviceSupabase
       .from("organization_members")
       .select("role")
       .eq("organization_id", project.organization_id)
@@ -41,8 +43,6 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const { enabled } = await request.json();
 
-    // Use service client to bypass RLS for the update
-    const serviceSupabase = createServiceClient();
     const { error } = await serviceSupabase
       .from("projects")
       .update({ naming_affects_health_score: !!enabled })
