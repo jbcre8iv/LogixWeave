@@ -137,7 +137,7 @@ export function NotificationsDropdown() {
           <span className="sr-only">Notifications</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent align="end" className="w-96">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
           {notifications.length > 0 && (
@@ -183,7 +183,7 @@ export function NotificationsDropdown() {
             <p className="text-sm text-muted-foreground">No notifications yet</p>
           </div>
         ) : (
-          <div className="max-h-[300px] overflow-y-auto">
+          <div className="max-h-[min(400px,60vh)] overflow-y-auto">
             {notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
