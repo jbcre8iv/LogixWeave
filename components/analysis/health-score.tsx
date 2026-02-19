@@ -228,7 +228,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, namingHealthE
           {/* Sub-metrics */}
           <div className="flex-1 w-full space-y-4">
             <div className="mb-1">
-              <h3 className="text-lg font-semibold">Project Health</h3>
+              <h3 className="text-lg font-semibold">Project Health Score</h3>
               <p className="text-sm text-muted-foreground">Weighted score across tag efficiency, documentation{namingCompliance !== undefined ? ", naming compliance," : ","} usage{taskConfig !== undefined ? ", and task configuration" : ""}</p>
             </div>
             {metrics.map((m) => {
