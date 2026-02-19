@@ -43,7 +43,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
   };
 
   return (
-    <div className="rounded-lg border border-dashed p-3">
+    <div className="rounded-lg border border-dashed p-3 space-y-2">
       <div className="flex items-center justify-between gap-3">
         <Button variant="outline" size="sm" asChild>
           <Link href={`/dashboard/projects/${projectId}/analysis/naming`}>
@@ -63,6 +63,11 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
           />
         </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        When enabled, naming rule violations count toward your project health score.
+        Tags that don&apos;t match your configured naming rules will lower the
+        Naming Compliance metric (20% of overall score).
+      </p>
     </div>
   );
 }
