@@ -130,7 +130,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, footer }: Hea
           </div>
         </div>
       )}
-      <CardContent className="p-6">
+      <CardContent className={`p-6 ${footer ? "pb-3" : ""}`}>
         <div className="flex flex-col sm:flex-row items-center gap-8">
           {/* Circular progress ring */}
           <div className="flex flex-col items-center flex-shrink-0">
@@ -201,7 +201,7 @@ export function HealthScore({ projectId, stats, partialExportInfo, footer }: Hea
         </div>
       </CardContent>
       {footer && (
-        <div className="px-6 pb-2 -mt-4">
+        <div className="px-6 pb-4">
           {footer}
         </div>
       )}
