@@ -614,6 +614,9 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             <Sparkles className="h-4 w-4 text-amber-500" />
             <Label className="text-sm font-medium">AI Rule Helper</Label>
           </div>
+          <p className="text-xs text-muted-foreground">
+            e.g. &quot;Must start with an area code like A01_ or B02_&quot;
+          </p>
           <div className="flex gap-2">
             <Input
               value={aiPrompt}
@@ -624,7 +627,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                   handleAiGenerate();
                 }
               }}
-              placeholder="Describe a naming pattern..."
+              placeholder="Describe a naming convention in plain English..."
               className="border-amber-500/20 focus-visible:ring-amber-500/30"
               disabled={aiLoading}
             />
