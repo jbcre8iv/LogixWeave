@@ -129,6 +129,42 @@ export async function POST(request: Request, context: RouteContext) {
           // Remap folder_id if present
           const newFolderId = file.folder_id ? folderIdMap.get(file.folder_id) || null : null;
 
+          // Fetch all versions for this file
+          const { data: versions } = await serviceClient
+            .from("file_versions")
+            .select("*")
+            .eq("file_id", file.id)
+            .order("version_number");
+
+          // Copy the current version's blob first so we have a storage_path for the file row
+          let fileStoragePath = file.storage_path; // fallback: keep original (shouldn't happen)
+          const currentVersion = versions?.find((v) => v.version_number === file.current_version);
+
+          if (currentVersion?.storage_path) {
+            const fileName = currentVersion.storage_path.split("/").pop() || "file";
+            const newPath = `${newProjectId}/${Date.now()}-dup-${fileName}`;
+
+            const { data: blob, error: dlError } = await serviceClient.storage
+              .from("project-files")
+              .download(currentVersion.storage_path);
+
+            if (dlError || !blob) {
+              throw new Error(`Failed to download blob: ${dlError?.message || "No data"}`);
+            }
+
+            const { error: upError } = await serviceClient.storage
+              .from("project-files")
+              .upload(newPath, blob);
+
+            if (upError) {
+              throw new Error(`Failed to upload blob: ${upError.message}`);
+            }
+
+            copiedStoragePaths.push(newPath);
+            fileStoragePath = newPath;
+          }
+
+          // Now insert the file row with a valid storage_path
           const { data: newFile, error: fileError } = await serviceClient
             .from("project_files")
             .insert({
@@ -136,7 +172,7 @@ export async function POST(request: Request, context: RouteContext) {
               project_id: newProjectId,
               folder_id: newFolderId,
               uploaded_by: user.id,
-              storage_path: null, // Will be updated after copying the current version's blob
+              storage_path: fileStoragePath,
             })
             .select("id")
             .single();
@@ -144,16 +180,8 @@ export async function POST(request: Request, context: RouteContext) {
           if (fileError) throw new Error(`Failed to copy file: ${fileError.message}`);
           fileIdMap.set(file.id, newFile!.id);
 
-          // Copy file versions
-          const { data: versions } = await serviceClient
-            .from("file_versions")
-            .select("*")
-            .eq("file_id", file.id)
-            .order("version_number");
-
+          // Copy all file versions
           if (versions && versions.length > 0) {
-            let currentVersionStoragePath: string | null = null;
-
             for (const version of versions) {
               const {
                 id: _vid,
@@ -162,13 +190,16 @@ export async function POST(request: Request, context: RouteContext) {
                 ...versionData
               } = version;
 
-              // Copy storage blob
               let newStoragePath: string | null = null;
-              if (version.storage_path) {
+
+              if (version.version_number === file.current_version) {
+                // Already copied above
+                newStoragePath = fileStoragePath;
+              } else if (version.storage_path) {
+                // Copy non-current version blobs
                 const fileName = version.storage_path.split("/").pop() || "file";
                 newStoragePath = `${newProjectId}/${Date.now()}-dup-${fileName}`;
 
-                // Download and re-upload (Supabase JS doesn't support server-side copy)
                 const { data: blob, error: dlError } = await serviceClient.storage
                   .from("project-files")
                   .download(version.storage_path);
@@ -186,10 +217,6 @@ export async function POST(request: Request, context: RouteContext) {
                 }
 
                 copiedStoragePaths.push(newStoragePath);
-
-                if (version.version_number === file.current_version) {
-                  currentVersionStoragePath = newStoragePath;
-                }
               }
 
               const { data: newVersion, error: versionError } = await serviceClient
@@ -205,14 +232,6 @@ export async function POST(request: Request, context: RouteContext) {
 
               if (versionError) throw new Error(`Failed to copy version: ${versionError.message}`);
               versionIdMap.set(version.id, newVersion!.id);
-            }
-
-            // Update file's storage_path to point to the current version's blob
-            if (currentVersionStoragePath) {
-              await serviceClient
-                .from("project_files")
-                .update({ storage_path: currentVersionStoragePath })
-                .eq("id", newFile!.id);
             }
           }
         }
