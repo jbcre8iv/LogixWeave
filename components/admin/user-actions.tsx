@@ -31,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MoreHorizontal, Ban, Trash2, UserCheck, Loader2, Eye, Building2, FolderOpen, FileText, Mail, Calendar, User } from "lucide-react";
+import { MoreHorizontal, Ban, Trash2, UserCheck, Loader2, Eye, Building2, FolderOpen, FileText, Mail, Calendar, User, Download } from "lucide-react";
 
 interface Organization {
   id: string;
@@ -93,6 +93,8 @@ export function UserActions({
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [downloadingProjectId, setDownloadingProjectId] = useState<string | null>(null);
 
   const handleViewUser = async () => {
     setViewDialogOpen(true);
@@ -107,6 +109,52 @@ export function UserActions({
       console.error("Failed to fetch user details:", error);
     } finally {
       setLoadingDetails(false);
+    }
+  };
+
+  const handleDownloadFile = async (fileId: string, fileName: string) => {
+    setDownloadingFileId(fileId);
+    try {
+      const response = await fetch(`/api/admin/files/${fileId}`);
+      if (!response.ok) {
+        throw new Error("Download failed");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download file:", error);
+    } finally {
+      setDownloadingFileId(null);
+    }
+  };
+
+  const handleDownloadProject = async (projectId: string, projectName: string) => {
+    setDownloadingProjectId(projectId);
+    try {
+      const response = await fetch(`/api/admin/files/download-all?projectId=${projectId}`);
+      if (!response.ok) {
+        throw new Error("Download failed");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${projectName.replace(/[^a-zA-Z0-9-_]/g, "_")}_files.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download project files:", error);
+    } finally {
+      setDownloadingProjectId(null);
     }
   };
 
@@ -330,11 +378,29 @@ export function UserActions({
                               <p className="text-xs text-muted-foreground">{project.organization_name}</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <Badge variant="secondary">{project.file_count} files</Badge>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(project.created_at).toLocaleDateString()}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <Badge variant="secondary">{project.file_count} files</Badge>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(project.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {project.file_count > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0"
+                                onClick={() => handleDownloadProject(project.id, project.name)}
+                                disabled={downloadingProjectId === project.id}
+                                title="Download all project files"
+                              >
+                                {downloadingProjectId === project.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Download className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -361,11 +427,27 @@ export function UserActions({
                               <p className="text-xs text-muted-foreground">{file.project_name}</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm">{(file.file_size / 1024).toFixed(1)} KB</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(file.created_at).toLocaleDateString()}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <p className="text-sm">{(file.file_size / 1024).toFixed(1)} KB</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(file.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={() => handleDownloadFile(file.id, file.file_name)}
+                              disabled={downloadingFileId === file.id}
+                              title="Download file"
+                            >
+                              {downloadingFileId === file.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
+                            </Button>
                           </div>
                         </div>
                       ))}
