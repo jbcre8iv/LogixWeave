@@ -86,7 +86,32 @@ function getUserDisplayName(activity: ActivityEntry): string {
   return activity.user_email || "System";
 }
 
-function getActionDescription(action: string, targetName?: string | null): string {
+function getProjectUpdateDetails(metadata: Record<string, unknown>): string | null {
+  const changes = metadata?.changes as Record<string, { from: string | null; to: string | null }> | undefined;
+  if (!changes || Object.keys(changes).length === 0) return null;
+
+  const parts: string[] = [];
+  if (changes.name) {
+    parts.push(`renamed project from "${changes.name.from}" to "${changes.name.to}"`);
+  }
+  if (changes.description) {
+    if (!changes.description.to) {
+      parts.push("removed description");
+    } else if (!changes.description.from) {
+      parts.push("added description");
+    } else {
+      parts.push("updated description");
+    }
+  }
+  return parts.join(" and ");
+}
+
+function getActionDescription(action: string, targetName?: string | null, metadata?: Record<string, unknown>): string {
+  if (action === "project_updated" && metadata) {
+    const detail = getProjectUpdateDetails(metadata);
+    if (detail) return detail;
+  }
+
   const descriptions: Record<string, string> = {
     project_created: "created the project",
     project_updated: "updated project settings",
@@ -210,7 +235,7 @@ export function ActivityLog({ projectId }: ActivityLogProps) {
                         {getUserDisplayName(activity)}
                       </span>{" "}
                       <span className="text-muted-foreground">
-                        {getActionDescription(activity.action, activity.target_name)}
+                        {getActionDescription(activity.action, activity.target_name, activity.metadata)}
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground">

@@ -132,6 +132,15 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
     return () => window.removeEventListener("feedback-updated", handler);
   }, [isPlatformAdmin, fetchUnreadCount]);
 
+  const [projectRefreshKey, setProjectRefreshKey] = useState(0);
+
+  // Re-fetch sidebar projects when a project is edited
+  useEffect(() => {
+    const handler = () => setProjectRefreshKey((k) => k + 1);
+    window.addEventListener("project-updated", handler);
+    return () => window.removeEventListener("project-updated", handler);
+  }, []);
+
   // Fetch current project, all projects, and admin status
   useEffect(() => {
     const fetchData = async () => {
@@ -174,7 +183,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
     };
 
     fetchData();
-  }, [projectId, pathname, supabase]);
+  }, [projectId, pathname, supabase, projectRefreshKey]);
 
   const handleProjectSwitch = (newProjectId: string) => {
     if (newProjectId === projectId) {

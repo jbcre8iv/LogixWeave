@@ -158,16 +158,37 @@ export async function updateProject(projectId: string, formData: FormData) {
     throw new Error("Project name is required");
   }
 
+  // Fetch current values to compute what changed
+  const { data: current } = await supabase
+    .from("projects")
+    .select("name, description")
+    .eq("id", projectId)
+    .single();
+
+  const newName = name.trim();
+  const newDescription = description?.trim() || null;
+
   const { error } = await supabase
     .from("projects")
     .update({
-      name: name.trim(),
-      description: description?.trim() || null,
+      name: newName,
+      description: newDescription,
     })
     .eq("id", projectId);
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  // Build metadata describing what changed
+  const changes: Record<string, { from: string | null; to: string | null }> = {};
+  if (current) {
+    if (current.name !== newName) {
+      changes.name = { from: current.name, to: newName };
+    }
+    if ((current.description || null) !== newDescription) {
+      changes.description = { from: current.description || null, to: newDescription };
+    }
   }
 
   await logActivity({
@@ -177,7 +198,8 @@ export async function updateProject(projectId: string, formData: FormData) {
     action: "project_updated",
     targetType: "project",
     targetId: projectId,
-    targetName: name.trim(),
+    targetName: newName,
+    metadata: Object.keys(changes).length > 0 ? { changes } : undefined,
   });
 
   revalidatePath(`/dashboard/projects/${projectId}`);

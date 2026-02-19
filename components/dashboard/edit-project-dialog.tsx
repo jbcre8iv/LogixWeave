@@ -60,6 +60,7 @@ export function EditProjectDialog({
       formData.set("name", name);
       formData.set("description", description);
       await updateProject(projectId, formData);
+      window.dispatchEvent(new CustomEvent("project-updated"));
       router.refresh();
       onOpenChange(false);
     } catch (err) {
