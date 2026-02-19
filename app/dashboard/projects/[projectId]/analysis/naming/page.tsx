@@ -356,13 +356,6 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                     isCrossOrg={isCrossOrg}
                     currentSeverityFilter={severityFilter}
                   />
-                  {!useProjectOwnerRules && (
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`?ruleSet=project-default${severityFilter ? `&severity=${severityFilter}` : ""}`}>
-                        Try project owner&apos;s rules
-                      </Link>
-                    </Button>
-                  )}
                 </div>
               </div>
             ) : (
