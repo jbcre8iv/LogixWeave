@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { NamingRulesManager } from "@/components/tools/naming-rules-manager";
 
 export default async function NamingRulesPage() {
@@ -50,22 +50,11 @@ export default async function NamingRulesPage() {
       <div>
         <h1 className="text-3xl font-bold">Naming Rules</h1>
         <p className="text-muted-foreground">
-          Configure tag naming conventions for your team
+          Organize rules into named sets that can be assigned per-project. The default set is used when a project has no specific assignment.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tag Naming Convention Rules</CardTitle>
-          <CardDescription>
-            Organize rules into named sets that can be assigned per-project.
-            The default set is used when a project has no specific assignment.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <NamingRulesManager ruleSets={ruleSets || []} isAdmin={isAdmin} />
-        </CardContent>
-      </Card>
+      <NamingRulesManager ruleSets={ruleSets || []} isAdmin={isAdmin} />
     </div>
   );
 }

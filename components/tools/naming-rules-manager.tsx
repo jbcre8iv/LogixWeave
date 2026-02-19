@@ -851,66 +851,65 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     );
   }
 
+  // Add Rule Set dialog (rendered outside of layout flow)
+  const addRuleSetDialog = isAdmin && (
+    <Dialog open={isAddSetDialogOpen} onOpenChange={(open) => {
+      setIsAddSetDialogOpen(open);
+      if (!open) resetSetForm();
+    }}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <FolderPlus className="h-4 w-4 mr-2" />
+          Add Rule Set
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Rule Set</DialogTitle>
+          <DialogDescription>
+            Create a new named collection of naming rules
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+              {error}
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="set-name">Name</Label>
+            <Input
+              id="set-name"
+              value={setFormData.name}
+              onChange={(e) => setSetFormData({ ...setFormData, name: e.target.value })}
+              placeholder="e.g., Legacy Projects"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="set-description">Description (optional)</Label>
+            <Textarea
+              id="set-description"
+              value={setFormData.description}
+              onChange={(e) => setSetFormData({ ...setFormData, description: e.target.value })}
+              placeholder="Describe when to use this rule set..."
+              rows={2}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsAddSetDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateRuleSet} disabled={isSubmitting || !setFormData.name}>
+            {isSubmitting ? "Creating..." : "Create"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div className="space-y-4">
-      {/* Add Rule Set button */}
-      {isAdmin && (
-        <div className="flex justify-end">
-          <Dialog open={isAddSetDialogOpen} onOpenChange={(open) => {
-            setIsAddSetDialogOpen(open);
-            if (!open) resetSetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FolderPlus className="h-4 w-4 mr-2" />
-                Add Rule Set
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Rule Set</DialogTitle>
-                <DialogDescription>
-                  Create a new named collection of naming rules
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                {error && (
-                  <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                    {error}
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="set-name">Name</Label>
-                  <Input
-                    id="set-name"
-                    value={setFormData.name}
-                    onChange={(e) => setSetFormData({ ...setFormData, name: e.target.value })}
-                    placeholder="e.g., Legacy Projects"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="set-description">Description (optional)</Label>
-                  <Textarea
-                    id="set-description"
-                    value={setFormData.description}
-                    onChange={(e) => setSetFormData({ ...setFormData, description: e.target.value })}
-                    placeholder="Describe when to use this rule set..."
-                    rows={2}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddSetDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateRuleSet} disabled={isSubmitting || !setFormData.name}>
-                  {isSubmitting ? "Creating..." : "Create"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
 
       {/* Rename Rule Set dialog */}
       <Dialog open={!!editingSet} onOpenChange={(open) => {
@@ -963,7 +962,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
       {/* Tabs for rule sets */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3">
           <TabsList className="flex-wrap h-auto">
             {ruleSets.map((rs) => (
               <TabsTrigger key={rs.id} value={rs.id} className="gap-1.5">
@@ -979,6 +978,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
               </TabsTrigger>
             ))}
           </TabsList>
+          {addRuleSetDialog}
         </div>
 
         {ruleSets.map((rs) => (
@@ -986,9 +986,11 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             <div className="space-y-4">
               {/* Tab header with actions */}
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  {rs.description || `${rs.naming_rules.length} rule${rs.naming_rules.length === 1 ? "" : "s"}`}
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  {rs.description && rs.description}
+                  {rs.description && " · "}
+                  {rs.naming_rules.length} rule{rs.naming_rules.length === 1 ? "" : "s"}
+                </p>
                 <div className="flex items-center gap-2">
                   {isAdmin && (
                     <>
@@ -1071,9 +1073,8 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
 
               {/* Rules table */}
               {rs.naming_rules.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No rules in this set yet.
-                  {isAdmin && " Click 'Add Rule' to create one."}
+                <div className="text-center py-12 text-muted-foreground rounded-md border border-dashed">
+                  No rules in this set yet.{isAdmin && " Click \u2018Add Rule\u2019 above to create one."}
                 </div>
               ) : (
                 <div className="rounded-md border">
