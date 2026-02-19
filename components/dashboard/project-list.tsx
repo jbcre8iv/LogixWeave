@@ -70,6 +70,7 @@ interface HealthScores {
   overall: number;
   tagEfficiency: number;
   documentation: number;
+  namingCompliance?: number;
   tagUsage: number;
   hasPartialExports?: boolean;
 }

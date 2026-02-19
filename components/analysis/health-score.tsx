@@ -15,6 +15,7 @@ interface HealthScoreProps {
     commentCoverage: number;
     totalReferences: number;
     totalRungs: number;
+    namingViolationTags?: number;
   };
   partialExportInfo?: PartialExportInfo;
 }
@@ -29,6 +30,16 @@ function computeScore(stats: HealthScoreProps["stats"]) {
     stats.totalTags > 0
       ? Math.min(100, (stats.totalReferences / stats.totalTags) * 20)
       : 0;
+
+  if (stats.namingViolationTags !== undefined) {
+    const namingCompliance = stats.totalTags > 0
+      ? Math.max(0, ((stats.totalTags - stats.namingViolationTags) / stats.totalTags) * 100)
+      : 100;
+    const overall = Math.round(
+      tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance * 0.2 + tagUsage * 0.2
+    );
+    return { overall, tagEfficiency: Math.round(tagEfficiency), documentation: Math.round(documentation), namingCompliance: Math.round(namingCompliance), tagUsage: Math.round(tagUsage) };
+  }
 
   const overall = Math.round(
     tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
@@ -52,7 +63,9 @@ function getColor(score: number): { ringHex: string; text: string; bg: string; p
 }
 
 export function HealthScore({ projectId, stats, partialExportInfo }: HealthScoreProps) {
-  const { overall, tagEfficiency, documentation, tagUsage } = computeScore(stats);
+  const scores = computeScore(stats);
+  const { overall, tagEfficiency, documentation, tagUsage } = scores;
+  const namingCompliance = "namingCompliance" in scores ? scores.namingCompliance : undefined;
   const { letter: grade, feedback } = getGrade(overall);
   const color = getColor(overall);
   const [animated, setAnimated] = useState(false);
@@ -85,6 +98,9 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
   const metrics = [
     { label: "Tag Efficiency (unused tags)", value: tagEfficiency },
     { label: "Documentation (comment coverage)", value: documentation },
+    ...(namingCompliance !== undefined
+      ? [{ label: "Naming Compliance (rule violations)", value: namingCompliance }]
+      : []),
     { label: "Tag Usage (reference density)", value: tagUsage },
   ];
 
@@ -160,7 +176,7 @@ export function HealthScore({ projectId, stats, partialExportInfo }: HealthScore
           <div className="flex-1 w-full space-y-4">
             <div className="mb-1">
               <h3 className="text-lg font-semibold">Project Health</h3>
-              <p className="text-sm text-muted-foreground">Weighted score across tag efficiency, documentation, and usage</p>
+              <p className="text-sm text-muted-foreground">Weighted score across tag efficiency, documentation{namingCompliance !== undefined ? ", naming compliance," : ","} and usage</p>
             </div>
             {metrics.map((m) => {
               const metricColor = getColor(m.value);

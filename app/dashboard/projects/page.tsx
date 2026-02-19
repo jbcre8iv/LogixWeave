@@ -31,7 +31,7 @@ export default async function ProjectsPage() {
   // Fetch latest health score per project
   const activeProjectIds = activeProjects.map((p) => p.id);
   const serviceSupabase = await createServiceClient();
-  let healthScoreMap: Record<string, { overall: number; tagEfficiency: number; documentation: number; tagUsage: number }> = {};
+  let healthScoreMap: Record<string, { overall: number; tagEfficiency: number; documentation: number; namingCompliance?: number; tagUsage: number }> = {};
   if (activeProjectIds.length > 0) {
     const { data: healthRows } = await serviceSupabase
       .from("ai_analysis_history")
@@ -43,7 +43,7 @@ export default async function ProjectsPage() {
     if (healthRows) {
       for (const row of healthRows) {
         if (!healthScoreMap[row.project_id] && row.health_scores) {
-          const hs = row.health_scores as { overall: number; tagEfficiency: number; documentation: number; tagUsage: number };
+          const hs = row.health_scores as { overall: number; tagEfficiency: number; documentation: number; namingCompliance?: number; tagUsage: number };
           healthScoreMap[row.project_id] = hs;
         }
       }
@@ -67,14 +67,82 @@ export default async function ProjectsPage() {
       }
     }
 
-    const [tagsResult, refsResult, rungsResult] = await Promise.all([
-      serviceSupabase.from("parsed_tags").select("file_id, name").in("file_id", allFileIds),
+    const computeProjectIds = projectsNeedingCompute.map((p) => p.id);
+    const [tagsResult, refsResult, rungsResult, projectSettingsResult] = await Promise.all([
+      serviceSupabase.from("parsed_tags").select("file_id, name, scope").in("file_id", allFileIds),
       serviceSupabase.from("tag_references").select("file_id, tag_name").in("file_id", allFileIds),
       serviceSupabase.from("parsed_rungs").select("file_id, comment").in("file_id", allFileIds),
+      serviceSupabase.from("projects").select("id, naming_rule_set_id, naming_affects_health_score, organization_id").in("id", computeProjectIds),
     ]);
 
+    // Build project settings map
+    const projectSettingsMap = new Map<string, { namingEnabled: boolean; ruleSetId: string | null; orgId: string }>();
+    for (const p of projectSettingsResult.data || []) {
+      projectSettingsMap.set(p.id, {
+        namingEnabled: p.naming_affects_health_score ?? true,
+        ruleSetId: p.naming_rule_set_id,
+        orgId: p.organization_id,
+      });
+    }
+
+    // Resolve naming rules for projects with naming enabled
+    const projectsWithNaming = computeProjectIds.filter((id) => projectSettingsMap.get(id)?.namingEnabled);
+    const namingRulesByProject = new Map<string, Array<{ pattern: string; applies_to: string }>>();
+
+    if (projectsWithNaming.length > 0) {
+      const ruleSetIds = new Set<string>();
+      const orgsNeedingDefault = new Set<string>();
+
+      for (const pid of projectsWithNaming) {
+        const settings = projectSettingsMap.get(pid);
+        if (!settings) continue;
+        if (settings.ruleSetId) {
+          ruleSetIds.add(settings.ruleSetId);
+        } else {
+          orgsNeedingDefault.add(settings.orgId);
+        }
+      }
+
+      const orgDefaultSets = new Map<string, string>();
+      if (orgsNeedingDefault.size > 0) {
+        const { data: defaults } = await serviceSupabase
+          .from("naming_rule_sets")
+          .select("id, organization_id")
+          .in("organization_id", [...orgsNeedingDefault])
+          .eq("is_default", true);
+        for (const d of defaults || []) {
+          orgDefaultSets.set(d.organization_id, d.id);
+          ruleSetIds.add(d.id);
+        }
+      }
+
+      if (ruleSetIds.size > 0) {
+        const { data: rules } = await serviceSupabase
+          .from("naming_rules")
+          .select("rule_set_id, pattern, applies_to")
+          .in("rule_set_id", [...ruleSetIds])
+          .eq("is_active", true);
+
+        const rulesBySet = new Map<string, Array<{ pattern: string; applies_to: string }>>();
+        for (const r of rules || []) {
+          const arr = rulesBySet.get(r.rule_set_id) || [];
+          arr.push({ pattern: r.pattern, applies_to: r.applies_to });
+          rulesBySet.set(r.rule_set_id, arr);
+        }
+
+        for (const pid of projectsWithNaming) {
+          const settings = projectSettingsMap.get(pid);
+          if (!settings) continue;
+          const setId = settings.ruleSetId || orgDefaultSets.get(settings.orgId);
+          if (setId && rulesBySet.has(setId)) {
+            namingRulesByProject.set(pid, rulesBySet.get(setId)!);
+          }
+        }
+      }
+    }
+
     // Group by project
-    const projectTags: Record<string, string[]> = {};
+    const projectTags: Record<string, Array<{ name: string; scope: string }>> = {};
     const projectRefNames: Record<string, Set<string>> = {};
     const projectRefCount: Record<string, number> = {};
     const projectRungs: Record<string, { total: number; commented: number }> = {};
@@ -82,7 +150,7 @@ export default async function ProjectsPage() {
     for (const tag of tagsResult.data || []) {
       const pid = fileIdToProject[tag.file_id];
       if (!projectTags[pid]) projectTags[pid] = [];
-      projectTags[pid].push(tag.name);
+      projectTags[pid].push({ name: tag.name, scope: tag.scope });
     }
 
     for (const ref of refsResult.data || []) {
@@ -108,15 +176,15 @@ export default async function ProjectsPage() {
       if (tags.length === 0) continue;
 
       let unusedCount = 0;
-      for (const tagName of tags) {
-        const tagParts = tagName.split(".");
+      for (const tag of tags) {
+        const tagParts = tag.name.split(".");
         let found = false;
         for (let i = 1; i <= tagParts.length; i++) {
           if (refNames.has(tagParts.slice(0, i).join("."))) { found = true; break; }
         }
         if (!found) {
-          const baseName = tagName.split("[")[0];
-          if (!refNames.has(baseName) && !refNames.has(tagName)) unusedCount++;
+          const baseName = tag.name.split("[")[0];
+          if (!refNames.has(baseName) && !refNames.has(tag.name)) unusedCount++;
         }
       }
 
@@ -124,14 +192,56 @@ export default async function ProjectsPage() {
       const tagEfficiency = Math.max(0, 100 - (unusedCount / tags.length) * 200);
       const documentation = commentCoverage;
       const tagUsage = Math.min(100, (totalRefs / tags.length) * 20);
-      const overall = Math.round(tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25);
 
-      healthScoreMap[p.id] = {
-        overall,
-        tagEfficiency: Math.round(tagEfficiency),
-        documentation: Math.round(documentation),
-        tagUsage: Math.round(tagUsage),
-      };
+      // Compute naming violations if enabled
+      const settings = projectSettingsMap.get(p.id);
+      const namingEnabled = settings?.namingEnabled ?? true;
+
+      if (namingEnabled) {
+        const rules = namingRulesByProject.get(p.id);
+        let namingViolationCount = 0;
+        if (rules && rules.length > 0) {
+          const violatingTags = new Set<string>();
+          for (const tag of tags) {
+            for (const rule of rules) {
+              const appliesToTag =
+                rule.applies_to === "all" ||
+                (rule.applies_to === "controller" && tag.scope === "Controller") ||
+                (rule.applies_to === "program" && tag.scope !== "Controller");
+              if (!appliesToTag) continue;
+              try {
+                if (!new RegExp(rule.pattern).test(tag.name)) {
+                  violatingTags.add(tag.name);
+                  break;
+                }
+              } catch { continue; }
+            }
+          }
+          namingViolationCount = violatingTags.size;
+        }
+
+        const namingCompliance = tags.length > 0
+          ? Math.max(0, ((tags.length - namingViolationCount) / tags.length) * 100)
+          : 100;
+        const overall = Math.round(tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance * 0.2 + tagUsage * 0.2);
+
+        healthScoreMap[p.id] = {
+          overall,
+          tagEfficiency: Math.round(tagEfficiency),
+          documentation: Math.round(documentation),
+          namingCompliance: Math.round(namingCompliance),
+          tagUsage: Math.round(tagUsage),
+        };
+      } else {
+        const overall = Math.round(tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25);
+
+        healthScoreMap[p.id] = {
+          overall,
+          tagEfficiency: Math.round(tagEfficiency),
+          documentation: Math.round(documentation),
+          tagUsage: Math.round(tagUsage),
+        };
+      }
     }
   }
 

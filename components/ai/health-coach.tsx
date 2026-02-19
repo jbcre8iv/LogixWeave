@@ -58,6 +58,7 @@ interface HistoryEntry {
     overall: number;
     tagEfficiency: number;
     documentation: number;
+    namingCompliance?: number;
     tagUsage: number;
   } | null;
   tokens_used: number | null;
@@ -67,12 +68,14 @@ interface HistoryEntry {
 const metricLabels: Record<string, string> = {
   tagEfficiency: "Tag Efficiency",
   documentation: "Documentation",
+  namingCompliance: "Naming Compliance",
   tagUsage: "Tag Usage",
 };
 
 const metricDescriptions: Record<string, string> = {
   tagEfficiency: "Measures the ratio of actively used tags vs. total tags",
   documentation: "Measures comment coverage across all rungs",
+  namingCompliance: "Measures tag conformance to configured naming rules",
   tagUsage: "Measures reference density relative to total tags",
 };
 
@@ -83,6 +86,8 @@ const toolRoutes: Record<string, (projectId: string) => string> = {
   "unused-tags": (id) => `/dashboard/projects/${id}/analysis/unused-tags`,
   "comment-coverage": (id) =>
     `/dashboard/projects/${id}/analysis/comment-coverage`,
+  "naming-validation": (id) =>
+    `/dashboard/projects/${id}/analysis/naming`,
 };
 
 function getScoreColor(score: number) {
@@ -256,6 +261,9 @@ function HistoryEntryCard({
                 <MiniHealthRing score={scores.overall} size={32} />
                 <ScoreBadge label="TagEff" score={scores.tagEfficiency} />
                 <ScoreBadge label="Docs" score={scores.documentation} />
+                {scores.namingCompliance !== undefined && (
+                  <ScoreBadge label="Naming" score={scores.namingCompliance} />
+                )}
                 <ScoreBadge label="Usage" score={scores.tagUsage} />
                 {prevScores && (
                   <ScoreChangeIndicator
@@ -456,11 +464,11 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
       }
     };
 
-    const weightLabels: Record<string, string> = {
-      tagEfficiency: "40%",
-      documentation: "35%",
-      tagUsage: "25%",
-    };
+    // Determine if naming compliance is included (check if any section has it)
+    const hasNaming = result.sections.some((s) => s.metric === "namingCompliance");
+    const weightLabels: Record<string, string> = hasNaming
+      ? { tagEfficiency: "30%", documentation: "30%", namingCompliance: "20%", tagUsage: "20%" }
+      : { tagEfficiency: "40%", documentation: "35%", tagUsage: "25%" };
 
     // Title
     doc.setFontSize(18);
@@ -588,13 +596,22 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
       // Table header
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      const cols = [margin, margin + 35, margin + 55, margin + 75, margin + 95, margin + 115];
+      const historyHasNaming = history.some((e) => e.health_scores?.namingCompliance !== undefined);
+      const cols = historyHasNaming
+        ? [margin, margin + 30, margin + 48, margin + 63, margin + 80, margin + 97, margin + 115]
+        : [margin, margin + 35, margin + 55, margin + 75, margin + 95, margin + 115];
       doc.text("Date", cols[0], y);
       doc.text("Overall", cols[1], y);
       doc.text("Tag Eff", cols[2], y);
       doc.text("Docs", cols[3], y);
-      doc.text("Usage", cols[4], y);
-      doc.text("Change", cols[5], y);
+      if (historyHasNaming) {
+        doc.text("Naming", cols[4], y);
+        doc.text("Usage", cols[5], y);
+        doc.text("Change", cols[6], y);
+      } else {
+        doc.text("Usage", cols[4], y);
+        doc.text("Change", cols[5], y);
+      }
       y += 2;
       doc.setDrawColor(180, 180, 180);
       doc.line(margin, y, margin + 140, y);
@@ -618,12 +635,23 @@ export function HealthCoach({ projectId, projectName }: HealthCoachProps) {
           doc.text(String(scores.overall), cols[1], y);
           doc.text(String(scores.tagEfficiency), cols[2], y);
           doc.text(String(scores.documentation), cols[3], y);
-          doc.text(String(scores.tagUsage), cols[4], y);
-          if (prev?.health_scores) {
-            const diff = scores.overall - prev.health_scores.overall;
-            doc.text(diff > 0 ? `+${diff}` : String(diff), cols[5], y);
+          if (historyHasNaming) {
+            doc.text(scores.namingCompliance !== undefined ? String(scores.namingCompliance) : "—", cols[4], y);
+            doc.text(String(scores.tagUsage), cols[5], y);
+            if (prev?.health_scores) {
+              const diff = scores.overall - prev.health_scores.overall;
+              doc.text(diff > 0 ? `+${diff}` : String(diff), cols[6], y);
+            } else {
+              doc.text("—", cols[6], y);
+            }
           } else {
-            doc.text("—", cols[5], y);
+            doc.text(String(scores.tagUsage), cols[4], y);
+            if (prev?.health_scores) {
+              const diff = scores.overall - prev.health_scores.overall;
+              doc.text(diff > 0 ? `+${diff}` : String(diff), cols[5], y);
+            } else {
+              doc.text("—", cols[5], y);
+            }
           }
         }
         y += 5;

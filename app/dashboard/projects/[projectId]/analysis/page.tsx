@@ -9,6 +9,7 @@ import { ExportXLSXButton, type ExportSheet } from "@/components/export-xlsx-but
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AnalysisCharts } from "@/components/analysis/analysis-charts";
 import { HealthScore } from "@/components/analysis/health-score";
+import { NamingHealthToggle } from "@/components/analysis/naming-health-toggle";
 import { AnimatedCount } from "@/components/analysis/animated-count";
 import { analyzeExportTypes } from "@/lib/partial-export";
 import { ActivityLog } from "@/components/projects/activity-log";
@@ -84,13 +85,14 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     ? `${ownerProfile.first_name[0]}${ownerProfile.last_name?.[0] || ""}`.toUpperCase()
     : "?";
 
-  // Fetch naming_rule_set_id separately (column may not exist pre-migration)
+  // Fetch naming settings separately (columns may not exist pre-migration)
   const { data: projectRuleSetRow } = await supabase
     .from("projects")
-    .select("naming_rule_set_id")
+    .select("naming_rule_set_id, naming_affects_health_score")
     .eq("id", projectId)
     .single();
   const projectRuleSetId: string | null = projectRuleSetRow?.naming_rule_set_id ?? null;
+  const namingAffectsHealthScore: boolean = projectRuleSetRow?.naming_affects_health_score ?? true;
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
@@ -102,7 +104,15 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   );
 
   // Fetch full analysis data (used for both summary stats and CSV export)
-  let stats = {
+  let stats: {
+    totalTags: number;
+    unusedTags: number;
+    totalRungs: number;
+    commentedRungs: number;
+    commentCoverage: number;
+    totalReferences: number;
+    namingViolationTags?: number;
+  } = {
     totalTags: 0,
     unusedTags: 0,
     totalRungs: 0,
@@ -186,6 +196,32 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
     const commentedRungs = rungs.filter((r) => r.comment && r.comment.trim() !== "").length;
 
+    // Compute naming violation count for health score
+    let namingViolationTags: number | undefined;
+    if (namingAffectsHealthScore) {
+      if (namingRules.length > 0) {
+        const violatingTagNames = new Set<string>();
+        for (const tag of allTags) {
+          for (const rule of namingRules) {
+            const appliesToTag =
+              rule.applies_to === "all" ||
+              (rule.applies_to === "controller" && tag.scope === "Controller") ||
+              (rule.applies_to === "program" && tag.scope !== "Controller");
+            if (!appliesToTag) continue;
+            try {
+              if (!new RegExp(rule.pattern).test(tag.name)) {
+                violatingTagNames.add(tag.name);
+                break;
+              }
+            } catch { continue; }
+          }
+        }
+        namingViolationTags = violatingTagNames.size;
+      } else {
+        namingViolationTags = 0;
+      }
+    }
+
     stats = {
       totalTags: allTags.length,
       unusedTags: unusedTags.length,
@@ -193,6 +229,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       commentedRungs,
       commentCoverage: rungs.length > 0 ? Math.round((commentedRungs / rungs.length) * 100) : 0,
       totalReferences: references.length,
+      namingViolationTags,
     };
 
     // --- Build multi-sheet XLSX export ---
@@ -385,7 +422,6 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                     Naming Validation
                   </Link>
                 </Button>
-                <p className="text-xs text-muted-foreground">Affects health score</p>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <ExportXLSXButton
@@ -439,6 +475,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
           {/* Health Score */}
           <HealthScore projectId={projectId} stats={stats} partialExportInfo={partialExportInfo} />
+          <NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} />
 
           {/* Summary Stats */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">

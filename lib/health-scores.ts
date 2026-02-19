@@ -5,6 +5,7 @@ interface HealthScores {
   overall: number;
   tagEfficiency: number;
   documentation: number;
+  namingCompliance?: number;
   tagUsage: number;
   hasPartialExports?: boolean;
 }
@@ -14,6 +15,7 @@ function computeScore(stats: {
   unusedTags: number;
   commentCoverage: number;
   totalReferences: number;
+  namingViolationTags?: number;
 }): HealthScores {
   const tagEfficiency =
     stats.totalTags > 0
@@ -24,6 +26,26 @@ function computeScore(stats: {
     stats.totalTags > 0
       ? Math.min(100, (stats.totalReferences / stats.totalTags) * 20)
       : 0;
+
+  // When namingViolationTags is provided, use 4-metric weights (30/30/20/20)
+  // Otherwise fall back to original 3-metric weights (40/35/25)
+  if (stats.namingViolationTags !== undefined) {
+    const namingCompliance = stats.totalTags > 0
+      ? Math.max(0, ((stats.totalTags - stats.namingViolationTags) / stats.totalTags) * 100)
+      : 100;
+
+    const overall = Math.round(
+      tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance * 0.2 + tagUsage * 0.2
+    );
+
+    return {
+      overall,
+      tagEfficiency: Math.round(tagEfficiency),
+      documentation: Math.round(documentation),
+      namingCompliance: Math.round(namingCompliance),
+      tagUsage: Math.round(tagUsage),
+    };
+  }
 
   const overall = Math.round(
     tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
@@ -68,11 +90,17 @@ export async function getProjectHealthScores(
   // 2. Compute real-time scores for projects without AI analysis
   const missing = projectIds.filter((id) => !scores.has(id));
   if (missing.length > 0) {
-    // Get file IDs for missing projects
-    const { data: files } = await supabase
-      .from("project_files")
-      .select("id, project_id")
-      .in("project_id", missing);
+    // Get file IDs and naming toggle for missing projects
+    const [{ data: files }, { data: projectSettings }] = await Promise.all([
+      supabase
+        .from("project_files")
+        .select("id, project_id")
+        .in("project_id", missing),
+      supabase
+        .from("projects")
+        .select("id, naming_rule_set_id, naming_affects_health_score, organization_id")
+        .in("id", missing),
+    ]);
 
     const filesByProject = new Map<string, string[]>();
     for (const f of files || []) {
@@ -81,12 +109,82 @@ export async function getProjectHealthScores(
       filesByProject.set(f.project_id, arr);
     }
 
+    // Build a map of project settings
+    const settingsMap = new Map<string, { namingEnabled: boolean; ruleSetId: string | null; orgId: string }>();
+    for (const p of projectSettings || []) {
+      settingsMap.set(p.id, {
+        namingEnabled: p.naming_affects_health_score ?? true,
+        ruleSetId: p.naming_rule_set_id,
+        orgId: p.organization_id,
+      });
+    }
+
+    // Resolve naming rules for projects with naming enabled
+    const projectsWithNaming = missing.filter((id) => settingsMap.get(id)?.namingEnabled);
+    const namingRulesByProject = new Map<string, Array<{ pattern: string; applies_to: string }>>();
+
+    if (projectsWithNaming.length > 0) {
+      // Collect rule set IDs and org IDs that need default lookups
+      const ruleSetIds = new Set<string>();
+      const orgsNeedingDefault = new Set<string>();
+
+      for (const pid of projectsWithNaming) {
+        const settings = settingsMap.get(pid);
+        if (!settings) continue;
+        if (settings.ruleSetId) {
+          ruleSetIds.add(settings.ruleSetId);
+        } else {
+          orgsNeedingDefault.add(settings.orgId);
+        }
+      }
+
+      // Fetch org default rule sets
+      const orgDefaultSets = new Map<string, string>();
+      if (orgsNeedingDefault.size > 0) {
+        const { data: defaults } = await supabase
+          .from("naming_rule_sets")
+          .select("id, organization_id")
+          .in("organization_id", [...orgsNeedingDefault])
+          .eq("is_default", true);
+        for (const d of defaults || []) {
+          orgDefaultSets.set(d.organization_id, d.id);
+          ruleSetIds.add(d.id);
+        }
+      }
+
+      // Fetch all active rules for resolved set IDs
+      if (ruleSetIds.size > 0) {
+        const { data: rules } = await supabase
+          .from("naming_rules")
+          .select("rule_set_id, pattern, applies_to")
+          .in("rule_set_id", [...ruleSetIds])
+          .eq("is_active", true);
+
+        const rulesBySet = new Map<string, Array<{ pattern: string; applies_to: string }>>();
+        for (const r of rules || []) {
+          const arr = rulesBySet.get(r.rule_set_id) || [];
+          arr.push({ pattern: r.pattern, applies_to: r.applies_to });
+          rulesBySet.set(r.rule_set_id, arr);
+        }
+
+        // Map rules to projects
+        for (const pid of projectsWithNaming) {
+          const settings = settingsMap.get(pid);
+          if (!settings) continue;
+          const setId = settings.ruleSetId || orgDefaultSets.get(settings.orgId);
+          if (setId && rulesBySet.has(setId)) {
+            namingRulesByProject.set(pid, rulesBySet.get(setId)!);
+          }
+        }
+      }
+    }
+
     const allFileIds = (files || []).map((f) => f.id);
     if (allFileIds.length > 0) {
       const [tagsResult, referencesResult, rungsResult] = await Promise.all([
         supabase
           .from("parsed_tags")
-          .select("name, file_id")
+          .select("name, scope, file_id")
           .in("file_id", allFileIds),
         supabase
           .from("tag_references")
@@ -124,11 +222,42 @@ export async function getProjectHealthScores(
           ? Math.round((commentedRungs / rungs.length) * 100)
           : 0;
 
+        // Compute naming violations if enabled
+        const settings = settingsMap.get(projectId);
+        const namingEnabled = settings?.namingEnabled ?? true;
+        let namingViolationTags: number | undefined;
+
+        if (namingEnabled) {
+          const rules = namingRulesByProject.get(projectId);
+          if (rules && rules.length > 0) {
+            const violatingTags = new Set<string>();
+            for (const tag of tags) {
+              for (const rule of rules) {
+                const appliesToTag =
+                  rule.applies_to === "all" ||
+                  (rule.applies_to === "controller" && tag.scope === "Controller") ||
+                  (rule.applies_to === "program" && tag.scope !== "Controller");
+                if (!appliesToTag) continue;
+                try {
+                  if (!new RegExp(rule.pattern).test(tag.name)) {
+                    violatingTags.add(tag.name);
+                    break;
+                  }
+                } catch { continue; }
+              }
+            }
+            namingViolationTags = violatingTags.size;
+          } else {
+            namingViolationTags = 0;
+          }
+        }
+
         scores.set(projectId, computeScore({
           totalTags: tags.length,
           unusedTags: unusedTags.length,
           commentCoverage,
           totalReferences: references.length,
+          namingViolationTags,
         }));
       }
     }

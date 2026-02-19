@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const { data: project } = await supabase
       .from("projects")
       .select(
-        "id, organization_id, project_files(id, parsing_status, current_version, version_count, target_type, target_name)"
+        "id, organization_id, naming_rule_set_id, naming_affects_health_score, project_files(id, parsing_status, current_version, version_count, target_type, target_name)"
       )
       .eq("id", projectId)
       .single();
@@ -126,6 +126,62 @@ export async function POST(request: Request) {
       );
     }
 
+    // Fetch naming rules if naming compliance is enabled for this project
+    const namingAffectsHealthScore = (project as { naming_affects_health_score?: boolean }).naming_affects_health_score ?? true;
+    let namingViolationTags = 0;
+    let namingRulesList: Array<{ name: string; pattern: string; applies_to: string }> = [];
+    let topViolatedRules: Array<{ ruleName: string; violationCount: number }> = [];
+
+    if (namingAffectsHealthScore) {
+      // Resolve effective rule set
+      let effectiveRuleSetId = (project as { naming_rule_set_id?: string | null }).naming_rule_set_id ?? null;
+      if (!effectiveRuleSetId) {
+        const { data: defaultSet } = await supabase
+          .from("naming_rule_sets")
+          .select("id")
+          .eq("organization_id", project.organization_id)
+          .eq("is_default", true)
+          .single();
+        effectiveRuleSetId = defaultSet?.id ?? null;
+      }
+
+      if (effectiveRuleSetId) {
+        const { data: rules } = await supabase
+          .from("naming_rules")
+          .select("name, pattern, applies_to")
+          .eq("rule_set_id", effectiveRuleSetId)
+          .eq("is_active", true);
+        namingRulesList = rules || [];
+      }
+
+      if (namingRulesList.length > 0) {
+        const violatingTagNames = new Set<string>();
+        const ruleViolationCounts = new Map<string, number>();
+
+        for (const tag of allTags) {
+          for (const rule of namingRulesList) {
+            const appliesToTag =
+              rule.applies_to === "all" ||
+              (rule.applies_to === "controller" && tag.scope === "Controller") ||
+              (rule.applies_to === "program" && tag.scope !== "Controller");
+            if (!appliesToTag) continue;
+            try {
+              if (!new RegExp(rule.pattern).test(tag.name)) {
+                violatingTagNames.add(tag.name);
+                ruleViolationCounts.set(rule.name, (ruleViolationCounts.get(rule.name) || 0) + 1);
+              }
+            } catch { continue; }
+          }
+        }
+
+        namingViolationTags = violatingTagNames.size;
+        topViolatedRules = Array.from(ruleViolationCounts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([ruleName, violationCount]) => ({ ruleName, violationCount }));
+      }
+    }
+
     // Compute unused tags
     const referencedTagNames = new Set(references.map((r) => r.tag_name));
     const unusedTags = allTags.filter((tag) => {
@@ -198,14 +254,34 @@ export async function POST(request: Request) {
       allTags.length > 0
         ? Math.min(100, (references.length / allTags.length) * 20)
         : 0;
-    const overall = Math.round(
-      tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
-    );
 
-    const healthScores = {
+    let namingCompliance: number | undefined;
+    let overall: number;
+
+    if (namingAffectsHealthScore) {
+      namingCompliance = allTags.length > 0
+        ? Math.max(0, ((allTags.length - namingViolationTags) / allTags.length) * 100)
+        : 100;
+      overall = Math.round(
+        tagEfficiency * 0.3 + documentation * 0.3 + namingCompliance * 0.2 + tagUsage * 0.2
+      );
+    } else {
+      overall = Math.round(
+        tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25
+      );
+    }
+
+    const healthScores: {
+      overall: number;
+      tagEfficiency: number;
+      documentation: number;
+      namingCompliance?: number;
+      tagUsage: number;
+    } = {
       overall,
       tagEfficiency: Math.round(tagEfficiency),
       documentation: Math.round(documentation),
+      ...(namingAffectsHealthScore ? { namingCompliance: Math.round(namingCompliance!) } : {}),
       tagUsage: Math.round(tagUsage),
     };
 
@@ -342,6 +418,8 @@ export async function POST(request: Request) {
         JSON.stringify(versionHistory?.versionSummaries?.length || 0) +
         JSON.stringify(previousRuns?.length || 0) +
         JSON.stringify(partialExportInfo.hasPartialExports) +
+        JSON.stringify(namingViolationTags) +
+        JSON.stringify(namingAffectsHealthScore) +
         language
     );
 
@@ -408,7 +486,10 @@ export async function POST(request: Request) {
       versionHistory,
       language,
       previousAnalyses,
-      partialExportInfo.hasPartialExports ? partialExportInfo : undefined
+      partialExportInfo.hasPartialExports ? partialExportInfo : undefined,
+      namingAffectsHealthScore
+        ? { violationCount: namingViolationTags, totalTags: allTags.length, topViolatedRules }
+        : undefined
     );
 
     // Cache result (7-day TTL)

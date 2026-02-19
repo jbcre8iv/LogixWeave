@@ -55,7 +55,7 @@ export interface HealthRecommendation {
   specificItems?: string[];
   actionLink?: {
     label: string;
-    tool: "issues" | "explainer" | "tag-xref" | "unused-tags" | "comment-coverage";
+    tool: "issues" | "explainer" | "tag-xref" | "unused-tags" | "comment-coverage" | "naming-validation";
   };
 }
 
@@ -63,7 +63,7 @@ export interface HealthRecommendationResult {
   summary: string;
   quickWins: string[];
   sections: Array<{
-    metric: "tagEfficiency" | "documentation" | "tagUsage";
+    metric: "tagEfficiency" | "documentation" | "namingCompliance" | "tagUsage";
     currentScore: number;
     weight: string;
     recommendations: HealthRecommendation[];
@@ -590,6 +590,7 @@ export async function recommendHealthImprovements(
     overall: number;
     tagEfficiency: number;
     documentation: number;
+    namingCompliance?: number;
     tagUsage: number;
   },
   unusedTags: Array<{ name: string; dataType: string; scope: string }>,
@@ -615,12 +616,17 @@ export async function recommendHealthImprovements(
   },
   language: AILanguage = "en",
   previousAnalyses?: Array<{
-    healthScores: { overall: number; tagEfficiency: number; documentation: number; tagUsage: number };
+    healthScores: { overall: number; tagEfficiency: number; documentation: number; namingCompliance?: number; tagUsage: number };
     summary: string;
     quickWins: string[];
     analyzedAt: string;
   }> | null,
   partialExportContext?: PartialExportInfo,
+  namingViolationData?: {
+    violationCount: number;
+    totalTags: number;
+    topViolatedRules: Array<{ ruleName: string; violationCount: number }>;
+  },
 ): Promise<HealthRecommendationResult> {
   const client = getClient();
 
@@ -679,13 +685,23 @@ When making recommendations, reference trends you observe across versions. For e
 `
     : "";
 
+  const namingSection = namingViolationData
+    ? `\nNaming Violations (${namingViolationData.violationCount} tags with violations out of ${namingViolationData.totalTags} total):
+${namingViolationData.topViolatedRules.length > 0
+  ? namingViolationData.topViolatedRules.map((r) => `- "${r.ruleName}": ${r.violationCount} tags violating`).join("\n")
+  : "No violations found"}
+`
+    : "";
+
+  const hasNaming = healthScores.namingCompliance !== undefined;
+
   const prompt = `Analyze this PLC project's health metrics and provide specific, actionable recommendations to improve the scores.
 
 Current Health Scores:
 - Overall: ${healthScores.overall}/100
-- Tag Efficiency (40% weight): ${healthScores.tagEfficiency}/100
-- Documentation (35% weight): ${healthScores.documentation}/100
-- Tag Usage (25% weight): ${healthScores.tagUsage}/100
+- Tag Efficiency (${hasNaming ? "30" : "40"}% weight): ${healthScores.tagEfficiency}/100
+- Documentation (${hasNaming ? "30" : "35"}% weight): ${healthScores.documentation}/100${hasNaming ? `\n- Naming Compliance (20% weight): ${healthScores.namingCompliance}/100` : ""}
+- Tag Usage (${hasNaming ? "20" : "25"}% weight): ${healthScores.tagUsage}/100
 
 Unused Tags (${unusedTags.length} total, showing ${limitedUnusedTags.length}):
 ${limitedUnusedTags.map((t) => `- ${t.name} (${t.dataType}, ${t.scope})`).join("\n") || "None"}
@@ -703,7 +719,7 @@ ${topTags.slice(0, 10).map((t) => `- ${t.name}: ${t.count} references`).join("\n
 
 Routines (${routines.length} total, showing ${limitedRoutines.length}):
 ${limitedRoutines.map((r) => `- ${r.programName}/${r.name} (${r.type}, ${r.rungCount || 0} rungs)`).join("\n")}
-${versionHistorySection}${previousAnalysesSection}${partialExportSection}
+${namingSection}${versionHistorySection}${previousAnalysesSection}${partialExportSection}
 Provide your analysis as JSON with this structure:
 {
   "summary": "2-3 sentence overall assessment of the project health",
@@ -712,7 +728,7 @@ Provide your analysis as JSON with this structure:
     {
       "metric": "tagEfficiency",
       "currentScore": ${healthScores.tagEfficiency},
-      "weight": "40%",
+      "weight": "${hasNaming ? "30" : "40"}%",
       "recommendations": [
         {
           "priority": "high|medium|low",
@@ -720,20 +736,26 @@ Provide your analysis as JSON with this structure:
           "description": "Detailed explanation naming specific tags/routines",
           "impact": "Expected score improvement description",
           "specificItems": ["Tag1", "Tag2"],
-          "actionLink": { "label": "Button text", "tool": "unused-tags|issues|explainer|tag-xref|comment-coverage" }
+          "actionLink": { "label": "Button text", "tool": "unused-tags|issues|explainer|tag-xref|comment-coverage${hasNaming ? "|naming-validation" : ""}" }
         }
       ]
     },
     {
       "metric": "documentation",
       "currentScore": ${healthScores.documentation},
-      "weight": "35%",
+      "weight": "${hasNaming ? "30" : "35"}%",
       "recommendations": [...]
-    },
+    },${hasNaming ? `
+    {
+      "metric": "namingCompliance",
+      "currentScore": ${healthScores.namingCompliance},
+      "weight": "20%",
+      "recommendations": [...]
+    },` : ""}
     {
       "metric": "tagUsage",
       "currentScore": ${healthScores.tagUsage},
-      "weight": "25%",
+      "weight": "${hasNaming ? "20" : "25"}%",
       "recommendations": [...]
     }
   ]
@@ -744,7 +766,7 @@ Rules:
 - Order recommendations by impact (highest first)
 - For tag efficiency issues, suggest "View Unused Tags" (tool: "unused-tags") or "Run Issue Finder" (tool: "issues")
 - For documentation issues, suggest "View Comment Coverage" (tool: "comment-coverage") or "Explain routine logic" (tool: "explainer")
-- For tag usage issues, suggest "View Tag Cross-Reference" (tool: "tag-xref")
+- For tag usage issues, suggest "View Tag Cross-Reference" (tool: "tag-xref")${hasNaming ? '\n- For naming compliance issues, suggest "View Naming Validation" (tool: "naming-validation")' : ""}
 - Keep quickWins to truly easy, specific actions${versionHistory && versionHistory.totalVersions > 1 ? "\n- Include version trend observations in your summary and relevant section recommendations" : ""}${previousAnalyses && previousAnalyses.length > 0 ? "\n- Include score trend comparisons in your summary and note which previous recommendations were addressed" : ""}
 - Limit to 2-4 recommendations per section${languageInstruction}`;
 
