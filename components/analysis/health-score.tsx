@@ -148,10 +148,10 @@ export function HealthScore({ projectId, stats, partialExportInfo, namingHealthE
   const metrics = [
     { label: "Tag Efficiency (unused tags)", value: tagEfficiency },
     { label: "Documentation (comment coverage)", value: documentation },
+    { label: "Tag Usage (reference density)", value: tagUsage },
     ...(namingCompliance !== undefined
       ? [{ label: "Naming Compliance (rule violations)", value: namingCompliance }]
       : []),
-    { label: "Tag Usage (reference density)", value: tagUsage },
     ...(taskConfig !== undefined
       ? [{ label: "Task Configuration (program scheduling)", value: taskConfig }]
       : []),
