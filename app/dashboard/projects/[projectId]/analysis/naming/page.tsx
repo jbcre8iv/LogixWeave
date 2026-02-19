@@ -336,7 +336,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                 <p className="text-sm text-muted-foreground mb-4">
                   {useProjectOwnerRules
                     ? "You can configure your own rules and apply them to this shared project."
-                    : "Create naming rules in your organization settings to validate tags on shared projects."}
+                    : "Create naming rules in your settings to validate tags on shared projects."}
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <RuleSetPicker
@@ -557,7 +557,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
               {effectiveRuleSet && (
                 <Badge variant="outline">
                   Rule set: {effectiveRuleSet.name}
-                  {!isCrossOrg && !projectRuleSetId && " (org default)"}
+                  {!isCrossOrg && !projectRuleSetId && " (default)"}
                 </Badge>
               )}
               {isCrossOrg && (

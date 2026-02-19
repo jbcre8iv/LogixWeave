@@ -1195,7 +1195,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
             <AlertDialogDescription>
               Are you sure you want to delete the rule set &quot;{deleteSet?.name}&quot; and all
               its {deleteSet?.naming_rules.length} rule{deleteSet?.naming_rules.length === 1 ? "" : "s"}?
-              Projects using this set will fall back to the organization default.
+              Projects using this set will fall back to the default rule set.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

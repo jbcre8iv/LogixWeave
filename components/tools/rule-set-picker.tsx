@@ -86,7 +86,7 @@ export function RuleSetPicker({
       <SelectContent>
         <SelectItem value="org-default">
           <span className="flex items-center gap-2">
-            {isCrossOrg ? "Use your org default" : "Use organization default"}
+            {isCrossOrg ? "Use your default rules" : "Use default rule set"}
           </span>
         </SelectItem>
         {isCrossOrg && (

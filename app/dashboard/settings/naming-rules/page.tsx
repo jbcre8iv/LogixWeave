@@ -27,7 +27,7 @@ export default async function NamingRulesPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
-              No organization found. Please create or join an organization first.
+              No team found. Please create or join a team first.
             </p>
           </CardContent>
         </Card>
@@ -50,7 +50,7 @@ export default async function NamingRulesPage() {
       <div>
         <h1 className="text-3xl font-bold">Naming Rules</h1>
         <p className="text-muted-foreground">
-          Configure tag naming conventions for your organization
+          Configure tag naming conventions for your team
         </p>
       </div>
 

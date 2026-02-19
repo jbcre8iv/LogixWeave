@@ -81,7 +81,7 @@ export default async function SettingsPage() {
                     Naming Rules
                   </CardTitle>
                   <CardDescription className="mt-1.5">
-                    Configure tag naming conventions for your organization
+                    Configure tag naming conventions for your team
                   </CardDescription>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
