@@ -562,7 +562,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
     );
   };
 
-  const RuleFormContent = () => (
+  const ruleFormContent = (
     <div className="space-y-4">
       {error && (
         <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
@@ -993,7 +993,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                               Create a new rule in &quot;{rs.name}&quot;
                             </DialogDescription>
                           </DialogHeader>
-                          <RuleFormContent />
+                          {ruleFormContent}
                           <DialogFooter>
                             <Button variant="outline" onClick={() => setIsAddRuleDialogOpen(false)}>
                               Cancel
@@ -1120,7 +1120,7 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
                                         Update the rule configuration
                                       </DialogDescription>
                                     </DialogHeader>
-                                    <RuleFormContent />
+                                    {ruleFormContent}
                                     <DialogFooter>
                                       <Button variant="outline" onClick={() => setEditingRule(null)}>
                                         Cancel
