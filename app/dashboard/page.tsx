@@ -219,7 +219,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       <div className="min-w-0">
                         <p className="font-medium truncate">{project.name}</p>
                         <Badge variant="secondary" className="text-xs mt-1">
-                          {share.permission === "edit" ? "Can edit" : "View only"}
+                          {share.permission === "owner" ? "Owner" : share.permission === "edit" ? "Can edit" : "View only"}
                         </Badge>
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground shrink-0 ml-3 transition-colors" />
