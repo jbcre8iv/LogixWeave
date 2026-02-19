@@ -988,11 +988,6 @@ export function NamingRulesManager({ ruleSets: initialRuleSets, isAdmin }: Namin
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2">
               {activeRuleSet?.name}
-              {activeRuleSet?.is_default && (
-                <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                  Default
-                </Badge>
-              )}
               <span className="text-xs text-muted-foreground">
                 {activeRuleSet?.naming_rules.length} rule{activeRuleSet?.naming_rules.length === 1 ? "" : "s"}
               </span>
