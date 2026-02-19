@@ -372,6 +372,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           <ProjectActions
             projectId={projectId}
             projectName={project.name}
+            projectDescription={project.description}
             isFavorite={project.is_favorite}
             isOwner={isOwner}
           />

@@ -21,10 +21,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
+import { EditProjectDialog } from "@/components/dashboard/edit-project-dialog";
 import {
   MoreVertical,
   FolderOpen,
   Star,
+  Pencil,
   Share2,
   Archive,
   Trash2,
@@ -57,6 +59,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const handleArchive = async (e: React.MouseEvent) => {
@@ -163,6 +166,10 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
           {isOwner && (
             <>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                <Pencil className="h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShareDialogOpen(true)}>
                 <Share2 className="h-4 w-4" />
                 Share
@@ -195,6 +202,17 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Edit dialog */}
+      {isOwner && (
+        <EditProjectDialog
+          projectId={project.id}
+          projectName={project.name}
+          projectDescription={project.description}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
+      )}
 
       {/* Share dialog */}
       {isOwner && (

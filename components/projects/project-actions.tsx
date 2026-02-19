@@ -14,19 +14,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ShareProjectDialog } from "@/components/dashboard/share-project-dialog";
-import { Star, Share2, Archive, Loader2 } from "lucide-react";
+import { EditProjectDialog } from "@/components/dashboard/edit-project-dialog";
+import { Star, Pencil, Share2, Archive, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProjectActionsProps {
   projectId: string;
   projectName: string;
+  projectDescription: string | null;
   isFavorite: boolean;
   isOwner: boolean;
 }
 
-export function ProjectActions({ projectId, projectName, isFavorite, isOwner }: ProjectActionsProps) {
+export function ProjectActions({ projectId, projectName, projectDescription, isFavorite, isOwner }: ProjectActionsProps) {
   const router = useRouter();
   const [optimisticFavorite, setOptimisticFavorite] = useState(isFavorite);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -80,6 +83,9 @@ export function ProjectActions({ projectId, projectName, isFavorite, isOwner }: 
       </Button>
       {isOwner && (
         <>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditDialogOpen(true)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShareDialogOpen(true)}>
             <Share2 className="h-4 w-4" />
           </Button>
@@ -87,6 +93,16 @@ export function ProjectActions({ projectId, projectName, isFavorite, isOwner }: 
             <Archive className="h-4 w-4" />
           </Button>
         </>
+      )}
+
+      {isOwner && (
+        <EditProjectDialog
+          projectId={projectId}
+          projectName={projectName}
+          projectDescription={projectDescription}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
       )}
 
       {isOwner && (
