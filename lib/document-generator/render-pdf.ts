@@ -26,8 +26,10 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = PAGE_MARGIN;
 
+  const FOOTER_RESERVE = 35; // Reserve 35mm at bottom for page number + branding
+
   const checkPageBreak = (needed: number) => {
-    if (y + needed > pageHeight - 25) {
+    if (y + needed > pageHeight - FOOTER_RESERVE) {
       doc.addPage();
       y = PAGE_MARGIN;
     }
@@ -65,7 +67,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       startY: y,
       head: [headers],
       body: rows,
-      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
+      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN, bottom: FOOTER_RESERVE },
       styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
       headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 247, 250] },
@@ -331,10 +333,11 @@ function addPageNumbers(doc: jsPDF) {
 
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(150, 150, 150);
-    doc.text(`Page ${i - 1} of ${totalPages - 1}`, pageWidth / 2, pageHeight - 15, { align: "center" });
+    // Place page number above the branding line (branding is at pageHeight - 10)
+    doc.text(`Page ${i - 1} of ${totalPages - 1}`, pageWidth - PAGE_MARGIN, pageHeight - 18, { align: "right" });
     doc.setTextColor(0, 0, 0);
   }
 }
