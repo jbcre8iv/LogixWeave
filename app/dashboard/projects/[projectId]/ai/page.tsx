@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Search, AlertTriangle, Sparkles, ArrowRight, Activity } from "lucide-react";
+import { Brain, AlertTriangle, Sparkles, ArrowRight, Activity, BookOpen } from "lucide-react";
 import { AIChatSearchBar } from "@/components/ai/ai-chat-sidebar";
 
 interface AIPageProps {
@@ -45,10 +45,10 @@ export default async function AIPage({ params }: AIPageProps) {
       icon: AlertTriangle,
     },
     {
-      title: "Natural Language Search",
-      description: "Search your project using natural language queries",
-      href: `/dashboard/projects/${projectId}/ai/search`,
-      icon: Search,
+      title: "Project Manual",
+      description: "Generate comprehensive documentation with AI-powered narratives",
+      href: `/dashboard/projects/${projectId}/tools/documentation`,
+      icon: BookOpen,
     },
   ];
 
