@@ -16,6 +16,7 @@ import {
 import { ArrowLeft, AlertCircle, AlertTriangle, Info, CheckCircle, Settings, Layers } from "lucide-react";
 import { ExportCSVButton } from "@/components/export-csv-button";
 import { RuleSetPicker } from "@/components/tools/rule-set-picker";
+import { RuleSetPreview } from "@/components/tools/rule-set-preview";
 
 interface NamingPageProps {
   params: Promise<{ projectId: string }>;
@@ -250,6 +251,8 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     effectiveRuleSetId = defaultSet?.id ?? null;
   }
 
+  const effectiveRuleSetName = allRuleSets?.find((rs) => rs.id === effectiveRuleSetId)?.name ?? "Naming Rules";
+
   if (fileIds.length === 0) {
     return (
       <div className="space-y-6">
@@ -453,6 +456,10 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             currentRuleSetId={pickerCurrentRuleSetId}
             mode="persist"
             currentSeverityFilter={severityFilter}
+          />
+          <RuleSetPreview
+            ruleSetName={effectiveRuleSetName}
+            rules={rules}
           />
           <Button variant="outline" asChild>
             <Link href="/dashboard/settings/naming-rules">
