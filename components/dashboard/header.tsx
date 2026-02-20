@@ -13,12 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "next-themes";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { HelpTourDialog } from "./help-tour-dialog";
 import { FeedbackDialog } from "./feedback-dialog";
-import { LogOut, User, Settings, Scale, MessageSquareMore, Home, HelpCircle } from "lucide-react";
+import { LogOut, User, Settings, Scale, MessageSquareMore, Home, HelpCircle, Monitor, Sun, Moon } from "lucide-react";
 import { getDisplayName, getInitials } from "@/lib/utils/display-name";
 
 interface HeaderProps {
@@ -38,6 +38,7 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
   const [helpTourOpen, setHelpTourOpen] = useState(false);
   const [autoTriggered, setAutoTriggered] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const { setTheme, theme } = useTheme();
 
   useEffect(() => {
     const tourCompleted = localStorage.getItem("logixweave-tour-completed");
@@ -64,7 +65,6 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
       </div>
       <div className="flex items-center gap-2">
         <NotificationsDropdown />
-        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -112,6 +112,34 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
               <Scale className="mr-2 h-4 w-4" />
               Terms & Privacy
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <span className="text-sm">Theme</span>
+              <div className="flex items-center gap-0.5 rounded-md border bg-muted/50 p-0.5">
+                {([
+                  { value: "system" as const, icon: Monitor, label: "System" },
+                  { value: "light" as const, icon: Sun, label: "Light" },
+                  { value: "dark" as const, icon: Moon, label: "Dark" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTheme(opt.value);
+                    }}
+                    className={`rounded-sm p-1.5 transition-colors ${
+                      theme === opt.value
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title={opt.label}
+                  >
+                    <opt.icon className="h-3.5 w-3.5" />
+                  </button>
+                ))}
+              </div>
+            </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
