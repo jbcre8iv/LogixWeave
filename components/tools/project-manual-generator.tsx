@@ -76,7 +76,7 @@ export function ProjectManualGenerator({
     return defaults;
   });
   const [detailLevel, setDetailLevel] = useState<"standard" | "comprehensive">("standard");
-  const [format, setFormat] = useState<ExportFormat>("markdown");
+  const [format, setFormat] = useState<ExportFormat>("pdf");
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -356,9 +356,9 @@ export function ProjectManualGenerator({
         <h3 className="font-medium">Export Format</h3>
         <div className="flex gap-2">
           {([
-            { value: "markdown" as const, label: "Markdown" },
             { value: "pdf" as const, label: "PDF" },
             { value: "docx" as const, label: "DOCX" },
+            { value: "markdown" as const, label: "Markdown" },
           ]).map((opt) => (
             <Button
               key={opt.value}
