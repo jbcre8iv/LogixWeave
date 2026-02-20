@@ -378,7 +378,7 @@ export async function PUT(request: Request, context: RouteContext) {
       );
     }
 
-    const { newOwnerUserId, includeNamingRules } = await request.json();
+    const { newOwnerUserId, includeNamingRules, sourceRuleSetId } = await request.json();
 
     if (!newOwnerUserId || typeof newOwnerUserId !== "string") {
       return NextResponse.json({ error: "New owner user ID is required" }, { status: 400 });
@@ -446,11 +446,14 @@ export async function PUT(request: Request, context: RouteContext) {
     }
 
     // Handle naming rule set transfer
-    if (includeNamingRules && project.naming_rule_set_id) {
+    // Use client-provided sourceRuleSetId (covers org defaults) or fall back to explicit
+    const ruleSetToCopy = sourceRuleSetId || project.naming_rule_set_id;
+
+    if (includeNamingRules && ruleSetToCopy) {
       const { data: sourceSet } = await serviceClient
         .from("naming_rule_sets")
         .select("name, description")
-        .eq("id", project.naming_rule_set_id)
+        .eq("id", ruleSetToCopy)
         .single();
 
       if (sourceSet && newOwnerMembership?.organization_id) {
@@ -487,7 +490,7 @@ export async function PUT(request: Request, context: RouteContext) {
           const { data: sourceRules } = await serviceClient
             .from("naming_rules")
             .select("name, description, pattern, applies_to, severity, is_active")
-            .eq("rule_set_id", project.naming_rule_set_id)
+            .eq("rule_set_id", ruleSetToCopy)
             .eq("is_active", true);
 
           if (sourceRules && sourceRules.length > 0) {

@@ -188,6 +188,7 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
         body: JSON.stringify({
           newOwnerUserId: transferTargetId,
           includeNamingRules: ruleSetInfo ? includeNamingRules : false,
+          sourceRuleSetId: ruleSetInfo?.ruleSetId || null,
         }),
       });
 
