@@ -454,39 +454,38 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             mode="persist"
             currentSeverityFilter={severityFilter}
           />
-          {severityFilter && severityFilter !== "all" && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={buildClearFilterUrl()}>Clear Filter</Link>
-            </Button>
-          )}
-          {(allViolations.length > 0 || scopeConflicts.length > 0) && (
-            <ExportCSVButton
-              filename="naming_validation.csv"
-              data={[
-                ["Severity", "Tag Name", "Scope", "Rule", "Reason"],
-                ...allViolations.map((v) => [
-                  v.severity,
-                  v.tagName,
-                  v.tagScope,
-                  v.ruleName,
-                  describeViolation(v.tagName, v.pattern, v.ruleName),
-                ]),
-                ...scopeConflicts.map((c) => [
-                  "scope-conflict",
-                  c.tagName,
-                  `Controller + ${c.programs.join(", ")}`,
-                  "Scope Conflict",
-                  `Tag exists in both Controller and program scope(s): ${c.programs.join(", ")}`,
-                ]),
-              ]}
-            />
-          )}
           <Button variant="outline" asChild>
             <Link href="/dashboard/settings/naming-rules">
               <Settings className="mr-2 h-4 w-4" />
               Manage Rules
             </Link>
           </Button>
+          {severityFilter && severityFilter !== "all" && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={buildClearFilterUrl()}>Clear Filter</Link>
+            </Button>
+          )}
+          <ExportCSVButton
+            filename="naming_validation.csv"
+            disabled={allViolations.length === 0 && scopeConflicts.length === 0}
+            data={[
+              ["Severity", "Tag Name", "Scope", "Rule", "Reason"],
+              ...allViolations.map((v) => [
+                v.severity,
+                v.tagName,
+                v.tagScope,
+                v.ruleName,
+                describeViolation(v.tagName, v.pattern, v.ruleName),
+              ]),
+              ...scopeConflicts.map((c) => [
+                "scope-conflict",
+                c.tagName,
+                `Controller + ${c.programs.join(", ")}`,
+                "Scope Conflict",
+                `Tag exists in both Controller and program scope(s): ${c.programs.join(", ")}`,
+              ]),
+            ]}
+          />
         </div>
       </div>
 

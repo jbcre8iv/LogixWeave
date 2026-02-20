@@ -14,9 +14,10 @@ function escapeCSV(value: string): string {
 interface ExportCSVButtonProps {
   data: string[][];
   filename: string;
+  disabled?: boolean;
 }
 
-export function ExportCSVButton({ data, filename }: ExportCSVButtonProps) {
+export function ExportCSVButton({ data, filename, disabled }: ExportCSVButtonProps) {
   const handleExport = () => {
     const csvContent = data
       .map((row) => row.map(escapeCSV).join(","))
@@ -35,7 +36,7 @@ export function ExportCSVButton({ data, filename }: ExportCSVButtonProps) {
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={handleExport}>
+    <Button variant="outline" size="sm" onClick={handleExport} disabled={disabled}>
       <Download className="mr-2 h-4 w-4" />
       Export CSV
     </Button>
