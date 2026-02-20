@@ -245,7 +245,7 @@ Available tools (use exact URLs below):
 - Issue Finder: ${toolLinks.issues}
 - AI Search: ${toolLinks.search}
 - Health Coach: ${toolLinks.health}
-- Documentation Generator: ${toolLinks.documentation}
+- Project Manual: ${toolLinks.documentation}
 - Bulk Tag Editor: ${toolLinks.bulkTags}
 
 4. Only suggest 1-3 of the most relevant tools per response — don't list them all.

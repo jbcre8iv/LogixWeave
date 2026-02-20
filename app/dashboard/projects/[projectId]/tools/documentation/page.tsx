@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
-import { DocumentationGenerator } from "@/components/tools/documentation-generator";
+import { ProjectManualGenerator } from "@/components/tools/project-manual-generator";
 
 interface DocumentationPageProps {
   params: Promise<{ projectId: string }>;
@@ -38,15 +38,30 @@ export default async function DocumentationPage({ params }: DocumentationPagePro
     ioModules: 0,
     udts: 0,
     aois: 0,
+    tasks: 0,
+    rungs: 0,
+    tagReferences: 0,
   };
 
   if (fileIds.length > 0) {
-    const [tagsResult, routinesResult, modulesResult, udtsResult, aoisResult] = await Promise.all([
+    const [
+      tagsResult,
+      routinesResult,
+      modulesResult,
+      udtsResult,
+      aoisResult,
+      tasksResult,
+      rungsResult,
+      tagRefsResult,
+    ] = await Promise.all([
       supabase.from("parsed_tags").select("id", { count: "exact" }).in("file_id", fileIds),
       supabase.from("parsed_routines").select("id", { count: "exact" }).in("file_id", fileIds),
       supabase.from("parsed_io_modules").select("id", { count: "exact" }).in("file_id", fileIds),
       supabase.from("parsed_udts").select("id", { count: "exact" }).in("file_id", fileIds),
       supabase.from("parsed_aois").select("id", { count: "exact" }).in("file_id", fileIds),
+      supabase.from("parsed_tasks").select("id", { count: "exact" }).in("file_id", fileIds),
+      supabase.from("parsed_rungs").select("id", { count: "exact" }).in("file_id", fileIds),
+      supabase.from("tag_references").select("id", { count: "exact" }).in("file_id", fileIds),
     ]);
 
     counts = {
@@ -55,6 +70,9 @@ export default async function DocumentationPage({ params }: DocumentationPagePro
       ioModules: modulesResult.count || 0,
       udts: udtsResult.count || 0,
       aois: aoisResult.count || 0,
+      tasks: tasksResult.count || 0,
+      rungs: rungsResult.count || 0,
+      tagReferences: tagRefsResult.count || 0,
     };
   }
 
@@ -67,7 +85,7 @@ export default async function DocumentationPage({ params }: DocumentationPagePro
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Documentation Generator</h1>
+          <h1 className="text-3xl font-bold">Project Manual</h1>
           <p className="text-muted-foreground">{project.name}</p>
         </div>
       </div>
@@ -76,7 +94,7 @@ export default async function DocumentationPage({ params }: DocumentationPagePro
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground mb-4">
-              No parsed files found. Please upload and parse L5X files first.
+              No parsed files found. Please upload and parse files first.
             </p>
             <Button asChild>
               <Link href={`/dashboard/projects/${projectId}/files`}>
@@ -88,14 +106,14 @@ export default async function DocumentationPage({ params }: DocumentationPagePro
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Generate As-Built Documentation</CardTitle>
+            <CardTitle>Generate Project Manual</CardTitle>
             <CardDescription>
-              Select the sections to include in your documentation export.
-              The documentation will be generated in Markdown format.
+              Create comprehensive as-built documentation for your project.
+              Select sections, detail level, and export format below.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DocumentationGenerator
+            <ProjectManualGenerator
               projectId={projectId}
               projectName={project.name}
               counts={counts}

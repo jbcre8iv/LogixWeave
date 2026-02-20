@@ -26,6 +26,7 @@ import {
   BarChart3,
   Sparkles,
   Upload,
+  FileText,
   FolderOpen as FolderIcon,
   ChevronDown,
   Check,
@@ -71,6 +72,7 @@ const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
     label: "Manage",
     items: [
       { name: "Files", projectHref: "/files", icon: Upload },
+      { name: "Project Manual", projectHref: "/tools/documentation", icon: FileText },
     ],
   },
 ];
