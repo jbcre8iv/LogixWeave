@@ -22,14 +22,20 @@ function generateHash(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex").substring(0, 16);
 }
 
-const NARRATOR_SYSTEM_PROMPT = `You are a technical writer specializing in industrial automation documentation. You write clear, professional documentation for PLC projects that is understandable by both engineers and non-technical stakeholders.
+const NARRATOR_SYSTEM_PROMPT = `You are a senior controls engineer and PLC programming expert writing professional project documentation. You have deep expertise in Rockwell Automation / Allen-Bradley platforms, ladder logic, structured text, and industrial automation systems.
 
-When describing PLC programs:
-- Explain what the program controls in practical terms
-- Note key I/O interactions and data flows
-- Mention safety-critical or timing-sensitive operations
-- Keep descriptions concise but informative
-- Use plain language while being technically accurate
+Writing style:
+- Be factual and direct. State what the system does, not what it "appears to" or "seems to" do.
+- Use precise PLC and automation terminology (e.g., "latching relay," "one-shot rising," "periodic task," "scan cycle") without over-explaining standard concepts.
+- Write for an audience of controls engineers, maintenance technicians, and project managers — people who work with these systems daily.
+- Never hedge or speculate. If the data shows a program handles motor control, say so directly.
+
+When describing programs and routines:
+- Identify the controlled process or equipment based on tag names, I/O references, and program structure.
+- Call out safety interlocks, fault handling, and alarm logic when present.
+- Note timing-critical operations, periodic task rates, and watchdog configurations.
+- Describe data flow between programs when cross-references indicate shared tags.
+- Reference specific tag names and routine names to ground descriptions in the actual project.
 
 Always respond with plain text paragraphs, not JSON or markdown formatting.`;
 
@@ -99,7 +105,7 @@ async function generateProjectNarrative(
   const programNames = [...new Set(data.routines.map((r) => r.program_name))];
   const topTags = getTopReferencedTags(data, 10);
 
-  const prompt = `Write a 2-3 paragraph executive summary for this PLC project documentation.
+  const prompt = `Write a 2-3 paragraph executive summary for this PLC project.
 
 Project: ${data.projectName}
 Processor: ${data.metadata.processorType || "Unknown"}
@@ -114,7 +120,7 @@ Tasks: ${data.tasks.map((t) => `${t.name} (${t.type})`).join(", ") || "None defi
 
 Most Referenced Tags: ${topTags.map((t) => t.name).join(", ")}
 
-Describe what this project likely controls, its scope, and key characteristics. Be specific about the automation systems based on tag names and program names.${getLanguageInstruction(language)}`;
+Identify the controlled process, equipment, or system based on the tag names, program names, and project structure. State the project scope, architecture (task types, program organization), and key characteristics. Reference specific names from the data — do not generalize.${getLanguageInstruction(language)}`;
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-5-20250929",
@@ -161,9 +167,9 @@ async function generateProgramNarrative(
     .slice(0, 10)
     .map(([name]) => name);
 
-  const prompt = `Write documentation for this PLC program. Provide:
-1. A program overview paragraph (what this program does overall)
-2. A one-sentence summary for each routine listed
+  const prompt = `Document this PLC program. Provide:
+1. A program overview paragraph — state what this program controls, its role in the system, and how it interacts with other programs or I/O. Be specific: reference tag names and routine names.
+2. A one-sentence summary for each routine — describe what the routine does, not its structure.
 
 Program: ${programName}
 Top Tags: ${topProgramTags.join(", ")}
