@@ -64,7 +64,7 @@ export function NamingHealthToggle({ projectId, enabled: initialEnabled }: Namin
             Include in health score
           </label>
           <p className="text-xs text-muted-foreground">
-            Naming rule violations affect the Naming Compliance metric (20% of score).
+            When enabled, naming rule violations are factored into your overall health score as the Naming Compliance metric. Disable to exclude naming from the score.
           </p>
         </div>
       </div>
