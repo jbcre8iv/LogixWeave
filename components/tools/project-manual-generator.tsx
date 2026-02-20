@@ -390,15 +390,17 @@ export function ProjectManualGenerator({
 
       {/* Actions */}
       <div className="flex items-center gap-4">
-        <Button
-          onClick={() => generateManual("preview")}
-          variant="outline"
-          size="sm"
-          disabled={!hasSelections || isGenerating}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Preview
-        </Button>
+        {format === "markdown" && (
+          <Button
+            onClick={() => generateManual("preview")}
+            variant="outline"
+            size="sm"
+            disabled={!hasSelections || isGenerating}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+        )}
         <Button
           onClick={() => generateManual("download")}
           disabled={!hasSelections || isGenerating}
