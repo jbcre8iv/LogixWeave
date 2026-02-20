@@ -47,7 +47,7 @@ export default async function AIPage({ params }: AIPageProps) {
     {
       title: "Project Manual",
       description: "Generate comprehensive documentation with AI-powered narratives",
-      href: `/dashboard/projects/${projectId}/tools/documentation`,
+      href: `/dashboard/projects/${projectId}/tools/documentation?detail=comprehensive`,
       icon: BookOpen,
     },
   ];

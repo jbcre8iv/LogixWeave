@@ -8,10 +8,13 @@ import { ProjectManualGenerator } from "@/components/tools/project-manual-genera
 
 interface DocumentationPageProps {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ detail?: string }>;
 }
 
-export default async function DocumentationPage({ params }: DocumentationPageProps) {
+export default async function DocumentationPage({ params, searchParams }: DocumentationPageProps) {
   const { projectId } = await params;
+  const { detail } = await searchParams;
+  const defaultDetailLevel = detail === "comprehensive" ? "comprehensive" : "standard";
 
   const supabase = await createClient();
 
@@ -117,6 +120,7 @@ export default async function DocumentationPage({ params }: DocumentationPagePro
               projectId={projectId}
               projectName={project.name}
               counts={counts}
+              defaultDetailLevel={defaultDetailLevel}
             />
           </CardContent>
         </Card>

@@ -38,6 +38,7 @@ interface ProjectManualGeneratorProps {
     rungs: number;
     tagReferences: number;
   };
+  defaultDetailLevel?: "standard" | "comprehensive";
 }
 
 interface SectionDef {
@@ -68,6 +69,7 @@ export function ProjectManualGenerator({
   projectId,
   projectName,
   counts,
+  defaultDetailLevel = "standard",
 }: ProjectManualGeneratorProps) {
   const [selectedSections, setSelectedSections] = useState<Record<string, boolean>>(() => {
     const defaults: Record<string, boolean> = {};
@@ -76,7 +78,7 @@ export function ProjectManualGenerator({
     }
     return defaults;
   });
-  const [detailLevel, setDetailLevel] = useState<"standard" | "comprehensive">("standard");
+  const [detailLevel, setDetailLevel] = useState<"standard" | "comprehensive">(defaultDetailLevel);
   const [format, setFormat] = useState<ExportFormat>("pdf");
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<GenerationProgress | null>(null);
