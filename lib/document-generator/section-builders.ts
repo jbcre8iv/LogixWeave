@@ -11,7 +11,7 @@ import type {
   UdtContent,
   AoiContent,
   CrossReferenceContent,
-  QualityMetricsContent,
+  ProjectHealthContent,
   ManualConfig,
   SectionType,
 } from "./types";
@@ -247,14 +247,14 @@ export function buildCrossReferenceSection(data: ProjectData): ManualSection {
   return { id: "crossReference", title: "Cross-Reference Summary", content };
 }
 
-export function buildQualityMetricsSection(data: ProjectData): ManualSection {
-  // Find unused tags (no references)
+export function buildProjectHealthSection(data: ProjectData): ManualSection {
+  // --- Unused tags ---
   const referencedTags = new Set(data.tagReferences.map((r) => r.tag_name));
   const unusedTags = data.tags
     .filter((t) => !referencedTags.has(t.name) && !t.alias_for)
     .map((t) => ({ name: t.name, dataType: t.data_type, scope: t.scope }));
 
-  // Comment coverage per routine
+  // --- Comment coverage per routine ---
   const routineRungMap = new Map<string, { commented: number; total: number; programName: string }>();
   for (const rung of data.rungs) {
     const key = `${rung.program_name}/${rung.routine_name}`;
@@ -279,14 +279,187 @@ export function buildQualityMetricsSection(data: ProjectData): ManualSection {
   const commentedRungs = data.rungs.filter((r) => r.comment).length;
   const overallCommentCoverage = totalRungs > 0 ? Math.round((commentedRungs / totalRungs) * 100) : 0;
 
-  const content: QualityMetricsContent = {
-    type: "qualityMetrics",
+  // --- Health score computation (mirrors lib/health-scores.ts) ---
+  const totalTags = data.tags.length;
+  const tagEfficiency = totalTags > 0
+    ? Math.max(0, Math.round(100 - (unusedTags.length / totalTags) * 200))
+    : 100;
+  const documentation = overallCommentCoverage;
+  const tagUsage = totalTags > 0
+    ? Math.min(100, Math.round((data.tagReferences.length / totalTags) * 20))
+    : 0;
+
+  // Task configuration score (only when tasks exist)
+  let taskConfig: number | undefined;
+  if (data.tasks.length > 0) {
+    let score = 100;
+    const emptyTasks = data.tasks.filter((t) => !t.scheduled_programs || t.scheduled_programs.length === 0);
+    score -= Math.min(40, emptyTasks.length * 20);
+
+    const scheduledProgramNames = new Set(data.tasks.flatMap((t) => t.scheduled_programs || []));
+    const allProgramNames = new Set(data.routines.map((r) => r.program_name));
+    const orphanedPrograms = [...allProgramNames].filter((p) => !scheduledProgramNames.has(p));
+    score -= Math.min(50, orphanedPrograms.length * 25);
+
+    const periodicTasks = data.tasks.filter((t) => t.type === "PERIODIC");
+    for (const pt of periodicTasks) {
+      if (pt.rate !== null && pt.rate !== undefined && (pt.rate < 1 || pt.rate > 30000)) {
+        score -= 15;
+      }
+    }
+    for (const t of data.tasks) {
+      if (t.watchdog !== null && t.watchdog !== undefined && t.watchdog > 5000) {
+        score -= 10;
+      }
+    }
+    taskConfig = Math.max(0, Math.min(100, score));
+  }
+
+  // Overall score (weight model matches lib/health-scores.ts)
+  let overall: number;
+  if (taskConfig !== undefined) {
+    overall = Math.round(tagEfficiency * 0.3 + documentation * 0.3 + tagUsage * 0.2 + taskConfig * 0.2);
+  } else {
+    overall = Math.round(tagEfficiency * 0.4 + documentation * 0.35 + tagUsage * 0.25);
+  }
+
+  // --- Generate findings ---
+  const findings: ProjectHealthContent["findings"] = [];
+
+  // Tag efficiency findings
+  if (unusedTags.length > 0) {
+    const pct = totalTags > 0 ? Math.round((unusedTags.length / totalTags) * 100) : 0;
+    findings.push({
+      severity: unusedTags.length > totalTags * 0.3 ? "error" : "warning",
+      category: "Tag Efficiency",
+      title: `${unusedTags.length} unused tag${unusedTags.length === 1 ? "" : "s"} detected (${pct}% of total)`,
+      description: "Tags with no read, write, or read/write references in any routine. These may be obsolete or indicate incomplete logic.",
+      items: unusedTags.slice(0, 10).map((t) => `${t.name} (${t.dataType}, ${t.scope})`),
+    });
+  } else {
+    findings.push({
+      severity: "info",
+      category: "Tag Efficiency",
+      title: "All tags are referenced in project logic",
+      description: "No unused tags detected. Tag database is clean.",
+    });
+  }
+
+  // Documentation findings
+  if (overallCommentCoverage < 25) {
+    findings.push({
+      severity: "error",
+      category: "Documentation",
+      title: `Comment coverage critically low at ${overallCommentCoverage}%`,
+      description: "Less than 25% of rungs have comments. This makes the project difficult to maintain and troubleshoot.",
+      items: commentCoverage
+        .filter((r) => r.coverage === 0 && r.total > 0)
+        .slice(0, 10)
+        .map((r) => `${r.programName}/${r.routineName} — 0% (${r.total} rungs)`),
+    });
+  } else if (overallCommentCoverage < 50) {
+    findings.push({
+      severity: "warning",
+      category: "Documentation",
+      title: `Comment coverage below target at ${overallCommentCoverage}%`,
+      description: "Less than 50% of rungs have comments. Increasing coverage improves maintainability.",
+      items: commentCoverage
+        .filter((r) => r.coverage < 25 && r.total > 3)
+        .slice(0, 10)
+        .map((r) => `${r.programName}/${r.routineName} — ${r.coverage}% (${r.total} rungs)`),
+    });
+  } else {
+    findings.push({
+      severity: "info",
+      category: "Documentation",
+      title: `Comment coverage at ${overallCommentCoverage}%`,
+      description: "Rung-level documentation meets minimum recommended threshold.",
+    });
+  }
+
+  // Task configuration findings
+  if (data.tasks.length > 0) {
+    const emptyTasks = data.tasks.filter((t) => !t.scheduled_programs || t.scheduled_programs.length === 0);
+    if (emptyTasks.length > 0) {
+      findings.push({
+        severity: "warning",
+        category: "Task Configuration",
+        title: `${emptyTasks.length} task${emptyTasks.length === 1 ? "" : "s"} with no scheduled programs`,
+        description: "Tasks without scheduled programs consume scan time but execute no logic.",
+        items: emptyTasks.map((t) => `${t.name} (${t.type})`),
+      });
+    }
+
+    const scheduledProgramNames = new Set(data.tasks.flatMap((t) => t.scheduled_programs || []));
+    const allProgramNames = new Set(data.routines.map((r) => r.program_name));
+    const orphanedPrograms = [...allProgramNames].filter((p) => !scheduledProgramNames.has(p));
+    if (orphanedPrograms.length > 0) {
+      findings.push({
+        severity: "error",
+        category: "Task Configuration",
+        title: `${orphanedPrograms.length} program${orphanedPrograms.length === 1 ? "" : "s"} not scheduled in any task`,
+        description: "Programs not assigned to a task will never execute. This may indicate misconfiguration or orphaned code.",
+        items: orphanedPrograms,
+      });
+    }
+
+    for (const t of data.tasks) {
+      if (t.watchdog !== null && t.watchdog !== undefined && t.watchdog > 5000) {
+        findings.push({
+          severity: "warning",
+          category: "Task Configuration",
+          title: `Task "${t.name}" has high watchdog timer (${t.watchdog}ms)`,
+          description: "Watchdog timers above 5000ms may delay fault detection. Verify this is intentional for the task's scan requirements.",
+        });
+      }
+    }
+
+    const periodicTasks = data.tasks.filter((t) => t.type === "PERIODIC");
+    for (const pt of periodicTasks) {
+      if (pt.rate !== null && pt.rate !== undefined && (pt.rate < 1 || pt.rate > 30000)) {
+        findings.push({
+          severity: "warning",
+          category: "Task Configuration",
+          title: `Periodic task "${pt.name}" has unusual rate (${pt.rate}ms)`,
+          description: "Periodic task rates outside 1–30000ms range may indicate a configuration error.",
+        });
+      }
+    }
+  } else {
+    findings.push({
+      severity: "info",
+      category: "Task Configuration",
+      title: "No tasks defined in project",
+      description: "Task configuration scoring is not applicable. The project may use default continuous task execution.",
+    });
+  }
+
+  // Tag usage findings
+  if (tagUsage < 30) {
+    findings.push({
+      severity: "warning",
+      category: "Tag Usage",
+      title: "Low tag reference density",
+      description: `Only ${data.tagReferences.length} cross-references found across ${totalTags} tags. This may indicate incomplete logic or a partial project export.`,
+    });
+  }
+
+  const content: ProjectHealthContent = {
+    type: "projectHealth",
+    healthScore: {
+      overall,
+      tagEfficiency,
+      documentation,
+      tagUsage,
+      ...(taskConfig !== undefined && { taskConfig }),
+    },
+    findings,
     unusedTagCount: unusedTags.length,
-    unusedTags: unusedTags.slice(0, 100), // Limit for document size
+    unusedTags: unusedTags.slice(0, 100),
     commentCoverage,
     overallCommentCoverage,
   };
-  return { id: "qualityMetrics", title: "Quality Metrics", content };
+  return { id: "projectHealth", title: "Project Health", content };
 }
 
 /**
@@ -331,8 +504,8 @@ export function buildAllSections(data: ProjectData, config: ManualConfig): Manua
     sections.push(buildCrossReferenceSection(data));
   }
 
-  if (config.sections.qualityMetrics) {
-    sections.push(buildQualityMetricsSection(data));
+  if (config.sections.projectHealth) {
+    sections.push(buildProjectHealthSection(data));
   }
 
   // Insert TOC after cover (or at the beginning)

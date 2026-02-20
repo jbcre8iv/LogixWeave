@@ -24,7 +24,7 @@ import type {
   ProgramsContent,
   TagDatabaseContent,
   CrossReferenceContent,
-  QualityMetricsContent,
+  ProjectHealthContent,
 } from "./types";
 
 const FONT = "Calibri";
@@ -375,18 +375,48 @@ export async function renderDocx(document: ManualDocument): Promise<Blob> {
         break;
       }
 
-      case "qualityMetrics": {
-        const c = content as QualityMetricsContent;
-        children.push(heading("Quality Metrics", HeadingLevel.HEADING_1));
-        children.push(
-          makeTable(
-            ["Metric", "Value"],
-            [
-              ["Unused Tags", c.unusedTagCount.toString()],
-              ["Overall Comment Coverage", `${c.overallCommentCoverage}%`],
-            ]
-          )
-        );
+      case "projectHealth": {
+        const c = content as ProjectHealthContent;
+        children.push(heading("Project Health", HeadingLevel.HEADING_1));
+
+        // Health score
+        const hs = c.healthScore;
+        children.push(heading("Health Score", HeadingLevel.HEADING_2));
+        children.push(paragraph(`Overall Score: ${hs.overall}/100`, { bold: true }));
+        const scoreRows: string[][] = [
+          ["Tag Efficiency", `${hs.tagEfficiency}/100`],
+          ["Documentation", `${hs.documentation}/100`],
+          ["Tag Usage", `${hs.tagUsage}/100`],
+        ];
+        if (hs.taskConfig !== undefined) {
+          scoreRows.push(["Task Configuration", `${hs.taskConfig}/100`]);
+        }
+        children.push(makeTable(["Metric", "Score"], scoreRows));
+
+        // Findings
+        if (c.findings.length > 0) {
+          children.push(heading("Findings", HeadingLevel.HEADING_2));
+          const severityLabel: Record<string, string> = { error: "CRITICAL", warning: "WARNING", info: "OK" };
+          for (const finding of c.findings) {
+            children.push(
+              new Paragraph({
+                spacing: { before: 160, after: 40 },
+                children: [
+                  new TextRun({ text: `[${severityLabel[finding.severity]}] `, bold: true, font: FONT, size: 22, color: finding.severity === "error" ? "DC2626" : finding.severity === "warning" ? "D97706" : "16A34A" }),
+                  new TextRun({ text: `${finding.category}: ${finding.title}`, bold: true, font: FONT, size: 22 }),
+                ],
+              })
+            );
+            children.push(paragraph(finding.description));
+            if (finding.items && finding.items.length > 0) {
+              for (const item of finding.items) {
+                children.push(paragraph(`  \u2022 ${item}`));
+              }
+            }
+          }
+        }
+
+        // Comment coverage
         if (c.commentCoverage.length > 0) {
           children.push(heading("Comment Coverage by Routine", HeadingLevel.HEADING_2));
           children.push(
@@ -396,6 +426,8 @@ export async function renderDocx(document: ManualDocument): Promise<Blob> {
             )
           );
         }
+
+        // Unused tags
         if (c.unusedTags.length > 0) {
           children.push(heading("Unused Tags", HeadingLevel.HEADING_2));
           children.push(

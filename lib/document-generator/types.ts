@@ -11,7 +11,7 @@ export interface ManualConfig {
     udts: boolean;
     aois: boolean;
     crossReference: boolean;
-    qualityMetrics: boolean;
+    projectHealth: boolean;
   };
   detailLevel: "standard" | "comprehensive"; // standard = data only, comprehensive = with AI narratives
   format: "markdown" | "pdf" | "docx";
@@ -29,7 +29,7 @@ export type SectionType =
   | "udts"
   | "aois"
   | "crossReference"
-  | "qualityMetrics";
+  | "projectHealth";
 
 export interface ManualSection {
   id: SectionType;
@@ -49,7 +49,7 @@ export type SectionContent =
   | UdtContent
   | AoiContent
   | CrossReferenceContent
-  | QualityMetricsContent;
+  | ProjectHealthContent;
 
 export interface CoverContent {
   type: "cover";
@@ -184,8 +184,22 @@ export interface CrossReferenceContent {
   }>;
 }
 
-export interface QualityMetricsContent {
-  type: "qualityMetrics";
+export interface ProjectHealthContent {
+  type: "projectHealth";
+  healthScore: {
+    overall: number;
+    tagEfficiency: number;
+    documentation: number;
+    tagUsage: number;
+    taskConfig?: number;
+  };
+  findings: Array<{
+    severity: "error" | "warning" | "info";
+    category: string;
+    title: string;
+    description: string;
+    items?: string[];
+  }>;
   unusedTagCount: number;
   unusedTags: Array<{ name: string; dataType: string; scope: string }>;
   commentCoverage: Array<{

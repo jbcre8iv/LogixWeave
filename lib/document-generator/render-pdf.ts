@@ -11,7 +11,7 @@ import type {
   ProgramsContent,
   TagDatabaseContent,
   CrossReferenceContent,
-  QualityMetricsContent,
+  ProjectHealthContent,
 } from "./types";
 
 const PAGE_MARGIN = 20;
@@ -289,16 +289,41 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
         break;
       }
 
-      case "qualityMetrics": {
-        const c = content as QualityMetricsContent;
-        addHeading("Quality Metrics", 1);
-        addTable(
-          ["Metric", "Value"],
-          [
-            ["Unused Tags", c.unusedTagCount.toString()],
-            ["Overall Comment Coverage", `${c.overallCommentCoverage}%`],
-          ]
-        );
+      case "projectHealth": {
+        const c = content as ProjectHealthContent;
+        addHeading("Project Health", 1);
+
+        // Health score breakdown
+        const hs = c.healthScore;
+        addHeading("Health Score", 2);
+        addParagraph(`Overall Score: ${hs.overall}/100`);
+        const scoreRows: string[][] = [
+          ["Tag Efficiency", `${hs.tagEfficiency}/100`],
+          ["Documentation", `${hs.documentation}/100`],
+          ["Tag Usage", `${hs.tagUsage}/100`],
+        ];
+        if (hs.taskConfig !== undefined) {
+          scoreRows.push(["Task Configuration", `${hs.taskConfig}/100`]);
+        }
+        addTable(["Metric", "Score"], scoreRows);
+
+        // Findings
+        if (c.findings.length > 0) {
+          addHeading("Findings", 2);
+          const severityLabel: Record<string, string> = { error: "CRITICAL", warning: "WARNING", info: "OK" };
+          for (const finding of c.findings) {
+            addHeading(`[${severityLabel[finding.severity]}] ${finding.category}`, 3);
+            addParagraph(finding.title);
+            addParagraph(finding.description);
+            if (finding.items && finding.items.length > 0) {
+              for (const item of finding.items) {
+                addParagraph(`  \u2022 ${item}`);
+              }
+            }
+          }
+        }
+
+        // Comment coverage
         if (c.commentCoverage.length > 0) {
           addHeading("Comment Coverage by Routine", 2);
           addTable(
@@ -306,6 +331,8 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
             c.commentCoverage.map((e) => [e.programName, e.routineName, e.commented.toString(), e.total.toString(), `${e.coverage}%`])
           );
         }
+
+        // Unused tags
         if (c.unusedTags.length > 0) {
           addHeading("Unused Tags", 2);
           addTable(

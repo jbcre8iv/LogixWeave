@@ -59,7 +59,7 @@ const SECTIONS: SectionDef[] = [
   { id: "udts", label: "User-Defined Types", description: "UDT definitions and members", icon: Layers, countKey: "udts" },
   { id: "aois", label: "Add-On Instructions", description: "AOI definitions and parameters", icon: Package, countKey: "aois" },
   { id: "crossReference", label: "Cross-Reference", description: "Tag usage analysis across programs", icon: ListTree, countKey: "tagReferences" },
-  { id: "qualityMetrics", label: "Quality Metrics", description: "Unused tags, comment coverage", icon: Activity, alwaysAvailable: true },
+  { id: "projectHealth", label: "Project Health", description: "Health score, findings, action items", icon: Activity, alwaysAvailable: true },
 ];
 
 type ExportFormat = "markdown" | "pdf" | "docx";

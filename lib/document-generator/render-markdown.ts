@@ -11,7 +11,7 @@ import type {
   UdtContent,
   AoiContent,
   CrossReferenceContent,
-  QualityMetricsContent,
+  ProjectHealthContent,
 } from "./types";
 
 /**
@@ -66,8 +66,8 @@ function renderSection(section: ManualSection, lines: string[]) {
     case "crossReference":
       renderCrossReference(content, lines);
       break;
-    case "qualityMetrics":
-      renderQualityMetrics(content, lines);
+    case "projectHealth":
+      renderProjectHealth(content, lines);
       break;
   }
 }
@@ -361,18 +361,44 @@ function renderCrossReference(content: CrossReferenceContent, lines: string[]) {
   }
 }
 
-function renderQualityMetrics(content: QualityMetricsContent, lines: string[]) {
-  lines.push("## Quality Metrics");
+function renderProjectHealth(content: ProjectHealthContent, lines: string[]) {
+  lines.push("## Project Health");
   lines.push("");
 
-  // Overall stats
-  lines.push("### Overview");
+  // Health score breakdown
+  const hs = content.healthScore;
+  lines.push("### Health Score");
   lines.push("");
-  lines.push("| Metric | Value |");
+  lines.push(`**Overall: ${hs.overall}/100**`);
+  lines.push("");
+  lines.push("| Metric | Score |");
   lines.push("|--------|-------|");
-  lines.push(`| Unused Tags | ${content.unusedTagCount} |`);
-  lines.push(`| Overall Comment Coverage | ${content.overallCommentCoverage}% |`);
+  lines.push(`| Tag Efficiency | ${hs.tagEfficiency}/100 |`);
+  lines.push(`| Documentation | ${hs.documentation}/100 |`);
+  lines.push(`| Tag Usage | ${hs.tagUsage}/100 |`);
+  if (hs.taskConfig !== undefined) {
+    lines.push(`| Task Configuration | ${hs.taskConfig}/100 |`);
+  }
   lines.push("");
+
+  // Findings
+  if (content.findings.length > 0) {
+    lines.push("### Findings");
+    lines.push("");
+    const severityIcon: Record<string, string> = { error: "CRITICAL", warning: "WARNING", info: "OK" };
+    for (const finding of content.findings) {
+      lines.push(`**[${severityIcon[finding.severity]}] ${finding.category}: ${finding.title}**`);
+      lines.push("");
+      lines.push(finding.description);
+      if (finding.items && finding.items.length > 0) {
+        lines.push("");
+        for (const item of finding.items) {
+          lines.push(`- ${item}`);
+        }
+      }
+      lines.push("");
+    }
+  }
 
   // Comment coverage by routine
   if (content.commentCoverage.length > 0) {
