@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, HeartPulse } from "lucide-react";
+import { ArrowLeft, Activity } from "lucide-react";
 import { HealthCoach } from "@/components/ai/health-coach";
 
 interface HealthPageProps {
@@ -42,7 +42,7 @@ export default async function HealthPage({ params }: HealthPageProps) {
             </Button>
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-2">
-                <HeartPulse className="h-8 w-8 text-amber-500" />
+                <Activity className="h-8 w-8 text-amber-500" />
                 Project Health Analysis
               </h1>
               <p className="text-muted-foreground">{project.name}</p>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Search, AlertTriangle, Sparkles, ArrowRight, HeartPulse } from "lucide-react";
+import { Brain, Search, AlertTriangle, Sparkles, ArrowRight, Activity } from "lucide-react";
 import { AIChatSearchBar } from "@/components/ai/ai-chat-sidebar";
 
 interface AIPageProps {
@@ -95,7 +95,7 @@ export default async function AIPage({ params }: AIPageProps) {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-5">
                       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/15 to-orange-500/10 shrink-0">
-                        <HeartPulse className="h-7 w-7 text-amber-500" />
+                        <Activity className="h-7 w-7 text-amber-500" />
                       </div>
                       <div>
                         <h2 className="text-lg font-semibold">Project Health Analysis</h2>
