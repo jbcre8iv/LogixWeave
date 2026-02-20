@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
@@ -135,11 +135,13 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
   if (fileIds.length > 0) {
     // Resolve effective rule set — always use the project's rules so all viewers
-    // see the same naming compliance results
+    // see the same naming compliance results. Use service client because the
+    // viewer may be in a different org (e.g. after ownership transfer).
     const rulesOrgId = project.organization_id;
+    const namingServiceClient = createServiceClient();
     let effectiveRuleSetId = projectRuleSetId;
     if (!effectiveRuleSetId) {
-      const { data: defaultSet } = await supabase
+      const { data: defaultSet } = await namingServiceClient
         .from("naming_rule_sets")
         .select("id")
         .eq("organization_id", rulesOrgId)
@@ -150,12 +152,12 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
     // Build naming rules query — use rule_set_id if available, fall back to organization_id
     const namingRulesQuery = effectiveRuleSetId
-      ? supabase
+      ? namingServiceClient
           .from("naming_rules")
           .select("id, name, pattern, applies_to, severity")
           .eq("rule_set_id", effectiveRuleSetId)
           .eq("is_active", true)
-      : supabase
+      : namingServiceClient
           .from("naming_rules")
           .select("id, name, pattern, applies_to, severity")
           .eq("organization_id", rulesOrgId)

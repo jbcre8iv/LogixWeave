@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -236,8 +236,13 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
   // Always use the project's org — all viewers see the same naming results
   const ruleSetOrgId = project.organization_id;
 
+  // Use service client for naming rule lookups — the viewer may be in a
+  // different org (e.g. after ownership transfer) so RLS on naming tables
+  // would block cross-org reads. Project access was already verified above.
+  const serviceClient = createServiceClient();
+
   // Fetch all rule sets for the picker (may be empty pre-migration)
-  const { data: allRuleSets } = await supabase
+  const { data: allRuleSets } = await serviceClient
     .from("naming_rule_sets")
     .select("id, name, is_default")
     .eq("organization_id", ruleSetOrgId)
@@ -286,7 +291,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
   // Get active naming rules — use rule_set_id if available, fall back to organization_id
   let rules: NamingRule[] = [];
   if (effectiveRuleSetId) {
-    const { data } = await supabase
+    const { data } = await serviceClient
       .from("naming_rules")
       .select("id, name, pattern, applies_to, severity")
       .eq("rule_set_id", effectiveRuleSetId)
@@ -294,7 +299,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     rules = data || [];
   }
   if (rules.length === 0 && !effectiveRuleSetId) {
-    const { data } = await supabase
+    const { data } = await serviceClient
       .from("naming_rules")
       .select("id, name, pattern, applies_to, severity")
       .eq("organization_id", ruleSetOrgId)

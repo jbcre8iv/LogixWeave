@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
@@ -28,6 +28,9 @@ export async function GET(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    // Use service client for naming lookups — viewer may be in a different org
+    const serviceClient = createServiceClient();
+
     let ruleSetId = project.naming_rule_set_id;
     let ruleSetName: string | null = null;
     let ruleCount = 0;
@@ -35,7 +38,7 @@ export async function GET(request: Request, context: RouteContext) {
 
     if (!ruleSetId) {
       // No explicit rule set — check for org default
-      const { data: defaultSet } = await supabase
+      const { data: defaultSet } = await serviceClient
         .from("naming_rule_sets")
         .select("id, name")
         .eq("organization_id", project.organization_id)
@@ -47,7 +50,7 @@ export async function GET(request: Request, context: RouteContext) {
         ruleSetName = defaultSet.name;
       }
     } else {
-      const { data: ruleSet } = await supabase
+      const { data: ruleSet } = await serviceClient
         .from("naming_rule_sets")
         .select("name")
         .eq("id", ruleSetId)
@@ -57,7 +60,7 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     if (ruleSetId) {
-      const { count } = await supabase
+      const { count } = await serviceClient
         .from("naming_rules")
         .select("id", { count: "exact", head: true })
         .eq("rule_set_id", ruleSetId)
