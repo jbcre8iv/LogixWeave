@@ -237,10 +237,9 @@ export function ToolProjectGrid({
           {owned.length > 0 && (
             <div className="space-y-3">
               {shared.length > 0 && (
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <FolderOpen className="h-3.5 w-3.5" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                   My Projects
-                </h3>
+                </h2>
               )}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {owned.map((item) => (
@@ -251,10 +250,12 @@ export function ToolProjectGrid({
           )}
           {shared.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Users className="h-3.5 w-3.5" />
-                Shared with me
-              </h3>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Shared with me
+                </h2>
+              </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {shared.map((item) => (
                   <GridCard key={item.id} item={item} />
@@ -265,57 +266,90 @@ export function ToolProjectGrid({
         </div>
       )}
 
-      {/* List view — same columns as Projects page */}
+      {/* List view */}
       {filteredAndSorted.length > 0 && viewMode === "list" && (
-        <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
-          <Table className="table-fixed">
-            <colgroup>
-              <col className="w-[30%]" />
-              <col className="hidden md:table-column" />
-              <col className="w-[80px]" />
-              <col className="w-[80px]" />
-              <col className="w-[110px]" />
-            </colgroup>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Description</TableHead>
-                <TableHead>{statColumnHeader}</TableHead>
-                <TableHead>Health</TableHead>
-                <TableHead>Updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {owned.length > 0 && shared.length > 0 && (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="py-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <FolderOpen className="h-3.5 w-3.5" />
-                      My Projects
-                    </span>
-                  </TableCell>
-                </TableRow>
-              )}
-              {owned.map((item) => (
-                <ListRows key={item.id} item={item} expandedIds={expandedIds} toggleExpand={toggleExpand} getMatchingFiles={getMatchingFiles} router={router} />
-              ))}
+        <div className="space-y-6">
+          {owned.length > 0 && (
+            <div className="space-y-3">
               {shared.length > 0 && (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="py-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <Users className="h-3.5 w-3.5" />
-                      Shared with me
-                    </span>
-                  </TableCell>
-                </TableRow>
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  My Projects
+                </h2>
               )}
-              {shared.map((item) => (
-                <ListRows key={item.id} item={item} expandedIds={expandedIds} toggleExpand={toggleExpand} getMatchingFiles={getMatchingFiles} router={router} />
-              ))}
-            </TableBody>
-          </Table>
+              <ListTable
+                items={owned}
+                statColumnHeader={statColumnHeader}
+                expandedIds={expandedIds}
+                toggleExpand={toggleExpand}
+                getMatchingFiles={getMatchingFiles}
+                router={router}
+              />
+            </div>
+          )}
+          {shared.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Shared with me
+                </h2>
+              </div>
+              <ListTable
+                items={shared}
+                statColumnHeader={statColumnHeader}
+                expandedIds={expandedIds}
+                toggleExpand={toggleExpand}
+                getMatchingFiles={getMatchingFiles}
+                router={router}
+              />
+            </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ListTable({
+  items,
+  statColumnHeader,
+  expandedIds,
+  toggleExpand,
+  getMatchingFiles,
+  router,
+}: {
+  items: ToolProjectItem[];
+  statColumnHeader: string;
+  expandedIds: Set<string>;
+  toggleExpand: (id: string) => void;
+  getMatchingFiles: (item: ToolProjectItem) => string[];
+  router: ReturnType<typeof useRouter>;
+}) {
+  return (
+    <div className="rounded-md border overflow-hidden bg-white dark:bg-card">
+      <Table className="table-fixed">
+        <colgroup>
+          <col className="w-[30%]" />
+          <col className="hidden md:table-column" />
+          <col className="w-[80px]" />
+          <col className="w-[80px]" />
+          <col className="w-[110px]" />
+        </colgroup>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead className="hidden md:table-cell">Description</TableHead>
+            <TableHead>{statColumnHeader}</TableHead>
+            <TableHead>Health</TableHead>
+            <TableHead>Updated</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <ListRows key={item.id} item={item} expandedIds={expandedIds} toggleExpand={toggleExpand} getMatchingFiles={getMatchingFiles} router={router} />
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
