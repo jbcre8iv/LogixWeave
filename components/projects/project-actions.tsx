@@ -24,10 +24,11 @@ interface ProjectActionsProps {
   projectName: string;
   projectDescription: string | null;
   isFavorite: boolean;
-  isOwner: boolean;
+  isCreator: boolean;
+  canManage: boolean;
 }
 
-export function ProjectActions({ projectId, projectName, projectDescription, isFavorite, isOwner }: ProjectActionsProps) {
+export function ProjectActions({ projectId, projectName, projectDescription, isFavorite, isCreator, canManage }: ProjectActionsProps) {
   const router = useRouter();
   const [optimisticFavorite, setOptimisticFavorite] = useState(isFavorite);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -102,7 +103,7 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleToggleFavorite}>
         <Star className={cn("h-4 w-4", optimisticFavorite && "fill-yellow-400 text-yellow-400")} />
       </Button>
-      {isOwner && (
+      {canManage && (
         <>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setEditDialogOpen(true)}>
             <Pencil className="h-4 w-4" />
@@ -113,6 +114,10 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setDuplicateDialogOpen(true)}>
             <Copy className="h-4 w-4" />
           </Button>
+        </>
+      )}
+      {isCreator && (
+        <>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setArchiveDialogOpen(true)}>
             <Archive className="h-4 w-4" />
           </Button>
@@ -122,7 +127,7 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
         </>
       )}
 
-      {isOwner && (
+      {canManage && (
         <EditProjectDialog
           projectId={projectId}
           projectName={projectName}
@@ -132,16 +137,17 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
         />
       )}
 
-      {isOwner && (
+      {canManage && (
         <ShareProjectDialog
           projectId={projectId}
           projectName={projectName}
+          isCreator={isCreator}
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
         />
       )}
 
-      {isOwner && (
+      {canManage && (
         <DuplicateProjectDialog
           projectId={projectId}
           projectName={projectName}

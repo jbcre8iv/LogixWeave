@@ -245,6 +245,20 @@ export default async function ProjectsPage() {
     }
   }
 
+  // Fetch share permissions for current user (needed for canManage computation)
+  let sharePermissionMap: Record<string, string> = {};
+  if (user?.id) {
+    const { data: userShares } = await supabase
+      .from("project_shares")
+      .select("project_id, permission")
+      .eq("shared_with_user_id", user.id)
+      .not("accepted_at", "is", null);
+
+    for (const share of userShares || []) {
+      sharePermissionMap[share.project_id] = share.permission;
+    }
+  }
+
   // Fetch owner names for shared projects
   const sharedOwnerIds = projects
     ?.filter((p) => user && p.created_by && p.created_by !== user.id)
@@ -286,7 +300,7 @@ export default async function ProjectsPage() {
       </div>
 
       {activeProjects.length > 0 || archivedProjects.length > 0 ? (
-        <ProjectList projects={activeProjects} archivedProjects={archivedProjects} currentUserId={user?.id} ownerMap={ownerMap} healthScoreMap={healthScoreMap} />
+        <ProjectList projects={activeProjects} archivedProjects={archivedProjects} currentUserId={user?.id} ownerMap={ownerMap} healthScoreMap={healthScoreMap} sharePermissionMap={sharePermissionMap} />
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

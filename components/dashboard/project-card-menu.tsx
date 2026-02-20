@@ -51,11 +51,12 @@ interface Project {
 
 interface ProjectCardMenuProps {
   project: Project;
-  isOwner: boolean;
+  isCreator: boolean;
+  canManage: boolean;
   onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
 }
 
-export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectCardMenuProps) {
+export function ProjectCardMenu({ project, isCreator, canManage, onToggleFavorite }: ProjectCardMenuProps) {
   const router = useRouter();
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -166,7 +167,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
             />
             {project.is_favorite ? "Unfavorite" : "Favorite"}
           </DropdownMenuItem>
-          {isOwner && (
+          {canManage && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
@@ -181,6 +182,11 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
                 <Copy className="h-4 w-4" />
                 Duplicate
               </DropdownMenuItem>
+            </>
+          )}
+          {isCreator && (
+            <>
+              {!canManage && <DropdownMenuSeparator />}
               <DropdownMenuItem onClick={() => setArchiveDialogOpen(true)}>
                 <Archive className="h-4 w-4" />
                 Archive
@@ -195,7 +201,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
               </DropdownMenuItem>
             </>
           )}
-          {!isOwner && (
+          {!isCreator && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -211,7 +217,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
       </DropdownMenu>
 
       {/* Edit dialog */}
-      {isOwner && (
+      {canManage && (
         <EditProjectDialog
           projectId={project.id}
           projectName={project.name}
@@ -222,17 +228,18 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
       )}
 
       {/* Share dialog */}
-      {isOwner && (
+      {canManage && (
         <ShareProjectDialog
           projectId={project.id}
           projectName={project.name}
+          isCreator={isCreator}
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
         />
       )}
 
       {/* Duplicate dialog */}
-      {isOwner && (
+      {canManage && (
         <DuplicateProjectDialog
           projectId={project.id}
           projectName={project.name}
@@ -245,7 +252,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
       <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive "{project.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>Archive &ldquo;{project.name}&rdquo;?</AlertDialogTitle>
             <AlertDialogDescription>
               This project will be hidden from tools and the sidebar but can be restored at any time.
             </AlertDialogDescription>
@@ -273,7 +280,7 @@ export function ProjectCardMenu({ project, isOwner, onToggleFavorite }: ProjectC
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{project.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>Delete &ldquo;{project.name}&rdquo;?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. All files and parsed data associated with this project will be permanently deleted.
             </AlertDialogDescription>

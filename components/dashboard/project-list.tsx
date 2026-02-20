@@ -81,6 +81,7 @@ interface ProjectListProps {
   currentUserId?: string;
   ownerMap?: Record<string, string>;
   healthScoreMap?: Record<string, HealthScores>;
+  sharePermissionMap?: Record<string, string>;
 }
 
 type SortOption = "updated" | "created" | "name" | "files";
@@ -91,10 +92,11 @@ interface ProjectGridCardProps {
   onToggleSelect: (id: string, e?: React.MouseEvent) => void;
   onToggleFavorite: (id: string, currentValue: boolean, e: React.MouseEvent) => void;
   getFileCount: (project: Project) => number;
-  currentUserId?: string;
   searchQuery?: string;
   healthScore?: number;
   hasPartialExports?: boolean;
+  isCreator: boolean;
+  canManage: boolean;
 }
 
 function getMatchingFiles(project: Project, query: string): string[] {
@@ -111,13 +113,13 @@ function ProjectGridCard({
   onToggleSelect,
   onToggleFavorite,
   getFileCount,
-  currentUserId,
   searchQuery = "",
   healthScore,
   hasPartialExports,
+  isCreator,
+  canManage,
 }: ProjectGridCardProps) {
   const fileCount = getFileCount(project);
-  const isOwner = !currentUserId || !project.created_by || project.created_by === currentUserId;
   const matchingFiles = getMatchingFiles(project, searchQuery);
 
   return (
@@ -137,7 +139,8 @@ function ProjectGridCard({
               </div>
               <ProjectCardMenu
                 project={project}
-                isOwner={isOwner}
+                isCreator={isCreator}
+                canManage={canManage}
                 onToggleFavorite={onToggleFavorite}
               />
             </div>
@@ -209,6 +212,7 @@ interface ProjectListTableProps {
   currentUserId?: string;
   searchQuery?: string;
   healthScoreMap?: Record<string, HealthScores>;
+  sharePermissionMap?: Record<string, string>;
 }
 
 function ProjectListTable({
@@ -223,6 +227,7 @@ function ProjectListTable({
   currentUserId,
   searchQuery = "",
   healthScoreMap = {},
+  sharePermissionMap = {},
 }: ProjectListTableProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -346,7 +351,8 @@ function ProjectListTable({
                 <TableCell onClick={(e) => e.stopPropagation()} className="pr-4">
                   <ProjectCardMenu
                     project={project}
-                    isOwner={!currentUserId || !project.created_by || project.created_by === currentUserId}
+                    isCreator={!currentUserId || !project.created_by || project.created_by === currentUserId}
+                    canManage={!currentUserId || !project.created_by || project.created_by === currentUserId || sharePermissionMap[project.id] === "owner"}
                     onToggleFavorite={onToggleFavorite}
                   />
                 </TableCell>
@@ -381,7 +387,7 @@ function ProjectListTable({
   );
 }
 
-export function ProjectList({ projects, archivedProjects = [], currentUserId, ownerMap = {}, healthScoreMap = {} }: ProjectListProps) {
+export function ProjectList({ projects, archivedProjects = [], currentUserId, ownerMap = {}, healthScoreMap = {}, sharePermissionMap = {} }: ProjectListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -822,20 +828,24 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 </h2>
               </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {favoriteProjects.map((project) => (
-                  <ProjectGridCard
-                    key={project.id}
-                    project={project}
-                    isSelected={selectedIds.has(project.id)}
-                    onToggleSelect={toggleSelect}
-                    onToggleFavorite={toggleSingleFavorite}
-                    getFileCount={getFileCount}
-                    currentUserId={currentUserId}
-                    searchQuery={searchQuery}
-                    healthScore={healthScoreMap[project.id]?.overall}
-                    hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
-                  />
-                ))}
+                {favoriteProjects.map((project) => {
+                  const projIsCreator = !currentUserId || !project.created_by || project.created_by === currentUserId;
+                  return (
+                    <ProjectGridCard
+                      key={project.id}
+                      project={project}
+                      isSelected={selectedIds.has(project.id)}
+                      onToggleSelect={toggleSelect}
+                      onToggleFavorite={toggleSingleFavorite}
+                      getFileCount={getFileCount}
+                      searchQuery={searchQuery}
+                      healthScore={healthScoreMap[project.id]?.overall}
+                      hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
+                      isCreator={projIsCreator}
+                      canManage={projIsCreator || sharePermissionMap[project.id] === "owner"}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -849,20 +859,24 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 </h2>
               )}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {regularProjects.map((project) => (
-                  <ProjectGridCard
-                    key={project.id}
-                    project={project}
-                    isSelected={selectedIds.has(project.id)}
-                    onToggleSelect={toggleSelect}
-                    onToggleFavorite={toggleSingleFavorite}
-                    getFileCount={getFileCount}
-                    currentUserId={currentUserId}
-                    searchQuery={searchQuery}
-                    healthScore={healthScoreMap[project.id]?.overall}
-                    hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
-                  />
-                ))}
+                {regularProjects.map((project) => {
+                  const projIsCreator = !currentUserId || !project.created_by || project.created_by === currentUserId;
+                  return (
+                    <ProjectGridCard
+                      key={project.id}
+                      project={project}
+                      isSelected={selectedIds.has(project.id)}
+                      onToggleSelect={toggleSelect}
+                      onToggleFavorite={toggleSingleFavorite}
+                      getFileCount={getFileCount}
+                      searchQuery={searchQuery}
+                      healthScore={healthScoreMap[project.id]?.overall}
+                      hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
+                      isCreator={projIsCreator}
+                      canManage={projIsCreator || sharePermissionMap[project.id] === "owner"}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -877,20 +891,24 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 </h2>
               </div>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {sharedProjects.map((project) => (
-                  <ProjectGridCard
-                    key={project.id}
-                    project={project}
-                    isSelected={selectedIds.has(project.id)}
-                    onToggleSelect={toggleSelect}
-                    onToggleFavorite={toggleSingleFavorite}
-                    getFileCount={getFileCount}
-                    currentUserId={currentUserId}
-                    searchQuery={searchQuery}
-                    healthScore={healthScoreMap[project.id]?.overall}
-                    hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
-                  />
-                ))}
+                {sharedProjects.map((project) => {
+                  const projIsCreator = !currentUserId || !project.created_by || project.created_by === currentUserId;
+                  return (
+                    <ProjectGridCard
+                      key={project.id}
+                      project={project}
+                      isSelected={selectedIds.has(project.id)}
+                      onToggleSelect={toggleSelect}
+                      onToggleFavorite={toggleSingleFavorite}
+                      getFileCount={getFileCount}
+                      searchQuery={searchQuery}
+                      healthScore={healthScoreMap[project.id]?.overall}
+                      hasPartialExports={healthScoreMap[project.id]?.hasPartialExports}
+                      isCreator={projIsCreator}
+                      canManage={projIsCreator || sharePermissionMap[project.id] === "owner"}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
@@ -921,6 +939,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 currentUserId={currentUserId}
                 searchQuery={searchQuery}
                 healthScoreMap={healthScoreMap}
+                sharePermissionMap={sharePermissionMap}
               />
             </div>
           )}
@@ -944,6 +963,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 currentUserId={currentUserId}
                 searchQuery={searchQuery}
                 healthScoreMap={healthScoreMap}
+                sharePermissionMap={sharePermissionMap}
               />
             </div>
           )}
@@ -969,6 +989,7 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
                 currentUserId={currentUserId}
                 searchQuery={searchQuery}
                 healthScoreMap={healthScoreMap}
+                sharePermissionMap={sharePermissionMap}
               />
             </div>
           )}

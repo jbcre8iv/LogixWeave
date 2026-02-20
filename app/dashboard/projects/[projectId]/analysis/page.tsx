@@ -75,8 +75,18 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     : false;
   const viewerOrgId = viewerMembership?.organization_id ?? null;
 
-  const isOwner = user?.id === project.created_by;
-  const ownerName = isOwner
+  // Check if user has an owner-level share
+  const { data: userShare } = await supabase
+    .from("project_shares")
+    .select("permission")
+    .eq("project_id", projectId)
+    .eq("shared_with_user_id", user!.id)
+    .not("accepted_at", "is", null)
+    .single();
+
+  const isCreator = user?.id === project.created_by;
+  const canManage = isCreator || userShare?.permission === "owner";
+  const ownerName = isCreator
     ? "You"
     : ownerProfile?.first_name
       ? `${ownerProfile.first_name} ${ownerProfile.last_name || ""}`.trim()
@@ -471,7 +481,8 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             projectName={project.name}
             projectDescription={project.description}
             isFavorite={project.is_favorite}
-            isOwner={isOwner}
+            isCreator={isCreator}
+            canManage={canManage}
           />
           {fileIds.length > 0 && (
             <>
