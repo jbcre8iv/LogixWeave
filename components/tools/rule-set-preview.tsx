@@ -84,7 +84,7 @@ export function RuleSetPreview({ ruleSetName, rules }: RuleSetPreviewProps) {
           <span className="sr-only">View active rules</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-fit">
         <DialogHeader>
           <DialogTitle>{ruleSetName}</DialogTitle>
           <DialogDescription>
@@ -92,7 +92,7 @@ export function RuleSetPreview({ ruleSetName, rules }: RuleSetPreviewProps) {
           </DialogDescription>
         </DialogHeader>
         {rules.length > 0 ? (
-          <div className="max-h-[400px] overflow-auto">
+          <div className="overflow-auto max-h-[70vh]">
             <Table>
               <TableHeader>
                 <TableRow>

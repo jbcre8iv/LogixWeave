@@ -447,31 +447,27 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                 </>
               )}
             </div>
+            <div className="flex items-center gap-1.5 mt-2">
+              <RuleSetPicker
+                projectId={projectId}
+                ruleSets={allRuleSets || []}
+                currentRuleSetId={pickerCurrentRuleSetId}
+                mode="persist"
+                currentSeverityFilter={severityFilter}
+              />
+              <RuleSetPreview
+                ruleSetName={effectiveRuleSetName}
+                rules={rules}
+              />
+              {severityFilter && severityFilter !== "all" && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={buildClearFilterUrl()}>Clear Filter</Link>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <RuleSetPicker
-            projectId={projectId}
-            ruleSets={allRuleSets || []}
-            currentRuleSetId={pickerCurrentRuleSetId}
-            mode="persist"
-            currentSeverityFilter={severityFilter}
-          />
-          <RuleSetPreview
-            ruleSetName={effectiveRuleSetName}
-            rules={rules}
-          />
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/settings/naming-rules">
-              <Settings className="mr-2 h-4 w-4" />
-              Manage Rules
-            </Link>
-          </Button>
-          {severityFilter && severityFilter !== "all" && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={buildClearFilterUrl()}>Clear Filter</Link>
-            </Button>
-          )}
           <ExportCSVButton
             filename="naming_validation.csv"
             disabled={allViolations.length === 0 && scopeConflicts.length === 0}
