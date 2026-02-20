@@ -134,7 +134,7 @@ export async function getProjectHealthScores(
 
     // Resolve naming rules for projects with naming enabled
     const projectsWithNaming = missing.filter((id) => settingsMap.get(id)?.namingEnabled);
-    const namingRulesByProject = new Map<string, Array<{ pattern: string; applies_to: string }>>();
+    const namingRulesByProject = new Map<string, Array<{ pattern: string; applies_to: string; severity: string }>>();
 
     if (projectsWithNaming.length > 0) {
       // Collect rule set IDs and org IDs that need default lookups
@@ -169,14 +169,14 @@ export async function getProjectHealthScores(
       if (ruleSetIds.size > 0) {
         const { data: rules } = await supabase
           .from("naming_rules")
-          .select("rule_set_id, pattern, applies_to")
+          .select("rule_set_id, pattern, applies_to, severity")
           .in("rule_set_id", [...ruleSetIds])
           .eq("is_active", true);
 
-        const rulesBySet = new Map<string, Array<{ pattern: string; applies_to: string }>>();
+        const rulesBySet = new Map<string, Array<{ pattern: string; applies_to: string; severity: string }>>();
         for (const r of rules || []) {
           const arr = rulesBySet.get(r.rule_set_id) || [];
-          arr.push({ pattern: r.pattern, applies_to: r.applies_to });
+          arr.push({ pattern: r.pattern, applies_to: r.applies_to, severity: r.severity });
           rulesBySet.set(r.rule_set_id, arr);
         }
 
@@ -251,7 +251,11 @@ export async function getProjectHealthScores(
         if (namingEnabled) {
           const rules = namingRulesByProject.get(projectId);
           if (rules && rules.length > 0) {
-            const violatingTags = new Set<string>();
+            // Track worst severity per violating tag so we can weight by severity
+            const SEVERITY_ORDER: Record<string, number> = { error: 3, warning: 2, info: 1 };
+            const SEVERITY_WEIGHT: Record<string, number> = { error: 1.0, warning: 0.5, info: 0.1 };
+            const tagWorstSeverity = new Map<string, string>();
+
             for (const tag of tags) {
               for (const rule of rules) {
                 const appliesToTag =
@@ -261,13 +265,23 @@ export async function getProjectHealthScores(
                 if (!appliesToTag) continue;
                 try {
                   if (!new RegExp(rule.pattern).test(tag.name)) {
-                    violatingTags.add(tag.name);
-                    break;
+                    const current = tagWorstSeverity.get(tag.name);
+                    const currentOrder = current ? SEVERITY_ORDER[current] || 0 : 0;
+                    const newOrder = SEVERITY_ORDER[rule.severity] || 1;
+                    if (newOrder > currentOrder) {
+                      tagWorstSeverity.set(tag.name, rule.severity);
+                    }
                   }
                 } catch { continue; }
               }
             }
-            namingViolationTags = violatingTags.size;
+
+            // Weighted count: errors count fully, warnings half, info minimally
+            let weightedViolations = 0;
+            for (const severity of tagWorstSeverity.values()) {
+              weightedViolations += SEVERITY_WEIGHT[severity] ?? 1.0;
+            }
+            namingViolationTags = weightedViolations;
           } else {
             namingViolationTags = 0;
           }
