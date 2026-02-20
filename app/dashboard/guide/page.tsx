@@ -12,15 +12,15 @@ import {
 } from "lucide-react";
 
 const sections = [
-  { label: "Getting Started", anchor: "getting-started", icon: Rocket },
-  { label: "Exploring Your Data", anchor: "explore", icon: Search },
-  { label: "Analysis & Health Scores", anchor: "analysis", icon: BarChart3 },
-  { label: "Naming Validation", anchor: "naming", icon: ScrollText },
-  { label: "AI Tools", anchor: "ai-tools", icon: Sparkles },
-  { label: "Project Manual", anchor: "project-manual", icon: BookOpen },
-  { label: "File Compare", anchor: "file-compare", icon: GitCompareArrows },
-  { label: "Collaboration & Sharing", anchor: "collaboration", icon: Users },
-  { label: "Exporting Data", anchor: "export", icon: Download },
+  { label: "Getting Started", anchor: "getting-started", icon: Rocket, color: "text-emerald-500" },
+  { label: "Exploring Your Data", anchor: "explore", icon: Search, color: "text-blue-500" },
+  { label: "Analysis & Health Scores", anchor: "analysis", icon: BarChart3, color: "text-violet-500" },
+  { label: "Naming Validation", anchor: "naming", icon: ScrollText, color: "text-rose-500" },
+  { label: "AI Tools", anchor: "ai-tools", icon: Sparkles, color: "text-amber-500" },
+  { label: "Project Manual", anchor: "project-manual", icon: BookOpen, color: "text-teal-500" },
+  { label: "File Compare", anchor: "file-compare", icon: GitCompareArrows, color: "text-orange-500" },
+  { label: "Collaboration & Sharing", anchor: "collaboration", icon: Users, color: "text-indigo-500" },
+  { label: "Exporting Data", anchor: "export", icon: Download, color: "text-cyan-500" },
 ] as const;
 
 export default function GuidePage() {
@@ -41,13 +41,13 @@ export default function GuidePage() {
               Contents
             </h2>
             <nav className="grid gap-1 sm:grid-cols-2">
-              {sections.map(({ label, anchor, icon: Icon }) => (
+              {sections.map(({ label, anchor, icon: Icon, color }) => (
                 <a
                   key={anchor}
                   href={`#${anchor}`}
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
                 >
-                  <Icon className={`h-4 w-4 shrink-0 ${anchor === "ai-tools" ? "text-amber-500" : "text-muted-foreground"}`} />
+                  <Icon className={`h-4 w-4 shrink-0 ${color}`} />
                   {label}
                 </a>
               ))}
@@ -58,7 +58,7 @@ export default function GuidePage() {
         {/* Getting Started */}
         <section id="getting-started" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Rocket className="h-5 w-5" />
+            <Rocket className="h-5 w-5 text-emerald-500" />
             Getting Started
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -92,7 +92,7 @@ export default function GuidePage() {
         {/* Exploring Your Data */}
         <section id="explore" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5 text-blue-500" />
             Exploring Your Data
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -124,7 +124,7 @@ export default function GuidePage() {
         {/* Analysis & Health Scores */}
         <section id="analysis" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+            <BarChart3 className="h-5 w-5 text-violet-500" />
             Analysis &amp; Health Scores
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -159,7 +159,7 @@ export default function GuidePage() {
         {/* Naming Validation */}
         <section id="naming" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <ScrollText className="h-5 w-5" />
+            <ScrollText className="h-5 w-5 text-rose-500" />
             Naming Validation
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -226,7 +226,7 @@ export default function GuidePage() {
         {/* Project Manual */}
         <section id="project-manual" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
+            <BookOpen className="h-5 w-5 text-teal-500" />
             Project Manual
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -255,7 +255,7 @@ export default function GuidePage() {
         {/* File Compare */}
         <section id="file-compare" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <GitCompareArrows className="h-5 w-5" />
+            <GitCompareArrows className="h-5 w-5 text-orange-500" />
             File Compare
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -285,7 +285,7 @@ export default function GuidePage() {
         {/* Collaboration & Sharing */}
         <section id="collaboration" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Users className="h-5 w-5" />
+            <Users className="h-5 w-5 text-indigo-500" />
             Collaboration &amp; Sharing
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -315,7 +315,7 @@ export default function GuidePage() {
         {/* Exporting Data */}
         <section id="export" className="scroll-mt-6 space-y-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Download className="h-5 w-5" />
+            <Download className="h-5 w-5 text-cyan-500" />
             Exporting Data
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
