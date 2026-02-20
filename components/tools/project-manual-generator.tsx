@@ -228,8 +228,26 @@ export function ProjectManualGenerator({
       : progress.stage === "fetching" ? 10 : progress.stage === "building" ? 30 : 50
     : 0;
 
+  // Build summary description for the download area
+  const selectedCount = SECTIONS.filter((s) => {
+    const count = s.countKey ? counts[s.countKey] : undefined;
+    const isDisabled = count !== undefined && count === 0;
+    return selectedSections[s.id] && !isDisabled;
+  });
+  const sectionNames = selectedCount.map((s) => s.label);
+  const summaryParts: string[] = [];
+  if (sectionNames.length > 0) {
+    if (sectionNames.length <= 3) {
+      summaryParts.push(sectionNames.join(", "));
+    } else {
+      summaryParts.push(`${sectionNames.slice(0, 2).join(", ")} +${sectionNames.length - 2} more`);
+    }
+  }
+  summaryParts.push(detailLevel === "comprehensive" ? "with AI narratives" : "structural data only");
+  const summaryText = summaryParts.join(" \u2014 ");
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {error && (
         <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
           {error}
@@ -237,7 +255,7 @@ export function ProjectManualGenerator({
       )}
 
       {/* Section Selection */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-medium">Include Sections</h3>
           <div className="flex gap-2">
@@ -250,104 +268,97 @@ export function ProjectManualGenerator({
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
           {SECTIONS.map((section) => {
             const count = section.countKey ? counts[section.countKey] : undefined;
             const isDisabled = count !== undefined && count === 0;
 
             return (
-              <Card
+              <div
                 key={section.id}
-                className={`cursor-pointer transition-colors ${
+                className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
                   selectedSections[section.id] && !isDisabled
                     ? "border-primary bg-primary/5"
                     : isDisabled
-                    ? "opacity-50"
+                    ? "opacity-50 cursor-default"
                     : "hover:bg-accent/50"
                 }`}
                 onClick={() => !isDisabled && toggleSection(section.id)}
               >
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Checkbox
-                    checked={selectedSections[section.id] && !isDisabled}
-                    disabled={isDisabled}
-                    onCheckedChange={() => toggleSection(section.id)}
-                  />
-                  <section.icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <Label className="cursor-pointer font-medium">{section.label}</Label>
-                    <p className="text-xs text-muted-foreground truncate">{section.description}</p>
+                <Checkbox
+                  checked={selectedSections[section.id] && !isDisabled}
+                  disabled={isDisabled}
+                  onCheckedChange={() => toggleSection(section.id)}
+                  className="flex-shrink-0"
+                />
+                <section.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium leading-tight">{section.label}</span>
                     {count !== undefined && (
-                      <p className="text-xs text-muted-foreground">
-                        {count} item{count === 1 ? "" : "s"}
-                      </p>
+                      <span className="text-[11px] text-muted-foreground">({count})</span>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                  <p className="text-[11px] text-muted-foreground leading-tight truncate">{section.description}</p>
+                </div>
+              </div>
             );
           })}
         </div>
       </div>
 
       {/* Detail Level */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <h3 className="font-medium">Detail Level</h3>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card
-            className={`cursor-pointer transition-colors ${
+        <div className="grid gap-2 md:grid-cols-2">
+          <div
+            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
               detailLevel === "standard" ? "border-primary bg-primary/5" : "hover:bg-accent/50"
             }`}
             onClick={() => setDetailLevel("standard")}
           >
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                detailLevel === "standard" ? "border-primary" : "border-muted-foreground"
-              }`}>
-                {detailLevel === "standard" && <div className="h-2 w-2 rounded-full bg-primary" />}
-              </div>
-              <div>
-                <Label className="cursor-pointer font-medium">Standard</Label>
-                <p className="text-xs text-muted-foreground">Data tables and structural content only</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card
-            className={`cursor-pointer transition-colors ${
+            <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+              detailLevel === "standard" ? "border-primary" : "border-muted-foreground"
+            }`}>
+              {detailLevel === "standard" && <div className="h-2 w-2 rounded-full bg-primary" />}
+            </div>
+            <div>
+              <span className="text-sm font-medium">Standard</span>
+              <p className="text-[11px] text-muted-foreground leading-tight">Data tables and structural content only</p>
+            </div>
+          </div>
+          <div
+            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
               detailLevel === "comprehensive"
                 ? "border-amber-500 bg-amber-500/5"
                 : "hover:bg-accent/50"
             }`}
             onClick={() => setDetailLevel("comprehensive")}
           >
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                detailLevel === "comprehensive" ? "border-amber-500" : "border-muted-foreground"
-              }`}>
-                {detailLevel === "comprehensive" && <div className="h-2 w-2 rounded-full bg-amber-500" />}
-              </div>
-              <div className="flex items-center gap-2">
-                <div>
-                  <Label className="cursor-pointer font-medium flex items-center gap-1.5">
-                    Comprehensive
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  </Label>
-                  <p className="text-xs text-muted-foreground">Includes AI-generated narratives and summaries</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+              detailLevel === "comprehensive" ? "border-amber-500" : "border-muted-foreground"
+            }`}>
+              {detailLevel === "comprehensive" && <div className="h-2 w-2 rounded-full bg-amber-500" />}
+            </div>
+            <div>
+              <span className="text-sm font-medium flex items-center gap-1.5">
+                Comprehensive
+                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              </span>
+              <p className="text-[11px] text-muted-foreground leading-tight">Includes AI-generated narratives and summaries</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Export Format */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <h3 className="font-medium">Export Format</h3>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {([
-            { value: "markdown" as const, label: "Markdown", icon: FileText },
-            { value: "pdf" as const, label: "PDF", icon: FileText },
-            { value: "docx" as const, label: "DOCX", icon: FileText },
+            { value: "markdown" as const, label: "Markdown" },
+            { value: "pdf" as const, label: "PDF" },
+            { value: "docx" as const, label: "DOCX" },
           ]).map((opt) => (
             <Button
               key={opt.value}
@@ -363,19 +374,17 @@ export function ProjectManualGenerator({
 
       {/* Progress */}
       {isGenerating && progress && (
-        <Card>
-          <CardContent className="py-6 space-y-3">
-            <div className="flex items-center gap-3">
-              {detailLevel === "comprehensive" && progress.stage === "narrating" ? (
-                <Sparkles className="h-5 w-5 text-amber-500 animate-pulse" />
-              ) : (
-                <BarChart3 className="h-5 w-5 text-primary animate-pulse" />
-              )}
-              <span className="text-sm font-medium">{progress.message}</span>
-            </div>
-            <Progress value={progressPercent} className="h-2" />
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border p-4 space-y-2">
+          <div className="flex items-center gap-3">
+            {detailLevel === "comprehensive" && progress.stage === "narrating" ? (
+              <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+            ) : (
+              <BarChart3 className="h-4 w-4 text-primary animate-pulse" />
+            )}
+            <span className="text-sm font-medium">{progress.message}</span>
+          </div>
+          <Progress value={progressPercent} className="h-1.5" />
+        </div>
       )}
 
       {/* Actions */}
@@ -383,6 +392,7 @@ export function ProjectManualGenerator({
         <Button
           onClick={() => generateManual("preview")}
           variant="outline"
+          size="sm"
           disabled={!hasSelections || isGenerating}
         >
           <FileText className="h-4 w-4 mr-2" />
@@ -395,6 +405,11 @@ export function ProjectManualGenerator({
           <Download className="h-4 w-4 mr-2" />
           {isGenerating ? "Generating..." : `Download ${format.toUpperCase()}`}
         </Button>
+        {hasSelections && !isGenerating && (
+          <span className="text-xs text-muted-foreground">
+            {selectedCount.length} section{selectedCount.length === 1 ? "" : "s"} — {summaryText}
+          </span>
+        )}
       </div>
 
       {/* Preview */}
