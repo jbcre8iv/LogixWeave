@@ -459,18 +459,8 @@ export async function PUT(request: Request, context: RouteContext) {
       if (sourceSet && newOwnerMembership?.organization_id) {
         const targetOrgId = newOwnerMembership.organization_id;
 
-        // Check if a rule set with this name already exists in target org
-        let newName = sourceSet.name;
-        const { data: existing } = await serviceClient
-          .from("naming_rule_sets")
-          .select("name")
-          .eq("organization_id", targetOrgId)
-          .eq("name", newName)
-          .single();
-
-        if (existing) {
-          newName = `${sourceSet.name} (transferred)`;
-        }
+        // Always mark as transferred so the origin is clear
+        const newName = `${sourceSet.name} (transferred)`;
 
         // Create the new rule set in target org (NOT default)
         const { data: newSet } = await serviceClient
