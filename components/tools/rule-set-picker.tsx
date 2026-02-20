@@ -9,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-
 interface RuleSet {
   id: string;
   name: string;
@@ -23,7 +21,6 @@ interface RuleSetPickerProps {
   currentRuleSetId: string | null;
   className?: string;
   mode?: "persist" | "preview";
-  isCrossOrg?: boolean;
   currentSeverityFilter?: string;
 }
 
@@ -33,7 +30,6 @@ export function RuleSetPicker({
   currentRuleSetId,
   className,
   mode = "persist",
-  isCrossOrg = false,
   currentSeverityFilter,
 }: RuleSetPickerProps) {
   const router = useRouter();
@@ -86,16 +82,9 @@ export function RuleSetPicker({
       <SelectContent>
         <SelectItem value="org-default">
           <span className="flex items-center gap-2">
-            {isCrossOrg ? "Use your default rules" : "Use default rule set"}
+            Use default rule set
           </span>
         </SelectItem>
-        {isCrossOrg && (
-          <SelectItem value="project-default">
-            <span className="flex items-center gap-2">
-              Use project owner&apos;s rules
-            </span>
-          </SelectItem>
-        )}
         {ruleSets.filter((rs) => !rs.is_default).map((rs) => (
           <SelectItem key={rs.id} value={rs.id}>
             <span className="flex items-center gap-2">

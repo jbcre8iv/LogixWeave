@@ -64,17 +64,6 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
       .single(),
   ]);
 
-  // Detect cross-org viewing
-  const { data: viewerMembership } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", user!.id)
-    .single();
-  const isCrossOrg = viewerMembership?.organization_id
-    ? viewerMembership.organization_id !== project.organization_id
-    : false;
-  const viewerOrgId = viewerMembership?.organization_id ?? null;
-
   // Check if user has an owner-level share
   const { data: userShare } = await supabase
     .from("project_shares")
@@ -145,10 +134,10 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   let topTags: Array<{ name: string; count: number }> = [];
 
   if (fileIds.length > 0) {
-    // Resolve effective rule set for naming rules
-    // For cross-org viewers, use their org's rules instead of the project's org
-    const rulesOrgId = isCrossOrg && viewerOrgId ? viewerOrgId : project.organization_id;
-    let effectiveRuleSetId = isCrossOrg ? null : projectRuleSetId;
+    // Resolve effective rule set — always use the project's rules so all viewers
+    // see the same naming compliance results
+    const rulesOrgId = project.organization_id;
+    let effectiveRuleSetId = projectRuleSetId;
     if (!effectiveRuleSetId) {
       const { data: defaultSet } = await supabase
         .from("naming_rule_sets")

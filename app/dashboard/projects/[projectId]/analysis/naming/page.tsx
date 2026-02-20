@@ -222,15 +222,6 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     notFound();
   }
 
-  // Detect cross-org viewing
-  const { data: viewerMembership } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", user!.id)
-    .single();
-  const viewerOrgId = viewerMembership?.organization_id ?? null;
-  const isCrossOrg = !!viewerOrgId && viewerOrgId !== project.organization_id;
-
   // Fetch naming_rule_set_id separately (column may not exist pre-migration)
   const { data: projectRuleSetRow } = await supabase
     .from("projects")
@@ -241,11 +232,8 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
 
   const fileIds = project.project_files?.map((f: { id: string }) => f.id) || [];
 
-  // Determine which org to fetch rule sets from
-  const useProjectOwnerRules = isCrossOrg && ruleSetParam === "project-default";
-  const ruleSetOrgId = isCrossOrg && !useProjectOwnerRules
-    ? viewerOrgId
-    : project.organization_id;
+  // Always use the project's org — all viewers see the same naming results
+  const ruleSetOrgId = project.organization_id;
 
   // Fetch all rule sets for the picker (may be empty pre-migration)
   const { data: allRuleSets } = await supabase
@@ -255,25 +243,11 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     .order("is_default", { ascending: false })
     .order("name");
 
-  // Resolve effective rule set
-  let effectiveRuleSetId: string | null = null;
-  if (isCrossOrg) {
-    if (ruleSetParam && ruleSetParam !== "project-default") {
-      // Explicit rule set selected via URL param — validate it exists
-      const matchedSet = allRuleSets?.find((rs) => rs.id === ruleSetParam);
-      effectiveRuleSetId = matchedSet?.id ?? null;
-    }
-    if (!effectiveRuleSetId) {
-      // Use org default from whichever org we're fetching from
-      const defaultSet = allRuleSets?.find((rs) => rs.is_default);
-      effectiveRuleSetId = defaultSet?.id ?? null;
-    }
-  } else {
-    effectiveRuleSetId = projectRuleSetId;
-    if (!effectiveRuleSetId) {
-      const defaultSet = allRuleSets?.find((rs) => rs.is_default);
-      effectiveRuleSetId = defaultSet?.id ?? null;
-    }
+  // Resolve effective rule set — project's explicit assignment, or org default
+  let effectiveRuleSetId: string | null = projectRuleSetId;
+  if (!effectiveRuleSetId) {
+    const defaultSet = allRuleSets?.find((rs) => rs.is_default);
+    effectiveRuleSetId = defaultSet?.id ?? null;
   }
 
   const effectiveRuleSet = allRuleSets?.find((rs) => rs.id === effectiveRuleSetId);
@@ -327,10 +301,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     rules = data || [];
   }
 
-  // Determine the picker's currentRuleSetId for cross-org
-  const pickerCurrentRuleSetId = isCrossOrg
-    ? (ruleSetParam === "project-default" ? "project-default" : (ruleSetParam || null))
-    : projectRuleSetId;
+  const pickerCurrentRuleSetId = projectRuleSetId;
 
   if (rules.length === 0) {
     return (
@@ -348,68 +319,31 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
         </div>
         <Card>
           <CardContent className="py-16 text-center">
-            {isCrossOrg ? (
-              <div className="space-y-6">
-                <div>
-                  <p className="text-muted-foreground">
-                    {useProjectOwnerRules
-                      ? "The project owner has no naming rules configured."
-                      : "You don\u2019t have any naming rules configured yet."}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {useProjectOwnerRules
-                      ? "You can configure your own rules and apply them to this shared project."
-                      : "Create naming rules in your settings to validate tags on shared projects."}
-                  </p>
-                </div>
-                <div>
-                  <Button asChild>
-                    <Link href="/dashboard/settings/naming-rules">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configure Naming Rules
-                    </Link>
-                  </Button>
-                </div>
+            <div className="space-y-6">
+              <p className="text-muted-foreground">
+                No active naming rules found in the current rule set.
+              </p>
+              <div>
+                <Button asChild>
+                  <Link href="/dashboard/settings/naming-rules">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configure Naming Rules
+                  </Link>
+                </Button>
+              </div>
+              {(allRuleSets || []).length > 1 && (
                 <div className="flex flex-col items-center gap-2.5 pt-6 border-t">
                   <span className="text-xs text-muted-foreground">Or switch rule set</span>
                   <RuleSetPicker
                     projectId={projectId}
                     ruleSets={allRuleSets || []}
                     currentRuleSetId={pickerCurrentRuleSetId}
-                    mode="preview"
-                    isCrossOrg={isCrossOrg}
+                    mode="persist"
                     currentSeverityFilter={severityFilter}
                   />
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <p className="text-muted-foreground">
-                  No active naming rules found in the current rule set.
-                </p>
-                <div>
-                  <Button asChild>
-                    <Link href="/dashboard/settings/naming-rules">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configure Naming Rules
-                    </Link>
-                  </Button>
-                </div>
-                {(allRuleSets || []).length > 1 && (
-                  <div className="flex flex-col items-center gap-2.5 pt-6 border-t">
-                    <span className="text-xs text-muted-foreground">Or switch rule set</span>
-                    <RuleSetPicker
-                      projectId={projectId}
-                      ruleSets={allRuleSets || []}
-                      currentRuleSetId={pickerCurrentRuleSetId}
-                      mode="persist"
-                      isCrossOrg={isCrossOrg}
-                      currentSeverityFilter={severityFilter}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -598,12 +532,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
               {effectiveRuleSet && (
                 <Badge variant="outline">
                   Rule set: {effectiveRuleSet.name}
-                  {!isCrossOrg && !projectRuleSetId && " (default)"}
-                </Badge>
-              )}
-              {isCrossOrg && (
-                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-                  {useProjectOwnerRules ? "Using project owner\u2019s rules" : "Using your rules"}
+                  {!projectRuleSetId && " (default)"}
                 </Badge>
               )}
             </div>
@@ -612,8 +541,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
                 projectId={projectId}
                 ruleSets={allRuleSets || []}
                 currentRuleSetId={pickerCurrentRuleSetId}
-                mode={isCrossOrg ? "preview" : "persist"}
-                isCrossOrg={isCrossOrg}
+                mode="persist"
                 currentSeverityFilter={severityFilter}
               />
               {severityFilter && severityFilter !== "all" && (
