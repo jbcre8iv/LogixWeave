@@ -18,8 +18,12 @@ const getClient = () => {
   return new Anthropic({ apiKey });
 };
 
+// Bump this when prompt, cache format, or output structure changes.
+// Old cache entries with a different version will simply never match.
+const NARRATOR_VERSION = 2;
+
 function generateHash(content: string): string {
-  return crypto.createHash("sha256").update(content).digest("hex").substring(0, 16);
+  return crypto.createHash("sha256").update(`v${NARRATOR_VERSION}:${content}`).digest("hex").substring(0, 16);
 }
 
 const NARRATOR_SYSTEM_PROMPT = `You are a senior controls engineer and PLC programming expert writing professional project documentation. You have deep expertise in Rockwell Automation / Allen-Bradley platforms, ladder logic, structured text, and industrial automation systems.
@@ -300,8 +304,20 @@ export async function generateNarratives(
 
       const cachedNarrative = await getCachedNarrative(fileId, `program:${program.name}`, inputHash);
       if (cachedNarrative) {
-        // Parse cached result — it may be the full narrative or include routine summaries
-        program.narrative = cachedNarrative;
+        try {
+          const parsed = JSON.parse(cachedNarrative);
+          program.narrative = parsed.narrative || cachedNarrative;
+          if (parsed.routineSummaries) {
+            for (const routine of program.routines) {
+              if (parsed.routineSummaries[routine.name]) {
+                routine.summary = parsed.routineSummaries[routine.name];
+              }
+            }
+          }
+        } catch {
+          // Not JSON — use the raw string as the narrative
+          program.narrative = cachedNarrative;
+        }
         currentStep++;
         continue;
       }

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { ManualConfig, ManualDocument, GenerationProgress, SectionType } from "@/lib/document-generator/types";
 import { renderMarkdown } from "@/lib/document-generator/render-markdown";
+import { getTimestampSuffix } from "@/lib/utils";
 
 interface ProjectManualGeneratorProps {
   projectId: string;
@@ -198,19 +199,19 @@ export function ProjectManualGenerator({
   }, [hasSelections, selectedSections, detailLevel, format, projectId]);
 
   const downloadDocument = async (document: ManualDocument) => {
-    const date = new Date().toISOString().split("T")[0];
+    const timestamp = getTimestampSuffix();
     const safeName = projectName.replace(/[^a-zA-Z0-9]/g, "_");
 
     if (format === "markdown") {
       const markdown = renderMarkdown(document);
-      downloadBlob(new Blob([markdown], { type: "text/markdown" }), `${safeName}_Manual_${date}.md`);
+      downloadBlob(new Blob([markdown], { type: "text/markdown" }), `${safeName}_Manual_${timestamp}.md`);
     } else if (format === "pdf") {
       const { renderPdf } = await import("@/lib/document-generator/render-pdf");
       await renderPdf(document);
     } else if (format === "docx") {
       const { renderDocx } = await import("@/lib/document-generator/render-docx");
       const blob = await renderDocx(document);
-      downloadBlob(blob, `${safeName}_Manual_${date}.docx`);
+      downloadBlob(blob, `${safeName}_Manual_${timestamp}.docx`);
     }
   };
 
@@ -311,9 +312,9 @@ export function ProjectManualGenerator({
       {/* Detail Level */}
       <div className="space-y-2">
         <h3 className="font-medium">Detail Level</h3>
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
           <div
-            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
               detailLevel === "standard" ? "border-primary bg-primary/5" : "hover:bg-accent/50"
             }`}
             onClick={() => setDetailLevel("standard")}
@@ -329,7 +330,7 @@ export function ProjectManualGenerator({
             </div>
           </div>
           <div
-            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 cursor-pointer transition-colors lg:col-start-1 ${
               detailLevel === "comprehensive"
                 ? "border-amber-500 bg-amber-500/5"
                 : "hover:bg-accent/50"

@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addPdfBranding } from "@/lib/pdf-branding";
+import { getTimestampSuffix } from "@/lib/utils";
 import type {
   ManualDocument,
   CoverContent,
@@ -321,9 +322,8 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
   await addPdfBranding(doc);
   addPageNumbers(doc);
 
-  const date = new Date().toISOString().split("T")[0];
   const safeName = document.metadata.projectName.replace(/[^a-zA-Z0-9]/g, "_");
-  doc.save(`${safeName}_Manual_${date}.pdf`);
+  doc.save(`${safeName}_Manual_${getTimestampSuffix()}.pdf`);
 }
 
 function addPageNumbers(doc: jsPDF) {
