@@ -221,9 +221,13 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     const commentedRungs = rungs.filter((r) => r.comment && r.comment.trim() !== "").length;
 
     // Always compute naming violation count (needed for instant client-side toggle)
+    // Weight by severity so Info violations have minimal health impact
     namingViolationCount = 0;
     if (namingRules.length > 0) {
-      const violatingTagNames = new Set<string>();
+      const SEVERITY_ORDER: Record<string, number> = { error: 3, warning: 2, info: 1 };
+      const SEVERITY_WEIGHT: Record<string, number> = { error: 1.0, warning: 0.5, info: 0.1 };
+      const tagWorstSeverity = new Map<string, string>();
+
       for (const tag of allTags) {
         for (const rule of namingRules) {
           const appliesToTag =
@@ -233,13 +237,22 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           if (!appliesToTag) continue;
           try {
             if (!new RegExp(rule.pattern).test(tag.name)) {
-              violatingTagNames.add(tag.name);
-              break;
+              const current = tagWorstSeverity.get(tag.name);
+              const currentOrder = current ? SEVERITY_ORDER[current] || 0 : 0;
+              const newOrder = SEVERITY_ORDER[rule.severity] || 1;
+              if (newOrder > currentOrder) {
+                tagWorstSeverity.set(tag.name, rule.severity);
+              }
             }
           } catch { continue; }
         }
       }
-      namingViolationCount = violatingTagNames.size;
+
+      let weightedViolations = 0;
+      for (const severity of tagWorstSeverity.values()) {
+        weightedViolations += SEVERITY_WEIGHT[severity] ?? 1.0;
+      }
+      namingViolationCount = weightedViolations;
     }
     // Only include in stats for initial server render when toggle is on
     const namingViolationTags = namingAffectsHealthScore ? namingViolationCount : undefined;
