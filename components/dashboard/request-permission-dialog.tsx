@@ -114,14 +114,14 @@ export function RequestPermissionDialog({
                   <SelectItem value="edit">
                     <div className="flex items-center gap-2">
                       <Pencil className="h-3 w-3" />
-                      Edit Access
+                      Editor
                     </div>
                   </SelectItem>
                 )}
                 <SelectItem value="owner">
                   <div className="flex items-center gap-2">
                     <Crown className="h-3 w-3" />
-                    Owner Access
+                    Owner
                   </div>
                 </SelectItem>
               </SelectContent>

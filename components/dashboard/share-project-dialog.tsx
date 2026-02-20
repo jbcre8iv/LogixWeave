@@ -255,13 +255,13 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
                     <SelectItem value="view">
                       <div className="flex items-center gap-2">
                         <Eye className="h-3 w-3" />
-                        Can view
+                        Viewer
                       </div>
                     </SelectItem>
                     <SelectItem value="edit">
                       <div className="flex items-center gap-2">
                         <Pencil className="h-3 w-3" />
-                        Can edit
+                        Editor
                       </div>
                     </SelectItem>
                     {isCreator && (
@@ -338,13 +338,13 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
                               <SelectItem value="view">
                                 <div className="flex items-center gap-2">
                                   <Eye className="h-3 w-3" />
-                                  Can view
+                                  Viewer
                                 </div>
                               </SelectItem>
                               <SelectItem value="edit">
                                 <div className="flex items-center gap-2">
                                   <Pencil className="h-3 w-3" />
-                                  Can edit
+                                  Editor
                                 </div>
                               </SelectItem>
                               {isCreator && (

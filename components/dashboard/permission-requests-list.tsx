@@ -115,14 +115,14 @@ export function PermissionRequestsList({ projectId }: PermissionRequestsListProp
               </p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className="text-xs">
-                  {request.current_permission}
+                  {request.current_permission === "view" ? "Viewer" : request.current_permission === "edit" ? "Editor" : "Owner"}
                 </Badge>
                 <span className="text-xs text-muted-foreground">→</span>
                 <Badge variant="secondary" className="text-xs">
                   {request.requested_permission === "owner" ? (
-                    <><Crown className="h-3 w-3 mr-1" />owner</>
+                    <><Crown className="h-3 w-3 mr-1" />Owner</>
                   ) : (
-                    <><Pencil className="h-3 w-3 mr-1" />edit</>
+                    <><Pencil className="h-3 w-3 mr-1" />Editor</>
                   )}
                 </Badge>
               </div>

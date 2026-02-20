@@ -93,9 +93,9 @@ export function PendingInvites() {
       case "owner":
         return "Owner";
       case "edit":
-        return "Can edit";
+        return "Editor";
       default:
-        return "Can view";
+        return "Viewer";
     }
   };
 
