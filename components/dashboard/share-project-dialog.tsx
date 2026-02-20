@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Share2, Loader2, X, UserPlus, Eye, Pencil, Crown, ArrowRightLeft } from "lucide-react";
 
 interface Share {
@@ -64,12 +65,31 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
   const [transferTargetId, setTransferTargetId] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferError, setTransferError] = useState<string | null>(null);
+  const [includeNamingRules, setIncludeNamingRules] = useState(true);
+  const [ruleSetInfo, setRuleSetInfo] = useState<{
+    ruleSetId: string | null;
+    ruleSetName: string | null;
+    ruleCount: number;
+  } | null>(null);
 
   useEffect(() => {
     if (open) {
       fetchShares();
     }
   }, [open]);
+
+  // Fetch rule set info when transfer dialog opens
+  useEffect(() => {
+    if (transferDialogOpen) {
+      fetch(`/api/projects/${projectId}/rule-set`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.ruleSetId) setRuleSetInfo(data);
+          else setRuleSetInfo(null);
+        })
+        .catch(() => setRuleSetInfo(null));
+    }
+  }, [transferDialogOpen, projectId]);
 
   // Get accepted share holders eligible for transfer (must have accepted and have a user ID)
   const transferCandidates = shares.filter((s) => s.accepted_at && s.shared_with_user_id);
@@ -165,7 +185,10 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
       const response = await fetch(`/api/projects/${projectId}/shares`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newOwnerUserId: transferTargetId }),
+        body: JSON.stringify({
+          newOwnerUserId: transferTargetId,
+          includeNamingRules: ruleSetInfo ? includeNamingRules : false,
+        }),
       });
 
       const data = await response.json();
@@ -373,6 +396,8 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
                   onClick={() => {
                     setTransferTargetId("");
                     setTransferError(null);
+                    setIncludeNamingRules(true);
+                    setRuleSetInfo(null);
                     setTransferDialogOpen(true);
                   }}
                 >
@@ -411,6 +436,22 @@ export function ShareProjectDialog({ projectId, projectName, isCreator = true, o
                 ))}
               </SelectContent>
             </Select>
+
+            {ruleSetInfo && (
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="include-naming-rules"
+                  checked={includeNamingRules}
+                  onCheckedChange={(v) => setIncludeNamingRules(!!v)}
+                />
+                <label htmlFor="include-naming-rules" className="text-sm leading-tight cursor-pointer">
+                  Include naming rule set
+                  <span className="block text-xs text-muted-foreground mt-0.5">
+                    Copy &ldquo;{ruleSetInfo.ruleSetName}&rdquo; ({ruleSetInfo.ruleCount} rules) to the new owner&apos;s organization
+                  </span>
+                </label>
+              </div>
+            )}
 
             {transferTargetId && (
               <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">

@@ -5,6 +5,77 @@ interface RouteContext {
   params: Promise<{ projectId: string }>;
 }
 
+export async function GET(request: Request, context: RouteContext) {
+  try {
+    const { projectId } = await context.params;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: project } = await supabase
+      .from("projects")
+      .select("naming_rule_set_id, organization_id")
+      .eq("id", projectId)
+      .single();
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    let ruleSetId = project.naming_rule_set_id;
+    let ruleSetName: string | null = null;
+    let ruleCount = 0;
+    const isExplicit = !!ruleSetId;
+
+    if (!ruleSetId) {
+      // No explicit rule set — check for org default
+      const { data: defaultSet } = await supabase
+        .from("naming_rule_sets")
+        .select("id, name")
+        .eq("organization_id", project.organization_id)
+        .eq("is_default", true)
+        .single();
+
+      if (defaultSet) {
+        ruleSetId = defaultSet.id;
+        ruleSetName = defaultSet.name;
+      }
+    } else {
+      const { data: ruleSet } = await supabase
+        .from("naming_rule_sets")
+        .select("name")
+        .eq("id", ruleSetId)
+        .single();
+
+      ruleSetName = ruleSet?.name || null;
+    }
+
+    if (ruleSetId) {
+      const { count } = await supabase
+        .from("naming_rules")
+        .select("id", { count: "exact", head: true })
+        .eq("rule_set_id", ruleSetId)
+        .eq("is_active", true);
+
+      ruleCount = count || 0;
+    }
+
+    return NextResponse.json({ ruleSetId, ruleSetName, ruleCount, isExplicit });
+  } catch (error) {
+    console.error("Get project rule set error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(request: Request, context: RouteContext) {
   try {
     const { projectId } = await context.params;

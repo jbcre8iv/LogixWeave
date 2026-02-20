@@ -367,7 +367,7 @@ export async function PUT(request: Request, context: RouteContext) {
     // Only the project creator can transfer ownership
     const { data: project } = await supabase
       .from("projects")
-      .select("created_by, name")
+      .select("created_by, name, naming_rule_set_id")
       .eq("id", projectId)
       .single();
 
@@ -378,7 +378,7 @@ export async function PUT(request: Request, context: RouteContext) {
       );
     }
 
-    const { newOwnerUserId } = await request.json();
+    const { newOwnerUserId, includeNamingRules } = await request.json();
 
     if (!newOwnerUserId || typeof newOwnerUserId !== "string") {
       return NextResponse.json({ error: "New owner user ID is required" }, { status: 400 });
@@ -443,6 +443,77 @@ export async function PUT(request: Request, context: RouteContext) {
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    // Handle naming rule set transfer
+    if (includeNamingRules && project.naming_rule_set_id) {
+      const { data: sourceSet } = await serviceClient
+        .from("naming_rule_sets")
+        .select("name, description")
+        .eq("id", project.naming_rule_set_id)
+        .single();
+
+      if (sourceSet && newOwnerMembership?.organization_id) {
+        const targetOrgId = newOwnerMembership.organization_id;
+
+        // Check if a rule set with this name already exists in target org
+        let newName = sourceSet.name;
+        const { data: existing } = await serviceClient
+          .from("naming_rule_sets")
+          .select("name")
+          .eq("organization_id", targetOrgId)
+          .eq("name", newName)
+          .single();
+
+        if (existing) {
+          newName = `${sourceSet.name} (transferred)`;
+        }
+
+        // Create the new rule set in target org (NOT default)
+        const { data: newSet } = await serviceClient
+          .from("naming_rule_sets")
+          .insert({
+            organization_id: targetOrgId,
+            name: newName,
+            description: sourceSet.description,
+            is_default: false,
+            created_by: newOwnerUserId,
+          })
+          .select("id")
+          .single();
+
+        if (newSet) {
+          // Copy all active rules
+          const { data: sourceRules } = await serviceClient
+            .from("naming_rules")
+            .select("name, description, pattern, applies_to, severity, is_active")
+            .eq("rule_set_id", project.naming_rule_set_id)
+            .eq("is_active", true);
+
+          if (sourceRules && sourceRules.length > 0) {
+            await serviceClient.from("naming_rules").insert(
+              sourceRules.map((r) => ({
+                ...r,
+                organization_id: targetOrgId,
+                rule_set_id: newSet.id,
+                created_by: newOwnerUserId,
+              }))
+            );
+          }
+
+          // Point the project at the new rule set
+          await serviceClient
+            .from("projects")
+            .update({ naming_rule_set_id: newSet.id })
+            .eq("id", projectId);
+        }
+      }
+    } else {
+      // No rule set transfer — clear the reference so project uses new org's default
+      await serviceClient
+        .from("projects")
+        .update({ naming_rule_set_id: null })
+        .eq("id", projectId);
     }
 
     // 2. Delete the new owner's existing share (they're now the creator)
