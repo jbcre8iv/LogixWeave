@@ -459,8 +459,9 @@ export async function PUT(request: Request, context: RouteContext) {
       if (sourceSet && newOwnerMembership?.organization_id) {
         const targetOrgId = newOwnerMembership.organization_id;
 
-        // Always mark as transferred so the origin is clear
-        const newName = `${sourceSet.name} (transferred)`;
+        // Always mark as transferred so the origin is clear (strip prior suffixes to avoid stacking)
+        const baseName = sourceSet.name.replace(/\s*\(transferred\)$/i, "");
+        const newName = `${baseName} (transferred)`;
 
         // Create the new rule set in target org (NOT default)
         const { data: newSet } = await serviceClient
