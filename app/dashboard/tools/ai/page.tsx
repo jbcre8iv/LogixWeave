@@ -9,6 +9,8 @@ import { ToolProjectGrid } from "@/components/tools/tool-project-grid";
 export default async function GlobalAIPage() {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data: projects } = await supabase
     .from("projects")
     .select(`
@@ -16,6 +18,7 @@ export default async function GlobalAIPage() {
       name,
       description,
       updated_at,
+      created_by,
       project_files(id, file_name, parsing_status)
     `)
     .eq("is_archived", false)
@@ -83,6 +86,7 @@ export default async function GlobalAIPage() {
             cardClassName: "hover:bg-amber-500/10 hover:border-amber-500/30",
             iconClassName: "text-amber-500",
             actionClassName: "text-amber-600 hover:text-amber-700 hover:bg-amber-500/10",
+            isOwned: !user || !project.created_by || project.created_by === user.id,
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="File Count"

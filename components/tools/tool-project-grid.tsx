@@ -31,6 +31,7 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MiniHealthRing } from "@/components/dashboard/mini-health-ring";
@@ -53,6 +54,7 @@ export interface ToolProjectItem {
   cardClassName?: string;
   iconClassName?: string;
   actionClassName?: string;
+  isOwned?: boolean;
 }
 
 interface ToolProjectGridProps {
@@ -144,6 +146,10 @@ export function ToolProjectGrid({
     return result;
   }, [items, searchQuery, sortBy, sortDesc]);
 
+  const hasOwnership = items.some((i) => i.isOwned !== undefined);
+  const owned = hasOwnership ? filteredAndSorted.filter((i) => i.isOwned !== false) : filteredAndSorted;
+  const shared = hasOwnership ? filteredAndSorted.filter((i) => i.isOwned === false) : [];
+
   const getMatchingFiles = (item: ToolProjectItem) => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
@@ -227,47 +233,35 @@ export function ToolProjectGrid({
 
       {/* Grid view */}
       {filteredAndSorted.length > 0 && viewMode === "grid" && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAndSorted.map((item) => (
-            <Link key={item.id} href={item.href}>
-              <Card
-                className={`h-full transition-colors ${item.cardClassName || "hover:bg-accent/50"}`}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FolderOpen
-                        className={`h-5 w-5 ${item.iconClassName || "text-primary"}`}
-                      />
-                      <CardTitle className="text-lg">{item.name}</CardTitle>
-                    </div>
-                    <MiniHealthRing
-                      score={item.healthScore}
-                      approximate={item.hasPartialExports}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        {item.statIcon}
-                        {item.statLabel}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={item.actionClassName}
-                    >
-                      {item.actionLabel}{" "}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="space-y-6">
+          {owned.length > 0 && (
+            <div className="space-y-3">
+              {shared.length > 0 && (
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  My Projects
+                </h3>
+              )}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {owned.map((item) => (
+                  <GridCard key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+          {shared.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Users className="h-3.5 w-3.5" />
+                Shared with me
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {shared.map((item) => (
+                  <GridCard key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -292,98 +286,180 @@ export function ToolProjectGrid({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSorted.map((item) => {
-                const hasFiles = item.files.length > 0;
-                const isExpanded = expandedIds.has(item.id);
-                const matchingFiles = getMatchingFiles(item);
-
-                return (
-                  <Fragment key={item.id}>
-                    <TableRow
-                      className="cursor-pointer"
-                      onClick={() => router.push(item.href)}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {hasFiles ? (
-                            <button
-                              className="p-0.5 -ml-1 rounded hover:bg-accent shrink-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpand(item.id);
-                              }}
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </button>
-                          ) : (
-                            <span className="w-5 shrink-0" />
-                          )}
-                          <FolderOpen
-                            className={`h-4 w-4 shrink-0 ${item.iconClassName || "text-primary"}`}
-                          />
-                          <span className="font-medium truncate">{item.name}</span>
-                        </div>
-                        {matchingFiles.length > 0 && (
-                          <div className="ml-11 mt-1 space-y-0.5">
-                            {matchingFiles.map((name) => (
-                              <div key={name} className="flex items-center gap-1.5 text-xs text-primary">
-                                <FileText className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <span className="text-muted-foreground line-clamp-1">
-                          {item.description || "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>{item.statValue}</TableCell>
-                      <TableCell>
-                        {item.healthScore !== null ? (
-                          <MiniHealthRing
-                            score={item.healthScore}
-                            size={32}
-                            approximate={item.hasPartialExports}
-                          />
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground/60">No Data</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(item.updatedAt).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                    {isExpanded && item.files.map((file) => (
-                      <TableRow
-                        key={`file-${file.id}`}
-                        className="cursor-pointer bg-muted/30 hover:bg-muted/50"
-                        onClick={() => router.push(item.href)}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2 ml-7 text-sm text-muted-foreground">
-                            <FileText className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{file.file_name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell" />
-                        <TableCell />
-                        <TableCell />
-                        <TableCell />
-                      </TableRow>
-                    ))}
-                  </Fragment>
-                );
-              })}
+              {owned.length > 0 && shared.length > 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={5} className="py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      My Projects
+                    </span>
+                  </TableCell>
+                </TableRow>
+              )}
+              {owned.map((item) => (
+                <ListRows key={item.id} item={item} expandedIds={expandedIds} toggleExpand={toggleExpand} getMatchingFiles={getMatchingFiles} router={router} />
+              ))}
+              {shared.length > 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={5} className="py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Users className="h-3.5 w-3.5" />
+                      Shared with me
+                    </span>
+                  </TableCell>
+                </TableRow>
+              )}
+              {shared.map((item) => (
+                <ListRows key={item.id} item={item} expandedIds={expandedIds} toggleExpand={toggleExpand} getMatchingFiles={getMatchingFiles} router={router} />
+              ))}
             </TableBody>
           </Table>
         </div>
       )}
     </div>
+  );
+}
+
+function ListRows({
+  item,
+  expandedIds,
+  toggleExpand,
+  getMatchingFiles,
+  router,
+}: {
+  item: ToolProjectItem;
+  expandedIds: Set<string>;
+  toggleExpand: (id: string) => void;
+  getMatchingFiles: (item: ToolProjectItem) => string[];
+  router: ReturnType<typeof useRouter>;
+}) {
+  const hasFiles = item.files.length > 0;
+  const isExpanded = expandedIds.has(item.id);
+  const matchingFiles = getMatchingFiles(item);
+
+  return (
+    <Fragment>
+      <TableRow
+        className="cursor-pointer"
+        onClick={() => router.push(item.href)}
+      >
+        <TableCell>
+          <div className="flex items-center gap-2">
+            {hasFiles ? (
+              <button
+                className="p-0.5 -ml-1 rounded hover:bg-accent shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpand(item.id);
+                }}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+            ) : (
+              <span className="w-5 shrink-0" />
+            )}
+            <FolderOpen
+              className={`h-4 w-4 shrink-0 ${item.iconClassName || "text-primary"}`}
+            />
+            <span className="font-medium truncate">{item.name}</span>
+          </div>
+          {matchingFiles.length > 0 && (
+            <div className="ml-11 mt-1 space-y-0.5">
+              {matchingFiles.map((name) => (
+                <div key={name} className="flex items-center gap-1.5 text-xs text-primary">
+                  <FileText className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+          <span className="text-muted-foreground line-clamp-1">
+            {item.description || "-"}
+          </span>
+        </TableCell>
+        <TableCell>{item.statValue}</TableCell>
+        <TableCell>
+          {item.healthScore !== null ? (
+            <MiniHealthRing
+              score={item.healthScore}
+              size={32}
+              approximate={item.hasPartialExports}
+            />
+          ) : (
+            <span className="text-[10px] text-muted-foreground/60">No Data</span>
+          )}
+        </TableCell>
+        <TableCell className="text-muted-foreground">
+          {new Date(item.updatedAt).toLocaleDateString()}
+        </TableCell>
+      </TableRow>
+      {isExpanded && item.files.map((file) => (
+        <TableRow
+          key={`file-${file.id}`}
+          className="cursor-pointer bg-muted/30 hover:bg-muted/50"
+          onClick={() => router.push(item.href)}
+        >
+          <TableCell>
+            <div className="flex items-center gap-2 ml-7 text-sm text-muted-foreground">
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{file.file_name}</span>
+            </div>
+          </TableCell>
+          <TableCell className="hidden md:table-cell" />
+          <TableCell />
+          <TableCell />
+          <TableCell />
+        </TableRow>
+      ))}
+    </Fragment>
+  );
+}
+
+function GridCard({ item }: { item: ToolProjectItem }) {
+  return (
+    <Link href={item.href}>
+      <Card
+        className={`h-full transition-colors ${item.cardClassName || "hover:bg-accent/50"}`}
+      >
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FolderOpen
+                className={`h-5 w-5 ${item.iconClassName || "text-primary"}`}
+              />
+              <CardTitle className="text-lg">{item.name}</CardTitle>
+            </div>
+            <MiniHealthRing
+              score={item.healthScore}
+              approximate={item.hasPartialExports}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                {item.statIcon}
+                {item.statLabel}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={item.actionClassName}
+            >
+              {item.actionLabel}{" "}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

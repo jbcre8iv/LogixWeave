@@ -9,6 +9,8 @@ import { ToolProjectGrid } from "@/components/tools/tool-project-grid";
 export default async function GlobalTagExplorerPage() {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data: projects } = await supabase
     .from("projects")
     .select(`
@@ -16,6 +18,7 @@ export default async function GlobalTagExplorerPage() {
       name,
       description,
       updated_at,
+      created_by,
       project_files(id, file_name)
     `)
     .eq("is_archived", false)
@@ -68,6 +71,7 @@ export default async function GlobalTagExplorerPage() {
             statValue: project.tagCount,
             files: (project.project_files || []) as Array<{ id: string; file_name: string }>,
             actionLabel: "Explore",
+            isOwned: !user || !project.created_by || project.created_by === user.id,
           }))}
           searchPlaceholder="Search projects..."
           statSortLabel="Tag Count"
