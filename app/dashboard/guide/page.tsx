@@ -25,7 +25,7 @@ const sections = [
 
 export default function GuidePage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-lg bg-card p-6 md:p-8">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Help Guide</h1>
         <p className="text-muted-foreground text-sm md:text-base">
