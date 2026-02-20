@@ -18,7 +18,7 @@ import { MobileSidebar } from "./mobile-sidebar";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { HelpTourDialog } from "./help-tour-dialog";
 import { FeedbackDialog } from "./feedback-dialog";
-import { LogOut, User, Settings, Scale, MessageSquareMore, Home, HelpCircle, Monitor, Sun, Moon } from "lucide-react";
+import { LogOut, User, Settings, Scale, MessageSquareMore, Home, HelpCircle, BookOpen, Monitor, Sun, Moon } from "lucide-react";
 import { getDisplayName, getInitials } from "@/lib/utils/display-name";
 
 interface HeaderProps {
@@ -103,6 +103,10 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
             <DropdownMenuItem onClick={() => { setAutoTriggered(false); setHelpTourOpen(true); }}>
               <HelpCircle className="mr-2 h-4 w-4" />
               Take a Tour
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/dashboard/guide")}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              Help Guide
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
               <MessageSquareMore className="mr-2 h-4 w-4" />
