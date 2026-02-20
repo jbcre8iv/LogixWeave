@@ -92,10 +92,10 @@ export async function PUT(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify user has access to this project's organization
+    // Verify user can edit this project (creator, org member, or edit/owner share)
     const { data: project } = await supabase
       .from("projects")
-      .select("id, organization_id")
+      .select("id, created_by")
       .eq("id", projectId)
       .single();
 
@@ -103,21 +103,31 @@ export async function PUT(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const { data: membership } = await supabase
-      .from("organization_members")
-      .select("role")
-      .eq("organization_id", project.organization_id)
-      .eq("user_id", user.id)
-      .single();
+    let canEdit = project.created_by === user.id;
 
-    if (!membership) {
+    if (!canEdit) {
+      // Check for edit or owner share
+      const { data: share } = await supabase
+        .from("project_shares")
+        .select("permission")
+        .eq("project_id", projectId)
+        .eq("shared_with_user_id", user.id)
+        .in("permission", ["edit", "owner"])
+        .not("accepted_at", "is", null)
+        .single();
+
+      canEdit = !!share;
+    }
+
+    if (!canEdit) {
       return NextResponse.json({ error: "Permission denied" }, { status: 403 });
     }
 
     const body = await request.json();
     const { ruleSetId } = body; // null = reset to org default
 
-    const { data: updated, error } = await supabase
+    const serviceClient = createServiceClient();
+    const { data: updated, error } = await serviceClient
       .from("projects")
       .update({ naming_rule_set_id: ruleSetId || null })
       .eq("id", projectId)
