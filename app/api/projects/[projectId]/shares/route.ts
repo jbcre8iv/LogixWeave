@@ -396,7 +396,7 @@ export async function PUT(request: Request, context: RouteContext) {
     const serviceClient = createServiceClient();
     const { data: newOwnerProfile } = await serviceClient
       .from("profiles")
-      .select("id, email")
+      .select("id, email, full_name")
       .eq("id", newOwnerUserId)
       .single();
 
@@ -420,15 +420,37 @@ export async function PUT(request: Request, context: RouteContext) {
       );
     }
 
-    // Look up the new owner's organization so the project moves with them
-    const { data: newOwnerMembership } = await serviceClient
+    // Look up (or create) the new owner's organization so the project moves with them
+    let { data: newOwnerMembership } = await serviceClient
       .from("organization_members")
       .select("organization_id")
       .eq("user_id", newOwnerUserId)
       .single();
 
+    if (!newOwnerMembership) {
+      // New owner has no organization yet — create one
+      const orgName = newOwnerProfile.full_name
+        ? `${newOwnerProfile.full_name}'s Workspace`
+        : `${newOwnerProfile.email}'s Workspace`;
+
+      const { data: newOrg } = await serviceClient
+        .from("organizations")
+        .insert({ name: orgName })
+        .select("id")
+        .single();
+
+      if (newOrg) {
+        await serviceClient.from("organization_members").insert({
+          organization_id: newOrg.id,
+          user_id: newOwnerUserId,
+          role: "owner",
+        });
+        newOwnerMembership = { organization_id: newOrg.id };
+      }
+    }
+
     // Perform the transfer using service client to bypass RLS:
-    // 1. Update projects.created_by (and organization_id if applicable)
+    // 1. Update projects.created_by and organization_id
     const projectUpdate: { created_by: string; organization_id?: string } = {
       created_by: newOwnerUserId,
     };
