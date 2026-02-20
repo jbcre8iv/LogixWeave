@@ -45,7 +45,7 @@ export default function GuidePage() {
                 <a
                   key={anchor}
                   href={`#${anchor}`}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-base hover:bg-accent transition-colors"
                 >
                   <Icon className={`h-4 w-4 shrink-0 ${color}`} />
                   {label}
@@ -57,16 +57,16 @@ export default function GuidePage() {
 
         {/* Getting Started */}
         <section id="getting-started" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <Rocket className="h-5 w-5 text-emerald-500" />
             Getting Started
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             LogixWeave helps you analyze and document Rockwell Automation PLC
             projects. Start by creating a project, then upload your exported
             program files.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               Create a new project from the dashboard and give it a descriptive
               name.
@@ -91,15 +91,15 @@ export default function GuidePage() {
 
         {/* Exploring Your Data */}
         <section id="explore" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <Search className="h-5 w-5 text-blue-500" />
             Exploring Your Data
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             After uploading, use the data explorer tabs to browse every aspect
             of your PLC project.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               <strong className="text-foreground">Tag Explorer</strong> —
               Search, filter, and view detailed information for every tag
@@ -123,15 +123,15 @@ export default function GuidePage() {
 
         {/* Analysis & Health Scores */}
         <section id="analysis" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-violet-500" />
             Analysis &amp; Health Scores
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             The Analysis tab gives you a high-level overview of your project
             quality through a weighted health score.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               The overall health score is composed of weighted categories:{" "}
               <strong className="text-foreground">tag efficiency</strong>,{" "}
@@ -158,15 +158,15 @@ export default function GuidePage() {
 
         {/* Naming Validation */}
         <section id="naming" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <ScrollText className="h-5 w-5 text-rose-500" />
             Naming Validation
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             Enforce consistent tag naming conventions across your project using
             configurable rule sets.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               Apply built-in rule sets or create custom rules with regex
               patterns, scope filters, and severity levels (error, warning,
@@ -190,15 +190,15 @@ export default function GuidePage() {
 
         {/* AI Tools */}
         <section id="ai-tools" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-500" />
             AI Tools
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             AI-powered tools help you understand, troubleshoot, and improve your
             PLC programs.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               <strong className="text-foreground">Chat Assistant</strong> — Ask
               questions about your project in your own words. The AI has full
@@ -225,15 +225,15 @@ export default function GuidePage() {
 
         {/* Project Manual */}
         <section id="project-manual" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-teal-500" />
             Project Manual
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             Generate a comprehensive reference document for your PLC project
             that you can share with your team.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               Select which sections to include — tags, routines, I/O, UDTs,
               AOIs, and more.
@@ -254,15 +254,15 @@ export default function GuidePage() {
 
         {/* File Compare */}
         <section id="file-compare" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <GitCompareArrows className="h-5 w-5 text-orange-500" />
             File Compare
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             Compare two PLC files to identify what changed between versions or
             across projects.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               Side-by-side comparison highlights added, removed, and modified
               tags, routines, and configuration.
@@ -284,15 +284,15 @@ export default function GuidePage() {
 
         {/* Collaboration & Sharing */}
         <section id="collaboration" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <Users className="h-5 w-5 text-indigo-500" />
             Collaboration &amp; Sharing
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             Share projects with teammates and manage access levels to
             collaborate effectively.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               Share a project with other users by email. Choose a permission
               level:{" "}
@@ -314,14 +314,14 @@ export default function GuidePage() {
 
         {/* Exporting Data */}
         <section id="export" className="scroll-mt-6 space-y-3">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
             <Download className="h-5 w-5 text-cyan-500" />
             Exporting Data
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base text-muted-foreground leading-relaxed">
             Export your analysis results and documentation in various formats.
           </p>
-          <ul className="list-disc list-inside ml-4 space-y-1 text-sm text-muted-foreground">
+          <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
             <li>
               <strong className="text-foreground">XLSX</strong> — Export
               analysis data and tag lists as Excel spreadsheets from the
