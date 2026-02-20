@@ -15,6 +15,7 @@ import type {
 } from "./types";
 
 const PAGE_MARGIN = 20;
+const TOP_MARGIN = 25; // Extra clearance below the LogixWeave logo (logo occupies ~y6–y18)
 const CONTENT_WIDTH = 170; // 210mm - 2*20mm
 const LINE_HEIGHT = 6;
 
@@ -25,14 +26,14 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
-  let y = PAGE_MARGIN;
+  let y = TOP_MARGIN;
 
   const FOOTER_RESERVE = 35; // Reserve 35mm at bottom for page number + branding
 
   const checkPageBreak = (needed: number) => {
     if (y + needed > pageHeight - FOOTER_RESERVE) {
       doc.addPage();
-      y = PAGE_MARGIN;
+      y = TOP_MARGIN;
     }
   };
 
@@ -68,7 +69,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       startY: y,
       head: [headers],
       body: rows,
-      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN, bottom: FOOTER_RESERVE },
+      margin: { top: TOP_MARGIN, left: PAGE_MARGIN, right: PAGE_MARGIN, bottom: FOOTER_RESERVE },
       styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
       headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 247, 250] },
@@ -76,6 +77,11 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     y = (doc as any).lastAutoTable.finalY + 5;
   };
+
+  // Track section start pages for TOC
+  const sectionStartPages = new Map<string, number>();
+  let tocPageNum = 0;
+  let tocEntries: TocContent["entries"] = [];
 
   // Render each section
   for (const section of document.sections) {
@@ -109,24 +115,24 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
         }
         doc.text(`Generated: ${date}`, pageWidth / 2, y, { align: "center" });
         doc.addPage();
-        y = PAGE_MARGIN;
+        y = TOP_MARGIN;
         break;
       }
 
       case "toc": {
+        // Reserve a blank page — we'll render the TOC after all content is laid out
         const c = content as TocContent;
-        addHeading("Table of Contents", 1);
-        for (let i = 0; i < c.entries.length; i++) {
-          addParagraph(`${i + 1}. ${c.entries[i].title}`);
-        }
+        tocPageNum = doc.getNumberOfPages();
+        tocEntries = c.entries;
         doc.addPage();
-        y = PAGE_MARGIN;
+        y = TOP_MARGIN;
         break;
       }
 
       case "narrative": {
         const c = content as NarrativeContent;
         addHeading(section.title, 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (c.narrative) addParagraph(c.narrative);
         const labels: Record<string, string> = {
           programs: "Programs", routines: "Routines", tags: "Tags",
@@ -143,6 +149,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       case "tasks": {
         const c = content as TasksContent;
         addHeading("System Architecture", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (c.narrative) addParagraph(c.narrative);
         if (c.tasks.length > 0) {
           addHeading("Task Configuration", 2);
@@ -164,6 +171,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
 
       case "io":
         addHeading("I/O Configuration", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (content.modules.length > 0) {
           addTable(
             ["Module Name", "Catalog Number", "Parent Module", "Slot"],
@@ -177,6 +185,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       case "programs": {
         const c = content as ProgramsContent;
         addHeading("Programs & Routines", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         for (const program of c.programs) {
           addHeading(program.name, 2);
           if (program.narrative) addParagraph(program.narrative);
@@ -198,6 +207,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       case "tagDatabase": {
         const c = content as TagDatabaseContent;
         addHeading("Tag Database", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (c.controllerTags.length > 0) {
           addHeading("Controller-Scoped Tags", 2);
           addTable(
@@ -224,6 +234,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
 
       case "udts":
         addHeading("User-Defined Types", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (content.udts.length > 0) {
           for (const udt of content.udts) {
             addHeading(udt.name, 2);
@@ -243,6 +254,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
 
       case "aois":
         addHeading("Add-On Instructions", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (content.aois.length > 0) {
           for (const aoi of content.aois) {
             addHeading(aoi.name, 2);
@@ -272,6 +284,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       case "crossReference": {
         const c = content as CrossReferenceContent;
         addHeading("Cross-Reference Summary", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
         if (c.topTags.length > 0) {
           addHeading("Most Referenced Tags", 2);
           addTable(
@@ -292,6 +305,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       case "projectHealth": {
         const c = content as ProjectHealthContent;
         addHeading("Project Health", 1);
+        sectionStartPages.set(section.id, doc.getNumberOfPages());
 
         // Health score breakdown
         const hs = c.healthScore;
@@ -342,6 +356,32 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
         }
         break;
       }
+    }
+  }
+
+  // Render TOC on reserved page with section page numbers
+  if (tocPageNum > 0 && tocEntries.length > 0) {
+    doc.setPage(tocPageNum);
+    let tocY = TOP_MARGIN + 10;
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Table of Contents", PAGE_MARGIN, tocY);
+    tocY += 12;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    for (let i = 0; i < tocEntries.length; i++) {
+      const entry = tocEntries[i];
+      const actualPage = sectionStartPages.get(entry.sectionId);
+      const displayPage = actualPage ? actualPage - 1 : 0; // cover = page 1, content page numbers start at 2
+      const title = `${i + 1}. ${entry.title}`;
+      const pageRef = `Starts on page ${displayPage}`;
+
+      doc.text(title, PAGE_MARGIN, tocY);
+      doc.setTextColor(120, 120, 120);
+      doc.text(pageRef, pageWidth - PAGE_MARGIN, tocY, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      tocY += 8;
     }
   }
 
