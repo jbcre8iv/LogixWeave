@@ -180,10 +180,11 @@ export function ProjectManualGenerator({
         throw new Error("No document received from server");
       }
 
-      if (action === "preview") {
+      if (action === "preview" && format === "markdown") {
         const markdown = renderMarkdown(document);
         setPreview(markdown);
       } else {
+        // For PDF/DOCX preview is the same as download (can't inline-preview binary formats)
         await downloadDocument(document);
       }
     } catch (err) {
@@ -268,7 +269,7 @@ export function ProjectManualGenerator({
           </div>
         </div>
 
-        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
           {SECTIONS.map((section) => {
             const count = section.countKey ? counts[section.countKey] : undefined;
             const isDisabled = count !== undefined && count === 0;
@@ -389,15 +390,17 @@ export function ProjectManualGenerator({
 
       {/* Actions */}
       <div className="flex items-center gap-4">
-        <Button
-          onClick={() => generateManual("preview")}
-          variant="outline"
-          size="sm"
-          disabled={!hasSelections || isGenerating}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Preview
-        </Button>
+        {format === "markdown" && (
+          <Button
+            onClick={() => generateManual("preview")}
+            variant="outline"
+            size="sm"
+            disabled={!hasSelections || isGenerating}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+        )}
         <Button
           onClick={() => generateManual("download")}
           disabled={!hasSelections || isGenerating}
