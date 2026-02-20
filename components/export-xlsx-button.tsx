@@ -5,9 +5,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, ChevronDown, FileSpreadsheet, FileText, FileImage } from "lucide-react";
+import { Download, ChevronDown, FileSpreadsheet, FileText, FileImage, BookOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { getTimestampSuffix } from "@/lib/utils";
 import { useState } from "react";
@@ -23,6 +26,7 @@ interface ExportXLSXButtonProps {
   filename: string;
   pdfTargetId?: string;
   pdfFilename?: string;
+  projectId?: string;
 }
 
 function escapeCSV(value: string): string {
@@ -43,8 +47,9 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }: ExportXLSXButtonProps) {
+export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename, projectId }: ExportXLSXButtonProps) {
   const [exporting, setExporting] = useState(false);
+  const router = useRouter();
   const baseFilename = filename.replace(/\.[^.]+$/, "");
 
   const handleExportXLSX = () => {
@@ -157,6 +162,7 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuLabel className="text-xs text-muted-foreground">Data Export</DropdownMenuLabel>
         <DropdownMenuItem onClick={handleExportXLSX}>
           <FileSpreadsheet className="mr-2 h-4 w-4" />
           Export as XLSX
@@ -172,6 +178,17 @@ export function ExportXLSXButton({ sheets, filename, pdfTargetId, pdfFilename }:
             {exporting ? "Exporting..." : "Export as PDF"}
             <span className="ml-2 text-xs text-muted-foreground">Snapshot</span>
           </DropdownMenuItem>
+        )}
+        {projectId && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs text-muted-foreground">Documentation</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => router.push(`/dashboard/projects/${projectId}/tools/documentation`)}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              Project Manual
+              <span className="ml-2 text-xs text-muted-foreground">PDF / DOCX / MD</span>
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

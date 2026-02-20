@@ -496,6 +496,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
                   sheets={exportSheets}
                   pdfTargetId="overview-snapshot"
                   pdfFilename={`overview_${project.name.replace(/[^a-zA-Z0-9_-]/g, "_")}`}
+                  projectId={projectId}
                 />
                 <p className="text-xs text-muted-foreground">Export overview</p>
               </div>
