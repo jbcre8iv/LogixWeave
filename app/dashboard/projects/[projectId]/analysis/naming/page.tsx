@@ -250,8 +250,6 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
     effectiveRuleSetId = defaultSet?.id ?? null;
   }
 
-  const effectiveRuleSet = allRuleSets?.find((rs) => rs.id === effectiveRuleSetId);
-
   if (fileIds.length === 0) {
     return (
       <div className="space-y-6">
@@ -430,10 +428,37 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Naming Validation</h1>
-            <p className="text-muted-foreground">{project.name}</p>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+              <span>{project.name}</span>
+              <span className="mx-0.5">&middot;</span>
+              <span>{tags?.length || 0} tags</span>
+              <span className="mx-0.5">&middot;</span>
+              <span>{rules.length} active rules</span>
+              {scopeConflicts.length > 0 && (
+                <>
+                  <span className="mx-0.5">&middot;</span>
+                  <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                    <Layers className="h-3 w-3 mr-1" />
+                    {scopeConflicts.length} scope conflict{scopeConflicts.length === 1 ? "" : "s"}
+                  </Badge>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <RuleSetPicker
+            projectId={projectId}
+            ruleSets={allRuleSets || []}
+            currentRuleSetId={pickerCurrentRuleSetId}
+            mode="persist"
+            currentSeverityFilter={severityFilter}
+          />
+          {severityFilter && severityFilter !== "all" && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={buildClearFilterUrl()}>Clear Filter</Link>
+            </Button>
+          )}
           {(allViolations.length > 0 || scopeConflicts.length > 0) && (
             <ExportCSVButton
               filename="naming_validation.csv"
@@ -516,43 +541,6 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
           </Card>
         </Link>
       </div>
-
-      {/* Info Card with Rule Set Picker */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Checked {tags?.length || 0} tags against {rules.length} active rules</span>
-              {scopeConflicts.length > 0 && (
-                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-                  <Layers className="h-3 w-3 mr-1" />
-                  {scopeConflicts.length} scope conflict{scopeConflicts.length === 1 ? "" : "s"}
-                </Badge>
-              )}
-              {effectiveRuleSet && (
-                <Badge variant="outline">
-                  Rule set: {effectiveRuleSet.name}
-                  {!projectRuleSetId && " (default)"}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <RuleSetPicker
-                projectId={projectId}
-                ruleSets={allRuleSets || []}
-                currentRuleSetId={pickerCurrentRuleSetId}
-                mode="persist"
-                currentSeverityFilter={severityFilter}
-              />
-              {severityFilter && severityFilter !== "all" && (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href={buildClearFilterUrl()}>Clear Filter</Link>
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Scope Conflicts */}
       {scopeConflicts.length > 0 && (
