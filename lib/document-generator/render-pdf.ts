@@ -102,7 +102,12 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
         doc.setFontSize(16);
         doc.setFont("helvetica", "normal");
         doc.text("Project Manual", pageWidth / 2, y, { align: "center" });
-        y += 20;
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(120, 120, 120);
+        doc.text("Complete as-built documentation, analysis, and health assessment", pageWidth / 2, y, { align: "center" });
+        doc.setTextColor(0, 0, 0);
+        y += 15;
         doc.setFontSize(11);
         const date = new Date(c.generatedDate).toLocaleDateString();
         if (c.processorType) {
@@ -375,7 +380,7 @@ export async function renderPdf(document: ManualDocument): Promise<void> {
       const actualPage = sectionStartPages.get(entry.sectionId);
       const displayPage = actualPage ? actualPage - 1 : 0; // cover = page 1, content page numbers start at 2
       const title = `${i + 1}. ${entry.title}`;
-      const pageRef = `Starts on page ${displayPage}`;
+      const pageRef = `${displayPage}`;
 
       doc.text(title, PAGE_MARGIN, tocY);
       doc.setTextColor(120, 120, 120);

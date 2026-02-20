@@ -128,8 +128,15 @@ export async function renderDocx(document: ManualDocument): Promise<Blob> {
         children.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 400 },
+            spacing: { after: 100 },
             children: [new TextRun({ text: "Project Manual", font: FONT, size: 32 })],
+          })
+        );
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+            children: [new TextRun({ text: "Complete as-built documentation, analysis, and health assessment", font: FONT, size: 20, italics: true, color: "777777" })],
           })
         );
 
