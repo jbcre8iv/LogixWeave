@@ -44,23 +44,17 @@ export default async function AdminDashboardPage() {
     usersResult,
     projectsResult,
     filesResult,
-    organizationsResult,
-    membershipsResult,
     feedbackResult,
   ] = await Promise.all([
     serviceSupabase.from("profiles").select("id, email, first_name, last_name, full_name, created_at, is_platform_admin, is_disabled"),
-    serviceSupabase.from("projects").select("id, name, organization_id, created_at, organizations(name)"),
+    serviceSupabase.from("projects").select("id, name, created_by, organization_id, created_at, organizations(name)"),
     serviceSupabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
-    serviceSupabase.from("organizations").select("id, name, created_at"),
-    serviceSupabase.from("organization_members").select("user_id, organization_id"),
     serviceSupabase.from("feedback").select("id, user_email, type, subject, description, created_at, read_at").order("created_at", { ascending: false }),
   ]);
 
   const users = usersResult.data || [];
   const projects = projectsResult.data || [];
   const files = filesResult.data || [];
-  const organizations = organizationsResult.data || [];
-  const memberships = membershipsResult.data || [];
 
   // Explicitly normalize feedback to ensure read_at is null or string across RSC boundary
   const feedbackItems = (feedbackResult.data || []).map((f: Record<string, unknown>) => ({
@@ -75,46 +69,29 @@ export default async function AdminDashboardPage() {
   const unreadFeedbackCount = feedbackItems.filter(f => f.read_at === null).length;
 
   // Build lookup maps for per-user stats
-  // Map user_id -> organization_ids they belong to
-  const userOrgMap = new Map<string, Set<string>>();
-  memberships.forEach(m => {
-    if (!userOrgMap.has(m.user_id)) {
-      userOrgMap.set(m.user_id, new Set());
-    }
-    userOrgMap.get(m.user_id)!.add(m.organization_id);
-  });
-
-  // Map organization_id -> project_ids
-  const orgProjectMap = new Map<string, Set<string>>();
-  projects.forEach(p => {
-    if (!orgProjectMap.has(p.organization_id)) {
-      orgProjectMap.set(p.organization_id, new Set());
-    }
-    orgProjectMap.get(p.organization_id)!.add(p.id);
-  });
-
   // Map project_id -> file count
   const projectFileCount = new Map<string, number>();
   files.forEach(f => {
     projectFileCount.set(f.project_id, (projectFileCount.get(f.project_id) || 0) + 1);
   });
 
+  // Map user_id -> project_ids they own (via created_by)
+  const userProjectMap = new Map<string, string[]>();
+  projects.forEach(p => {
+    if (!userProjectMap.has(p.created_by)) {
+      userProjectMap.set(p.created_by, []);
+    }
+    userProjectMap.get(p.created_by)!.push(p.id);
+  });
+
   // Calculate stats
   const totalStorage = files.reduce((acc, f) => acc + (f.file_size || 0), 0);
   const parsedFiles = files.filter(f => f.parsing_status === "completed").length;
 
-  // Prepare user data with computed counts
+  // Prepare user data with computed counts based on project ownership
   const usersWithCounts = users.map(u => {
-    const userOrgs = userOrgMap.get(u.id) || new Set<string>();
-    let projectCount = 0;
-    let fileCount = 0;
-    userOrgs.forEach(orgId => {
-      const orgProjects = orgProjectMap.get(orgId) || new Set<string>();
-      projectCount += orgProjects.size;
-      orgProjects.forEach(projectId => {
-        fileCount += projectFileCount.get(projectId) || 0;
-      });
-    });
+    const ownedProjects = userProjectMap.get(u.id) || [];
+    const fileCount = ownedProjects.reduce((sum, pid) => sum + (projectFileCount.get(pid) || 0), 0);
     return {
       id: u.id,
       email: u.email,
@@ -124,7 +101,7 @@ export default async function AdminDashboardPage() {
       created_at: u.created_at,
       is_platform_admin: u.is_platform_admin || false,
       is_disabled: u.is_disabled || false,
-      projectCount,
+      projectCount: ownedProjects.length,
       fileCount,
     };
   });
