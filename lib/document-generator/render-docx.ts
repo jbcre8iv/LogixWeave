@@ -17,9 +17,6 @@ import {
   ImageRun,
   ExternalHyperlink,
 } from "docx";
-import path from "path";
-import fs from "fs/promises";
-import sharp from "sharp";
 import type {
   ManualDocument,
   CoverContent,
@@ -37,14 +34,11 @@ const TABLE_HEADER_COLOR = "3B82F6";
 const TABLE_ALT_COLOR = "F5F7FA";
 const LOGIXWEAVE_URL = "https://logixweave.com";
 
-async function loadLogoPng(): Promise<Buffer | null> {
+async function loadLogoPng(): Promise<ArrayBuffer | null> {
   try {
-    const svgPath = path.join(process.cwd(), "public", "logixweave-logo.svg");
-    const svgBuffer = await fs.readFile(svgPath);
-    return await sharp(svgBuffer, { density: 300 })
-      .resize({ width: 360 })
-      .png()
-      .toBuffer();
+    const res = await fetch("/logixweave-logo.png");
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
   } catch {
     return null;
   }
