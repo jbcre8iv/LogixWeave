@@ -128,7 +128,7 @@ export default function GuidePage() {
             Analysis &amp; Health Scores
           </h2>
           <p className="text-base text-muted-foreground leading-relaxed">
-            The Analysis tab gives you a high-level overview of your project
+            The Overview page gives you a high-level summary of your project
             quality through a weighted health score.
           </p>
           <ul className="list-disc list-inside ml-4 space-y-1.5 text-base text-muted-foreground">
@@ -325,7 +325,7 @@ export default function GuidePage() {
             <li>
               <strong className="text-foreground">XLSX</strong> — Export
               analysis data and tag lists as Excel spreadsheets from the
-              Analysis tab.
+              Overview page.
             </li>
             <li>
               <strong className="text-foreground">CSV</strong> — Export naming
