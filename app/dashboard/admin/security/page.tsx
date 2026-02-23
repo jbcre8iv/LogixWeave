@@ -58,7 +58,7 @@ export default async function SecurityDashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-6 w-6 text-primary" />
-            <h1 className="text-3xl font-bold">Security Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Security Dashboard</h1>
           </div>
           <p className="text-muted-foreground">
             Monitor security events and manage threat response

@@ -60,7 +60,7 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">User Defined Types</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">User Defined Types</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -123,7 +123,7 @@ export default async function UDTsPage({ params, searchParams }: UDTsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">User Defined Types</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">User Defined Types</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>

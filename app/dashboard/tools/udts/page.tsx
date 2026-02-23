@@ -51,7 +51,7 @@ export default async function GlobalUDTsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">User Defined Types</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">User Defined Types</h1>
         <p className="text-muted-foreground">
           Browse and document UDTs across your projects
         </p>

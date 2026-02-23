@@ -422,11 +422,11 @@ export function FileBrowser({ projectId, files, folders, onFolderChange, isAdmin
               draggable
               onDragStart={(e) => handleDragStart(e, file.id)}
               onDragEnd={handleDragEnd}
-              className={`flex items-center justify-between p-4 border rounded-lg transition-all ${
+              className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg transition-all ${
                 draggedFileId === file.id ? "opacity-50 border-dashed" : ""
               } ${!draggedFileId ? "hover:bg-muted/30" : ""}`}
             >
-              <div className="flex items-center gap-4 cursor-grab active:cursor-grabbing">
+              <div className="flex items-center gap-3 sm:gap-4 cursor-grab active:cursor-grabbing">
                 <FileText className="h-8 w-8 text-muted-foreground" />
                 <div>
                   <p className="font-medium">{file.file_name}</p>
@@ -441,7 +441,7 @@ export function FileBrowser({ projectId, files, folders, onFolderChange, isAdmin
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <Badge
                   variant={
                     file.parsing_status === "completed"

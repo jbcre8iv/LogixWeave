@@ -58,7 +58,7 @@ export default async function RoutinesPage({ params, searchParams }: RoutinesPag
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Routines</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Routines</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default async function RoutinesPage({ params, searchParams }: RoutinesPag
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Routines</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Routines</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>

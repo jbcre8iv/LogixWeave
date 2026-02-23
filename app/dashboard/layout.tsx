@@ -36,7 +36,7 @@ export default async function DashboardLayout({
       <Sidebar isPlatformAdmin={profile?.is_platform_admin || false} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header user={userInfo} isPlatformAdmin={profile?.is_platform_admin || false} />
-        <main className="flex-1 overflow-y-auto bg-background p-6">
+        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6">
           {children}
         </main>
       </div>

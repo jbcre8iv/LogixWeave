@@ -61,7 +61,7 @@ export function Header({ user, isPlatformAdmin }: HeaderProps) {
     <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
       <div className="flex items-center gap-3">
         <MobileSidebar isPlatformAdmin={isPlatformAdmin} />
-        <h1 className="text-lg font-semibold">Studio 5000 Toolkit</h1>
+        <h1 className="hidden sm:block text-lg font-semibold">Studio 5000 Toolkit</h1>
       </div>
       <div className="flex items-center gap-2">
         <NotificationsDropdown />

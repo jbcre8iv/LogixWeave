@@ -67,7 +67,7 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Tag Explorer</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Tag Explorer</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default async function TagsPage({ params, searchParams }: TagsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Tag Explorer</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Tag Explorer</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>

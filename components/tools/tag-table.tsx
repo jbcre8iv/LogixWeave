@@ -51,15 +51,15 @@ export function TagTable({ tags, totalCount, page, pageSize }: TagTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <SortableTableHead column="name" className="w-[250px]">Name</SortableTableHead>
               <SortableTableHead column="data_type" className="w-[150px]">Data Type</SortableTableHead>
-              <SortableTableHead column="scope" className="w-[150px]">Scope</SortableTableHead>
+              <SortableTableHead column="scope" className="hidden sm:table-cell w-[150px]">Scope</SortableTableHead>
               <SortableTableHead column="usage" className="w-[100px]">Usage</SortableTableHead>
-              <TableHead>Description</TableHead>
+              <TableHead className="hidden sm:table-cell">Description</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -76,13 +76,13 @@ export function TagTable({ tags, totalCount, page, pageSize }: TagTableProps) {
                   <TableCell>
                     <Badge variant="outline">{tag.data_type}</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant="secondary">{tag.scope}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {tag.usage || "-"}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
+                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground max-w-[300px] truncate">
                     {tag.description || "-"}
                   </TableCell>
                 </TableRow>
@@ -93,7 +93,7 @@ export function TagTable({ tags, totalCount, page, pageSize }: TagTableProps) {
       </div>
 
       {totalCount > 0 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2">
           <p className="text-sm text-muted-foreground">
             Showing {startIndex} to {endIndex} of {totalCount} tags
           </p>

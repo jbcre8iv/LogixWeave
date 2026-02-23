@@ -51,7 +51,7 @@ export default async function GlobalAOIsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Add-On Instructions</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Add-On Instructions</h1>
         <p className="text-muted-foreground">
           Browse and document AOIs across your projects
         </p>

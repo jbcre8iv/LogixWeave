@@ -49,7 +49,7 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
         <div className="flex items-center gap-4">
           <BackButton />
           <div>
-            <h1 className="text-3xl font-bold">Unused Tags</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Unused Tags</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
         <div className="flex items-center gap-4">
           <BackButton />
           <div>
-            <h1 className="text-3xl font-bold">Unused Tags</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Unused Tags</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>

@@ -268,7 +268,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Naming Validation</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -319,7 +319,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Naming Validation</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -435,7 +435,7 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Naming Validation</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Naming Validation</h1>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
               <span>{project.name}</span>
               <span className="mx-0.5">&middot;</span>

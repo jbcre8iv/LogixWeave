@@ -137,7 +137,7 @@ export function NotificationsDropdown() {
           <span className="sr-only">Notifications</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-96">
+      <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-96">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
           {notifications.length > 0 && (

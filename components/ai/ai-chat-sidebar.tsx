@@ -276,7 +276,7 @@ export function AIChatSidebar() {
     <div
       className={cn(
         "fixed top-16 right-0 bottom-0 z-40 border-l bg-background flex flex-col transition-all duration-300 ease-in-out",
-        isExpanded ? "w-[800px]" : "w-[400px]",
+        isExpanded ? "w-full md:w-[800px]" : "w-full md:w-[400px]",
         isOpen ? "translate-x-0" : "translate-x-full"
       )}
     >

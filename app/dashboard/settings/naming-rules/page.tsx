@@ -23,7 +23,7 @@ export default async function NamingRulesPage() {
   if (!membership) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Naming Rules</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Naming Rules</h1>
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">
@@ -48,7 +48,7 @@ export default async function NamingRulesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Naming Rules</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Naming Rules</h1>
         <p className="text-muted-foreground">
           Organize rules into named sets that can be assigned per-project. The default set is used when a project has no specific assignment.
         </p>

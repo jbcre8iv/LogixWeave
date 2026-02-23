@@ -60,7 +60,7 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Add-On Instructions</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Add-On Instructions</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default async function AOIsPage({ params, searchParams }: AOIsPageProps) 
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Add-On Instructions</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Add-On Instructions</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>

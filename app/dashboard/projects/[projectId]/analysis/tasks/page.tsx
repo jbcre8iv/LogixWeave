@@ -48,7 +48,7 @@ export default async function TasksPage({ params }: TasksPageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Task Configuration</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Task Configuration</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default async function TasksPage({ params }: TasksPageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Task Configuration</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Task Configuration</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default async function TasksPage({ params }: TasksPageProps) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Task Configuration</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Task Configuration</h1>
             <p className="text-muted-foreground">{project.name}</p>
           </div>
         </div>

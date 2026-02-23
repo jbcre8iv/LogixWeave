@@ -40,7 +40,7 @@ export default function NewProjectPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">New Project</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">New Project</h1>
           <p className="text-muted-foreground">
             Create a new project to organize your L5X/L5K files
           </p>

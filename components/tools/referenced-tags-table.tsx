@@ -167,14 +167,14 @@ export function ReferencedTagsTable({
         </CardContent>
       </Card>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <SortableTableHead column="name" className="w-[300px]">Tag Name</SortableTableHead>
               <SortableTableHead column="referenceCount" defaultOrder="desc" className="w-[120px]">References</SortableTableHead>
               <SortableTableHead column="usageTypes" className="w-[150px]">Usage</SortableTableHead>
-              <SortableTableHead column="routines" defaultOrder="desc" className="w-[150px]">Found In</SortableTableHead>
+              <SortableTableHead column="routines" defaultOrder="desc" className="hidden sm:table-cell w-[150px]">Found In</SortableTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,7 +198,7 @@ export function ReferencedTagsTable({
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[300px]">
+                  <TableCell className="hidden sm:table-cell text-sm text-muted-foreground max-w-[300px]">
                     <div className="flex gap-1 flex-wrap">
                       {tag.routines.slice(0, 3).map((routine) => (
                         <Badge key={routine} variant="secondary" className="text-xs font-normal">

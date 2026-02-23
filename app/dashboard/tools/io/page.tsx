@@ -51,7 +51,7 @@ export default async function GlobalIOPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">I/O Mapping</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">I/O Mapping</h1>
         <p className="text-muted-foreground">
           View and analyze hardware I/O configuration across your projects
         </p>

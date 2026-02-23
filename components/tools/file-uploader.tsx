@@ -188,8 +188,8 @@ export function FileUploader({ projectId, folderId }: FileUploaderProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+        <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+          <Upload className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-4" />
           <p className="text-lg font-medium mb-2">Drop L5X/L5K files here</p>
           <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
           <input

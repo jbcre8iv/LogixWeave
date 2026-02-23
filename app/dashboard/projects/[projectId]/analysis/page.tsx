@@ -456,13 +456,13 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Overview</h1>
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold">Overview</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-muted-foreground">
             <span>{project.name}</span>
             <span className="text-muted-foreground/40">—</span>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground/70">
               <Avatar className="size-5">
                 <AvatarImage src={ownerProfile?.avatar_url || undefined} alt={ownerName} />
                 <AvatarFallback className="text-[9px]">{ownerInitials}</AvatarFallback>
@@ -482,7 +482,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             <p className="text-sm text-muted-foreground/80 mt-1">{project.description}</p>
           )}
         </div>
-        <div className="flex items-start gap-2">
+        <div className="flex flex-wrap items-start gap-2">
           <TroubleshootHeaderButton />
           <ProjectActions
             projectId={projectId}
@@ -559,7 +559,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             {/* Counts */}
             <div className="space-y-2">
               <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 px-1">Counts</h3>
-              <div className="grid gap-3 grid-cols-3">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                 <Link href={`/dashboard/projects/${projectId}/tags?tab=definitions`}>
                   <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                     <CardHeader className="pb-2">
@@ -599,7 +599,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             {/* Quality */}
             <div className="space-y-2">
               <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 px-1">Quality</h3>
-              <div className="grid gap-3 grid-cols-3">
+              <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
                 <Link href={`/dashboard/projects/${projectId}/analysis/tag-xref`}>
                   <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer group">
                     <CardHeader className="pb-2">
