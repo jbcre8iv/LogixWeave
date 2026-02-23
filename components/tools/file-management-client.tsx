@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FileUploader } from "@/components/tools/file-uploader";
 import { DownloadAllButton } from "@/components/tools/download-all-button";
 import { FileBrowser } from "@/components/tools/file-browser";
-import { RefreshCw, Loader2, BarChart3, Sparkles, Tags, HardDrive, ArrowRight } from "lucide-react";
+import { RefreshCw, Loader2, BarChart3, Sparkles, Tags, FileCode2, ArrowRight } from "lucide-react";
 
 interface FileItem {
   id: string;
@@ -119,10 +119,10 @@ export function FileManagementClient({
                 accent: "text-primary bg-primary/10 border-primary/20",
               },
               {
-                href: `/dashboard/projects/${projectId}/io-mapping`,
-                icon: HardDrive,
-                label: "I/O Mapping",
-                description: "View physical I/O and modules",
+                href: "/dashboard/tools/compare",
+                icon: FileCode2,
+                label: "File Compare",
+                description: "Compare versions and track changes",
                 accent: "text-primary bg-primary/10 border-primary/20",
               },
             ].map(({ href, icon: Icon, label, description, accent }) => (
