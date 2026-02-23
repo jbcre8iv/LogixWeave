@@ -33,6 +33,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Block uploads to trashed projects
+    const { data: projectCheck } = await supabase
+      .from("projects")
+      .select("deleted_at")
+      .eq("id", projectId)
+      .single();
+
+    if (projectCheck?.deleted_at) {
+      return NextResponse.json(
+        { error: "Cannot upload files to a project that is in the trash" },
+        { status: 400 }
+      );
+    }
+
     // Validate file extension
     const extension = file.name.split(".").pop()?.toLowerCase();
     if (!extension || !ALLOWED_EXTENSIONS.includes(extension)) {

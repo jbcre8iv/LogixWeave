@@ -5,6 +5,32 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/activity-log";
 
+// ---------------------------------------------------------------------------
+// Storage cleanup helper — removes all files from the project-files bucket
+// that belong to the given project's file records.
+// ---------------------------------------------------------------------------
+async function cleanupProjectStorage(projectId: string) {
+  const serviceSupabase = createServiceClient();
+
+  const { data: files } = await serviceSupabase
+    .from("project_files")
+    .select("storage_path")
+    .eq("project_id", projectId);
+
+  if (!files || files.length === 0) return;
+
+  const paths = files.map((f) => f.storage_path).filter(Boolean) as string[];
+  if (paths.length === 0) return;
+
+  const { error } = await serviceSupabase.storage
+    .from("project-files")
+    .remove(paths);
+
+  if (error) {
+    console.error(`Storage cleanup failed for project ${projectId}:`, error);
+  }
+}
+
 export async function createOrganization(name: string, userId: string) {
   // Use service client to bypass RLS for initial organization setup
   const supabase = createServiceClient();
@@ -217,13 +243,155 @@ export async function deleteProject(projectId: string) {
     redirect("/login");
   }
 
-  const { error } = await supabase.from("projects").delete().eq("id", projectId);
+  // Fetch project name for activity log
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("id", projectId)
+    .single();
+
+  // Soft-delete: set deleted_at/deleted_by instead of hard DELETE
+  const { error } = await supabase
+    .from("projects")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
+    .eq("id", projectId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logActivity({
+    projectId,
+    userId: user.id,
+    userEmail: user.email,
+    action: "project_trashed",
+    targetType: "project",
+    targetId: projectId,
+    targetName: project?.name,
+  });
+
+  revalidatePath("/dashboard/projects");
+  revalidatePath("/dashboard/trash");
+}
+
+export async function restoreProject(projectId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Fetch project name for activity log
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("id", projectId)
+    .single();
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ deleted_at: null, deleted_by: null })
+    .eq("id", projectId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await logActivity({
+    projectId,
+    userId: user.id,
+    userEmail: user.email,
+    action: "project_restored",
+    targetType: "project",
+    targetId: projectId,
+    targetName: project?.name,
+  });
+
+  revalidatePath("/dashboard/projects");
+  revalidatePath("/dashboard/trash");
+}
+
+export async function permanentlyDeleteProject(projectId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Verify project is in trash before allowing permanent delete
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, deleted_at")
+    .eq("id", projectId)
+    .single();
+
+  if (!project?.deleted_at) {
+    throw new Error("Project must be in trash before it can be permanently deleted");
+  }
+
+  // Clean up storage files first
+  await cleanupProjectStorage(projectId);
+
+  // Hard delete — CASCADE handles child tables
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId);
 
   if (error) {
     throw new Error(error.message);
   }
 
   revalidatePath("/dashboard/projects");
+  revalidatePath("/dashboard/trash");
+}
+
+export async function emptyTrash() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Fetch all trashed projects owned by this user
+  const { data: trashedProjects } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("created_by", user.id)
+    .not("deleted_at", "is", null);
+
+  if (!trashedProjects || trashedProjects.length === 0) return;
+
+  // Clean up storage for each project
+  for (const project of trashedProjects) {
+    await cleanupProjectStorage(project.id);
+  }
+
+  // Hard delete all trashed projects owned by this user
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("created_by", user.id)
+    .not("deleted_at", "is", null);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/projects");
+  revalidatePath("/dashboard/trash");
 }
 
 

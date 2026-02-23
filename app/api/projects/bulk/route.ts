@@ -72,10 +72,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "No project IDs provided" }, { status: 400 });
     }
 
-    // Only the project owner can delete
+    // Soft-delete: move to trash instead of hard delete
     const { error } = await supabase
       .from("projects")
-      .delete()
+      .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
       .in("id", ids)
       .eq("created_by", user.id);
 

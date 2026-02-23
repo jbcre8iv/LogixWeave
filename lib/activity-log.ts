@@ -4,6 +4,8 @@ export type ActivityAction =
   | "project_created"
   | "project_updated"
   | "project_deleted"
+  | "project_trashed"
+  | "project_restored"
   | "file_uploaded"
   | "file_deleted"
   | "file_parsed"
@@ -102,6 +104,8 @@ export function getActionDescription(action: ActivityAction, targetName?: string
     project_created: "created the project",
     project_updated: "updated project settings",
     project_deleted: "deleted the project",
+    project_trashed: "moved the project to trash",
+    project_restored: "restored the project from trash",
     file_uploaded: targetName ? `uploaded file "${targetName}"` : "uploaded a file",
     file_deleted: targetName ? `deleted file "${targetName}"` : "deleted a file",
     file_parsed: targetName ? `parsed file "${targetName}"` : "parsed a file",

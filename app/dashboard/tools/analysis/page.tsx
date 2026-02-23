@@ -22,6 +22,7 @@ export default async function GlobalAnalysisPage() {
       project_files(id, file_name, parsing_status)
     `)
     .eq("is_archived", false)
+    .is("deleted_at", null)
     .order("name");
 
   const projectsWithData = (projects || [])

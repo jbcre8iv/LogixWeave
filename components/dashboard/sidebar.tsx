@@ -33,6 +33,7 @@ import {
   Plus,
   Shield,
   Star,
+  Trash2,
   Users,
 } from "lucide-react";
 
@@ -112,6 +113,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(isPlatformAdminProp || false);
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
+  const [trashCount, setTrashCount] = useState(0);
   const supabase = createClient();
 
   const fetchUnreadCount = useCallback(async () => {
@@ -165,11 +167,12 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
         }
       }
 
-      // Fetch all projects for dropdown (exclude archived)
+      // Fetch all projects for dropdown (exclude archived and trashed)
       const { data: projects } = await supabase
         .from("projects")
         .select("id, name, is_favorite, created_by")
         .eq("is_archived", false)
+        .is("deleted_at", null)
         .order("name");
 
       if (projects) {
@@ -182,6 +185,13 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
           setCurrentProject(null);
         }
       }
+
+      // Fetch trash count
+      const { count } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .not("deleted_at", "is", null);
+      setTrashCount(count || 0);
     };
 
     fetchData();
@@ -465,6 +475,24 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
         </div>
       </nav>
       <div className="border-t p-4 space-y-1">
+        <Link
+          href="/dashboard/trash"
+          onClick={onNavClick}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            pathname === "/dashboard/trash"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          )}
+        >
+          <Trash2 className="h-4 w-4" />
+          Trash
+          {trashCount > 0 && (
+            <span className="ml-auto h-5 min-w-5 px-1 rounded-full bg-muted-foreground/20 text-muted-foreground text-xs flex items-center justify-center font-medium">
+              {trashCount > 9 ? "9+" : trashCount}
+            </span>
+          )}
+        </Link>
         {isPlatformAdmin && (
           <Link
             href="/dashboard/admin"

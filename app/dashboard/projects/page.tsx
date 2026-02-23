@@ -23,6 +23,7 @@ export default async function ProjectsPage() {
       created_by,
       project_files(id, file_name)
     `)
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
   const activeProjects = projects?.filter((p) => !p.is_archived) || [];

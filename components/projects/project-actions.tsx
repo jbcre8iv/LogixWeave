@@ -183,9 +183,9 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete &ldquo;{projectName}&rdquo;?</AlertDialogTitle>
+            <AlertDialogTitle>Move &ldquo;{projectName}&rdquo; to Trash?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All files and parsed data associated with this project will be permanently deleted.
+              This project will be moved to the trash. You can restore it within 30 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -198,10 +198,10 @@ export function ProjectActions({ projectId, projectName, projectDescription, isF
               {deleteLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  Moving...
                 </>
               ) : (
-                "Delete"
+                "Move to Trash"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

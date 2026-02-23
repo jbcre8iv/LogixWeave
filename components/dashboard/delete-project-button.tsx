@@ -43,10 +43,9 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Project</DialogTitle>
+          <DialogTitle>Move to Trash</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete &quot;{projectName}&quot;? This will permanently delete
-            the project and all associated files. This action cannot be undone.
+            &quot;{projectName}&quot; will be moved to the trash. You can restore it within 30 days.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -55,7 +54,7 @@ export function DeleteProjectButton({ projectId, projectName }: DeleteProjectBut
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Delete Project
+            Move to Trash
           </Button>
         </DialogFooter>
       </DialogContent>

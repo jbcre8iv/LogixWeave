@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
     feedbackResult,
   ] = await Promise.all([
     serviceSupabase.from("profiles").select("id, email, first_name, last_name, full_name, created_at, is_platform_admin, is_disabled"),
-    serviceSupabase.from("projects").select("id, name, created_by, organization_id, created_at, organizations(name)"),
+    serviceSupabase.from("projects").select("id, name, created_by, organization_id, created_at, deleted_at, organizations(name)"),
     serviceSupabase.from("project_files").select("id, file_name, file_size, parsing_status, project_id"),
     serviceSupabase.from("feedback").select("id, user_email, type, subject, description, created_at, read_at").order("created_at", { ascending: false }),
   ]);
@@ -114,6 +114,7 @@ export default async function AdminDashboardPage() {
       name: p.name,
       organization_name: org?.name || "Unknown",
       created_at: p.created_at,
+      deleted_at: p.deleted_at as string | null,
       file_count: projectFileCount.get(p.id) || 0,
     };
   });

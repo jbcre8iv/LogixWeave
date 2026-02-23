@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import { LeaveProjectButton } from "@/components/projects/leave-project-button";
+import { RestoreProjectButton } from "@/components/dashboard/restore-project-button";
 import { AIChatProvider } from "@/components/ai/ai-chat-provider";
 import { AIChatSidebar } from "@/components/ai/ai-chat-sidebar";
 import { AIChatButton } from "@/components/ai/ai-chat-button";
@@ -27,9 +28,60 @@ export default async function ProjectLayout({
   // Check if project has any parsed files
   const { data: project } = await supabase
     .from("projects")
-    .select("id, name, created_by, is_archived, project_files(id, parsing_status)")
+    .select("id, name, created_by, is_archived, deleted_at, project_files(id, parsing_status)")
     .eq("id", projectId)
     .single();
+
+  // Block access to trashed projects
+  if (project?.deleted_at) {
+    const isCreator = user.id === project.created_by;
+    if (isCreator || isAdmin) {
+      const deletedDate = new Date(project.deleted_at);
+      const expiresDate = new Date(deletedDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const daysRemaining = Math.max(0, Math.ceil((expiresDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+
+      return (
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md w-full">
+            <CardContent className="py-12 text-center">
+              <Trash2 className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-lg font-semibold mb-2">This project is in the trash</h2>
+              <p className="text-sm text-muted-foreground mb-1">
+                &quot;{project.name}&quot; was moved to trash on {deletedDate.toLocaleDateString()}.
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                It will be permanently deleted in {daysRemaining} {daysRemaining === 1 ? "day" : "days"}.
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <RestoreProjectButton projectId={projectId} projectName={project.name} />
+                <Button variant="outline" asChild>
+                  <Link href="/dashboard/trash">View Trash</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Collaborators see a generic message
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md w-full">
+          <CardContent className="py-12 text-center">
+            <Lock className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Project is no longer accessible</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              This project has been removed by its owner.
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/projects">Back to Projects</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Block non-owners from accessing archived projects (admins can always view)
   if (project?.is_archived && !isAdmin) {

@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/security-scan",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/purge-trash",
+      "schedule": "0 3 * * *"
     }
   ]
 }

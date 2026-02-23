@@ -22,6 +22,7 @@ export default async function GlobalUDTsPage() {
       project_files(id, file_name)
     `)
     .eq("is_archived", false)
+    .is("deleted_at", null)
     .order("name");
 
   const projectsWithStats = await Promise.all(

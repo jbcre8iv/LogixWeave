@@ -28,19 +28,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const firstName = getFirstName(profile || {});
 
-  // Get user's projects count (only owned, non-archived projects)
+  // Get user's projects count (only owned, non-archived, non-trashed projects)
   const { count: projectCount } = await supabase
     .from("projects")
     .select("*", { count: "exact", head: true })
     .eq("created_by", user?.id)
-    .eq("is_archived", false);
+    .eq("is_archived", false)
+    .is("deleted_at", null);
 
-  // Get recent projects (owned by user, not archived)
+  // Get recent projects (owned by user, not archived, not trashed)
   const { data: recentProjects } = await supabase
     .from("projects")
     .select("id, name, updated_at")
     .eq("created_by", user?.id)
     .eq("is_archived", false)
+    .is("deleted_at", null)
     .order("updated_at", { ascending: false })
     .limit(5);
 
@@ -54,6 +56,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .or(`shared_with_user_id.eq.${user?.id},shared_with_email.eq.${user?.email}`)
     .not("accepted_at", "is", null)
     .eq("projects.is_archived", false)
+    .is("projects.deleted_at", null)
     .limit(5);
 
   // Get pending invites count

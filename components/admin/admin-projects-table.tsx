@@ -37,13 +37,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, ArrowUpDown, ExternalLink, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, ArrowUpDown, ExternalLink, MoreHorizontal, Trash2, RotateCcw, Loader2 } from "lucide-react";
 
 interface ProjectData {
   id: string;
   name: string;
   organization_name: string;
   created_at: string;
+  deleted_at: string | null;
   file_count: number;
 }
 
@@ -62,6 +64,7 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [deleteProject, setDeleteProject] = useState<ProjectData | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState<string | null>(null);
 
   // Poll for updates every 30 seconds
   useEffect(() => {
@@ -139,6 +142,28 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
     } finally {
       setDeleteLoading(false);
       setDeleteProject(null);
+    }
+  };
+
+  const handleRestore = async (projectId: string) => {
+    setRestoreLoading(projectId);
+    try {
+      const response = await fetch(`/api/admin/projects?projectId=${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore" }),
+      });
+
+      if (response.ok) {
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to restore project");
+      }
+    } catch {
+      alert("Failed to restore project");
+    } finally {
+      setRestoreLoading(null);
     }
   };
 
@@ -222,7 +247,16 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
           ) : (
             filteredAndSortedProjects.map((project) => (
               <TableRow key={project.id}>
-                <TableCell className="font-medium">{project.name}</TableCell>
+                <TableCell className="font-medium">
+                  <span className="flex items-center gap-2">
+                    {project.name}
+                    {project.deleted_at && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                        Trashed
+                      </Badge>
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell>{project.organization_name}</TableCell>
                 <TableCell>{project.file_count}</TableCell>
                 <TableCell>
@@ -242,13 +276,29 @@ export function AdminProjectsTable({ projects }: AdminProjectsTableProps) {
                           View
                         </Link>
                       </DropdownMenuItem>
+                      {project.deleted_at && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleRestore(project.id)}
+                            disabled={restoreLoading === project.id}
+                          >
+                            {restoreLoading === project.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                            )}
+                            Restore
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => setDeleteProject(project)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        {project.deleted_at ? "Delete Forever" : "Delete"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

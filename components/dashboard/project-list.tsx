@@ -1159,14 +1159,13 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete confirmation dialog */}
+      {/* Move to trash confirmation dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} project{selectedIds.size > 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogTitle>Move {selectedIds.size} project{selectedIds.size > 1 ? "s" : ""} to Trash?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All files and parsed data associated with
-              {selectedIds.size > 1 ? " these projects" : " this project"} will be permanently deleted.
+              {selectedIds.size > 1 ? "These projects" : "This project"} will be moved to the trash. You can restore {selectedIds.size > 1 ? "them" : "it"} within 30 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1179,10 +1178,10 @@ export function ProjectList({ projects, archivedProjects = [], currentUserId, ow
               {actionLoading === "delete" ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
+                  Moving...
                 </>
               ) : (
-                "Delete"
+                "Move to Trash"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

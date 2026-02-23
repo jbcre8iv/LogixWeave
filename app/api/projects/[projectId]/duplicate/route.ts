@@ -55,6 +55,11 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    // Block duplication of trashed projects
+    if (sourceProject.deleted_at) {
+      return NextResponse.json({ error: "Cannot duplicate a project that is in the trash" }, { status: 400 });
+    }
+
     // Only the owner can duplicate
     if (sourceProject.created_by !== user.id) {
       return NextResponse.json({ error: "Only the project owner can duplicate" }, { status: 403 });
