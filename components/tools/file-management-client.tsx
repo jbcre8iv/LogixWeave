@@ -34,6 +34,7 @@ interface FileManagementClientProps {
   projectName: string;
   files: FileItem[];
   folders: FolderItem[];
+  isAdmin?: boolean;
 }
 
 export function FileManagementClient({
@@ -41,6 +42,7 @@ export function FileManagementClient({
   projectName,
   files,
   folders,
+  isAdmin = false,
 }: FileManagementClientProps) {
   const router = useRouter();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -98,24 +100,26 @@ export function FileManagementClient({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReparseAll}
-                disabled={isReparsingAll || completedFiles.length === 0}
-              >
-                {isReparsingAll ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Re-parsing {reparseProgress.done}/{reparseProgress.total}...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Re-parse All
-                  </>
-                )}
-              </Button>
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReparseAll}
+                  disabled={isReparsingAll || completedFiles.length === 0}
+                >
+                  {isReparsingAll ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Re-parsing {reparseProgress.done}/{reparseProgress.total}...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Re-parse All
+                    </>
+                  )}
+                </Button>
+              )}
               <DownloadAllButton
                 projectId={projectId}
                 projectName={projectName}
@@ -130,6 +134,7 @@ export function FileManagementClient({
             files={files}
             folders={folders}
             onFolderChange={setCurrentFolderId}
+            isAdmin={isAdmin}
           />
         </CardContent>
       </Card>

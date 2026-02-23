@@ -13,7 +13,7 @@ export default async function FilesPage({ params }: FilesPageProps) {
   const { projectId } = await params;
   const access = await getProjectAccess();
   if (!access) notFound();
-  const { supabase } = access;
+  const { supabase, isAdmin } = access;
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -61,6 +61,7 @@ export default async function FilesPage({ params }: FilesPageProps) {
         projectName={project.name}
         files={files}
         folders={folders}
+        isAdmin={isAdmin}
       />
     </div>
   );

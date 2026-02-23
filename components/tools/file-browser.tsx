@@ -62,9 +62,10 @@ interface FileBrowserProps {
   files: FileItem[];
   folders: FolderItem[];
   onFolderChange?: (folderId: string | null) => void;
+  isAdmin?: boolean;
 }
 
-export function FileBrowser({ projectId, files, folders, onFolderChange }: FileBrowserProps) {
+export function FileBrowser({ projectId, files, folders, onFolderChange, isAdmin = false }: FileBrowserProps) {
   const router = useRouter();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const navigateToFolder = useCallback((folderId: string | null) => {
@@ -459,20 +460,22 @@ export function FileBrowser({ projectId, files, folders, onFolderChange }: FileB
                     {file.parsing_error}
                   </span>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  title="Re-parse file"
-                  disabled={reparsingFileId === file.id}
-                  onClick={() => handleReparse(file.id)}
-                >
-                  {reparsingFileId === file.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title="Re-parse file"
+                    disabled={reparsingFileId === file.id}
+                    onClick={() => handleReparse(file.id)}
+                  >
+                    {reparsingFileId === file.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
                 <FileVersionHistory
                   fileId={file.id}
                   fileName={file.file_name}
