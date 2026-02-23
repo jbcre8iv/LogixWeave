@@ -229,7 +229,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
 
   return (
     <>
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 overflow-y-auto space-y-1 p-4">
         <div className="space-y-1">
           {navigation.map((item) => {
             // Dashboard: active only on exact /dashboard
