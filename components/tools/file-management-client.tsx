@@ -98,28 +98,28 @@ export function FileManagementClient({
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                href: `/projects/${projectId}/overview`,
+                href: `/dashboard/projects/${projectId}`,
                 icon: BarChart3,
                 label: "Project Overview",
                 description: "Health scores, charts, and project summary",
                 accent: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
               },
               {
-                href: `/projects/${projectId}/ai`,
+                href: `/dashboard/projects/${projectId}/ai`,
                 icon: Sparkles,
                 label: "AI Assistant",
                 description: "Ask questions, explain logic, find issues",
                 accent: "text-amber-500 bg-amber-500/10 border-amber-500/20",
               },
               {
-                href: `/projects/${projectId}/tags`,
+                href: `/dashboard/projects/${projectId}/tags`,
                 icon: Tags,
                 label: "Tag Explorer",
                 description: "Browse, search, and filter tags",
                 accent: "text-primary bg-primary/10 border-primary/20",
               },
               {
-                href: `/projects/${projectId}/io`,
+                href: `/dashboard/projects/${projectId}/io`,
                 icon: HardDrive,
                 label: "I/O Mapping",
                 description: "View physical I/O and modules",
