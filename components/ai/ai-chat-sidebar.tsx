@@ -560,21 +560,25 @@ export function TroubleshootToolCard() {
   const { openTroubleshoot } = useAIChat();
 
   return (
-    <button onClick={openTroubleshoot} className="text-left h-full w-full group flex items-start">
-      <div className="h-full rounded-lg border border-border/60 bg-card hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer">
-        <div className="py-4 px-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/15 transition-colors shrink-0 mt-0.5">
-              <Wrench className="h-4.5 w-4.5 text-amber-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">Troubleshoot</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">Diagnose issues with guided step-by-step analysis</p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-amber-500 transition-colors shrink-0 mt-1" />
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={openTroubleshoot}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openTroubleshoot(); } }}
+      className="group h-full border-border/60 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer bg-card text-card-foreground flex flex-col rounded-xl border py-6 shadow-sm"
+    >
+      <div className="py-4 px-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/15 transition-colors shrink-0 mt-0.5">
+            <Wrench className="h-4.5 w-4.5 text-amber-500" />
           </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Troubleshoot</p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">Diagnose issues with guided step-by-step analysis</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-amber-500 transition-colors shrink-0 mt-1" />
         </div>
       </div>
-    </button>
+    </div>
   );
 }
