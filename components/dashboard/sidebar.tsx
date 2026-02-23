@@ -491,7 +491,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
         </div>
       </nav>
       {canScrollDown && (
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent" />
       )}
       </div>
       <div className="border-t p-4 space-y-1">
