@@ -294,15 +294,6 @@ export function AIChatSidebar() {
           variant="ghost"
           size="icon"
           className="h-8 w-8 shrink-0"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          title={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {isExpanded ? <PanelRightOpen className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
           onClick={handleNewConversation}
           title="New conversation"
         >
@@ -319,6 +310,15 @@ export function AIChatSidebar() {
           title="Conversation history"
         >
           <Clock className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          title={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {isExpanded ? <PanelRightOpen className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={close}>
           <X className="h-4 w-4" />
