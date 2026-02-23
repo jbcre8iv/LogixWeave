@@ -16,6 +16,7 @@ import {
   Clock,
   Trash2,
   Wrench,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIChat } from "./ai-chat-provider";
@@ -532,5 +533,44 @@ export function AIChatSearchBar() {
         <Send className="h-4 w-4" />
       </Button>
     </form>
+  );
+}
+
+/** Reusable button that opens the chat sidebar in troubleshoot mode */
+export function OpenTroubleshootButton({ className, compact }: { className?: string; compact?: boolean }) {
+  const { openTroubleshoot } = useAIChat();
+
+  return (
+    <button
+      onClick={openTroubleshoot}
+      className={cn(
+        "group w-full text-left cursor-pointer rounded-lg border border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-transparent hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all",
+        className
+      )}
+    >
+      <div className={cn(
+        "flex items-center justify-between gap-4",
+        compact ? "py-3 px-4" : "py-5 px-5"
+      )}>
+        <div className="flex items-center gap-4">
+          <div className={cn(
+            "flex items-center justify-center rounded-full bg-gradient-to-br from-amber-500/15 to-orange-500/10 shrink-0",
+            compact ? "h-10 w-10" : "h-12 w-12"
+          )}>
+            <Wrench className={cn(compact ? "h-5 w-5" : "h-6 w-6", "text-amber-500")} />
+          </div>
+          <div>
+            <h3 className={cn(compact ? "text-sm" : "text-base", "font-semibold")}>Troubleshoot</h3>
+            <p className={cn(compact ? "text-xs" : "text-sm", "text-muted-foreground mt-0.5")}>
+              Diagnose issues with guided step-by-step analysis
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-md px-3 py-1.5 group-hover:bg-amber-500/10 transition-colors">
+          Start
+          <ArrowRight className="h-3.5 w-3.5" />
+        </div>
+      </div>
+    </button>
   );
 }

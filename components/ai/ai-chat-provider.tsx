@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 
 type ChatMode = "chat" | "troubleshoot";
 
@@ -32,6 +32,7 @@ interface AIChatContextValue {
   open: (query?: string) => void;
   close: () => void;
   toggle: () => void;
+  openTroubleshoot: () => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   consumePendingQuery: () => string | null;
   loadConversations: () => Promise<void>;
@@ -195,6 +196,24 @@ export function AIChatProvider({
     return q;
   }, []);
 
+  const openTroubleshoot = useCallback(() => {
+    setChatModeState("troubleshoot");
+    chatModeRef.current = "troubleshoot";
+    setCurrentConversationId(null);
+    setMessages([]);
+    setConversations([]);
+    setConversationsLoaded(false);
+    setShowConversationList(false);
+    setIsOpen(true);
+  }, []);
+
+  // Listen for cross-boundary custom event (e.g. from dashboard sidebar outside provider)
+  useEffect(() => {
+    const handler = () => openTroubleshoot();
+    window.addEventListener("open-troubleshoot", handler);
+    return () => window.removeEventListener("open-troubleshoot", handler);
+  }, [openTroubleshoot]);
+
   return (
     <AIChatContext.Provider
       value={{
@@ -212,6 +231,7 @@ export function AIChatProvider({
         open,
         close,
         toggle,
+        openTroubleshoot,
         setMessages,
         consumePendingQuery,
         loadConversations,
