@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
@@ -26,7 +26,9 @@ export default async function UnusedTagsPage({ params, searchParams }: UnusedTag
   const { search, scope, dataType, page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam || "1", 10));
 
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase } = access;
 
   // Get project info
   const { data: project, error: projectError } = await supabase

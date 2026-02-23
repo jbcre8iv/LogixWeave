@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +15,9 @@ interface CommentCoveragePageProps {
 export default async function CommentCoveragePage({ params }: CommentCoveragePageProps) {
   const { projectId } = await params;
 
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase } = access;
 
   // Get project info
   const { data: project, error: projectError } = await supabase

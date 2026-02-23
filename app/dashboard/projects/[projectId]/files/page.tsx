@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { FileManagementClient } from "@/components/tools/file-management-client";
@@ -11,7 +11,9 @@ interface FilesPageProps {
 
 export default async function FilesPage({ params }: FilesPageProps) {
   const { projectId } = await params;
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase } = access;
 
   const { data: project, error } = await supabase
     .from("projects")

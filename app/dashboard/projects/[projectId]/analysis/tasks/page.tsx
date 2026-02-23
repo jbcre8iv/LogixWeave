@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
@@ -22,7 +22,9 @@ interface TasksPageProps {
 export default async function TasksPage({ params }: TasksPageProps) {
   const { projectId } = await params;
 
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase } = access;
 
   const { data: project, error: projectError } = await supabase
     .from("projects")

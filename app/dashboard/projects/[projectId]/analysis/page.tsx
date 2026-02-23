@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
@@ -41,7 +42,9 @@ interface AnalysisPageProps {
 export default async function AnalysisPage({ params }: AnalysisPageProps) {
   const { projectId } = await params;
 
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase, user, isAdmin } = access;
 
   // Get project info
   const { data: project, error: projectError } = await supabase
@@ -54,27 +57,26 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
     notFound();
   }
 
-  // Fetch current user and project owner profile in parallel
-  const [{ data: { user } }, { data: ownerProfile }] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase
-      .from("profiles")
-      .select("first_name, last_name, avatar_url")
-      .eq("id", project.created_by)
-      .single(),
-  ]);
-
-  // Check if user has an owner-level share
-  const { data: userShare } = await supabase
-    .from("project_shares")
-    .select("permission")
-    .eq("project_id", projectId)
-    .eq("shared_with_user_id", user!.id)
-    .not("accepted_at", "is", null)
+  // Fetch project owner profile
+  const { data: ownerProfile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, avatar_url")
+    .eq("id", project.created_by)
     .single();
 
-  const isCreator = user?.id === project.created_by;
-  const canManage = isCreator || userShare?.permission === "owner";
+  // Check if user has an owner-level share (skip for admins — they can manage everything)
+  const { data: userShare } = isAdmin
+    ? { data: null }
+    : await supabase
+        .from("project_shares")
+        .select("permission")
+        .eq("project_id", projectId)
+        .eq("shared_with_user_id", user.id)
+        .not("accepted_at", "is", null)
+        .single();
+
+  const isCreator = user.id === project.created_by;
+  const canManage = isCreator || isAdmin || userShare?.permission === "owner";
   const ownerName = isCreator
     ? "You"
     : ownerProfile?.first_name

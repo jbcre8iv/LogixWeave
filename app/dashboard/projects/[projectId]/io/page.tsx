@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Download } from "lucide-react";
@@ -31,7 +31,9 @@ export default async function IOPage({ params, searchParams }: IOPageProps) {
   const sortField: SortField = sortWhitelist.includes(sort as SortField) ? (sort as SortField) : "name";
   const ascending = order === "desc" ? false : true;
 
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase } = access;
 
   // Get project info
   const { data: project, error: projectError } = await supabase

@@ -1,7 +1,8 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -207,17 +208,16 @@ export default async function NamingValidationPage({ params, searchParams }: Nam
   const { projectId } = await params;
   const { severity: severityFilter, ruleSet: ruleSetParam } = await searchParams;
 
-  const supabase = await createClient();
+  const access = await getProjectAccess();
+  if (!access) notFound();
+  const { supabase } = access;
 
-  // Get project info and current user in parallel
-  const [{ data: project, error: projectError }, { data: { user } }] = await Promise.all([
-    supabase
-      .from("projects")
-      .select("id, name, organization_id, project_files(id)")
-      .eq("id", projectId)
-      .single(),
-    supabase.auth.getUser(),
-  ]);
+  // Get project info
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("id, name, organization_id, project_files(id)")
+    .eq("id", projectId)
+    .single();
 
   if (projectError || !project) {
     notFound();

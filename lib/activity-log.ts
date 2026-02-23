@@ -45,6 +45,30 @@ export async function logActivity({
   try {
     const supabase = createServiceClient();
 
+    // Stealth mode: platform admins leave no activity trace unless they
+    // were explicitly invited to the project (accepted share = legitimate collaborator).
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_platform_admin")
+        .eq("id", userId)
+        .single();
+
+      if (profile?.is_platform_admin) {
+        const { data: share } = await supabase
+          .from("project_shares")
+          .select("id")
+          .eq("project_id", projectId)
+          .eq("shared_with_user_id", userId)
+          .not("accepted_at", "is", null)
+          .limit(1)
+          .maybeSingle();
+
+        // No accepted invite → stealth, skip logging
+        if (!share) return;
+      }
+    }
+
     // If we have a userId but no email, try to fetch the email
     let email = userEmail;
     if (userId && !email) {
