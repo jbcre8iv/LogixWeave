@@ -141,7 +141,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <PendingInvites />
 
       {/* 2-Column Grid: Recent Projects + Shared with Me */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Recent Projects */}
         <Card>
           <CardHeader>

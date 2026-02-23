@@ -555,7 +555,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           />
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Counts */}
             <div className="space-y-2">
               <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 px-1">Counts</h3>

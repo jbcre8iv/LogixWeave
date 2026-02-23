@@ -553,7 +553,7 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
 
 export function Sidebar({ isPlatformAdmin }: { isPlatformAdmin?: boolean }) {
   return (
-    <div className="hidden md:flex h-full w-64 flex-col border-r bg-card">
+    <div className="hidden lg:flex h-full w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center">
           <Logo size="lg" />
