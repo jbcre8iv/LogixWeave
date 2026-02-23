@@ -14,7 +14,7 @@ import { NamingHealthToggle } from "@/components/analysis/naming-health-toggle";
 import { AnimatedCount } from "@/components/analysis/animated-count";
 import { analyzeExportTypes } from "@/lib/partial-export";
 import { ActivityLog } from "@/components/projects/activity-log";
-import { OpenTroubleshootButton } from "@/components/ai/ai-chat-sidebar";
+import { TroubleshootHeaderButton } from "@/components/ai/ai-chat-sidebar";
 
 function formatTimeAgo(date: string): string {
   const now = Date.now();
@@ -483,6 +483,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
           )}
         </div>
         <div className="flex items-start gap-2">
+          <TroubleshootHeaderButton />
           <ProjectActions
             projectId={projectId}
             projectName={project.name}
@@ -552,9 +553,6 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
             namingViolationCount={namingViolationCount}
             footer={<NamingHealthToggle projectId={projectId} enabled={namingAffectsHealthScore} />}
           />
-
-          {/* Troubleshoot CTA */}
-          <OpenTroubleshootButton compact />
 
           {/* Summary Stats */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

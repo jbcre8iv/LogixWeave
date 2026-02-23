@@ -536,8 +536,8 @@ export function AIChatSearchBar() {
   );
 }
 
-/** Reusable button that opens the chat sidebar in troubleshoot mode */
-export function OpenTroubleshootButton({ className, compact }: { className?: string; compact?: boolean }) {
+/** Reusable card button that opens the chat sidebar in troubleshoot mode */
+export function OpenTroubleshootButton({ className }: { className?: string }) {
   const { openTroubleshoot } = useAIChat();
 
   return (
@@ -548,20 +548,14 @@ export function OpenTroubleshootButton({ className, compact }: { className?: str
         className
       )}
     >
-      <div className={cn(
-        "flex items-center justify-between gap-4",
-        compact ? "py-3 px-4" : "py-5 px-5"
-      )}>
+      <div className="flex items-center justify-between gap-4 py-5 px-5">
         <div className="flex items-center gap-4">
-          <div className={cn(
-            "flex items-center justify-center rounded-full bg-gradient-to-br from-amber-500/15 to-orange-500/10 shrink-0",
-            compact ? "h-10 w-10" : "h-12 w-12"
-          )}>
-            <Wrench className={cn(compact ? "h-5 w-5" : "h-6 w-6", "text-amber-500")} />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/15 to-orange-500/10 shrink-0">
+            <Wrench className="h-6 w-6 text-amber-500" />
           </div>
           <div>
-            <h3 className={cn(compact ? "text-sm" : "text-base", "font-semibold")}>Troubleshoot</h3>
-            <p className={cn(compact ? "text-xs" : "text-sm", "text-muted-foreground mt-0.5")}>
+            <h3 className="text-base font-semibold">Troubleshoot</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Diagnose issues with guided step-by-step analysis
             </p>
           </div>
@@ -571,6 +565,25 @@ export function OpenTroubleshootButton({ className, compact }: { className?: str
           <ArrowRight className="h-3.5 w-3.5" />
         </div>
       </div>
+    </button>
+  );
+}
+
+/** Small header button that opens the chat sidebar in troubleshoot mode */
+export function TroubleshootHeaderButton({ className }: { className?: string }) {
+  const { openTroubleshoot } = useAIChat();
+
+  return (
+    <button
+      onClick={openTroubleshoot}
+      title="Troubleshoot"
+      className={cn(
+        "flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors",
+        className
+      )}
+    >
+      <Wrench className="h-3.5 w-3.5" />
+      Troubleshoot
     </button>
   );
 }

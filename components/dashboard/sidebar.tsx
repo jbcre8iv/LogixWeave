@@ -35,7 +35,6 @@ import {
   Star,
   Trash2,
   Users,
-  Wrench,
 } from "lucide-react";
 
 const navigation = [
@@ -51,7 +50,6 @@ interface ProjectTool {
   icon: typeof Upload;
   isAI?: boolean;
   isAnalysis?: boolean;
-  onClick?: () => void;
 }
 
 const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
@@ -60,7 +58,6 @@ const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
     items: [
       { name: "Overview", globalHref: "/dashboard/tools/analysis", projectHref: "/analysis", icon: BarChart3, isAnalysis: true },
       { name: "AI Assistant", globalHref: "/dashboard/tools/ai", projectHref: "/ai", icon: Sparkles, isAI: true },
-      { name: "Troubleshoot", projectHref: "/__troubleshoot__", icon: Wrench, isAI: true, onClick: () => window.dispatchEvent(new CustomEvent("open-troubleshoot")) },
     ],
   },
   {
@@ -81,8 +78,8 @@ const projectToolGroups: { label: string; items: ProjectTool[] }[] = [
   },
 ];
 
-// Flat list for project switching logic (exclude action-only items)
-const projectTools = projectToolGroups.flatMap((g) => g.items).filter((t) => !t.onClick);
+// Flat list for project switching logic
+const projectTools = projectToolGroups.flatMap((g) => g.items);
 
 // Global tools (always cross-project)
 const globalTools = [
@@ -386,7 +383,6 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
             {projectToolGroups.map((group) => {
               // Filter out items that have no href (project-only items when no project selected)
               const visibleItems = group.items.filter((item) => {
-                if (item.onClick) return !!projectId;
                 const href = projectId && item.projectHref
                   ? `/dashboard/projects/${projectId}${item.projectHref}`
                   : item.globalHref;
@@ -404,36 +400,12 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
                     {group.label}
                   </p>
                   {visibleItems.map((item) => {
-                    const isAI = "isAI" in item && item.isAI;
-                    const isAnalysis = "isAnalysis" in item && item.isAnalysis;
-
-                    // Action-only items (no navigation)
-                    if (item.onClick) {
-                      return (
-                        <button
-                          key={item.name}
-                          onClick={() => {
-                            item.onClick!();
-                            onNavClick?.();
-                          }}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors w-full",
-                            projectId ? "py-1.5 text-[13px]" : "",
-                            isAI
-                              ? "text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                          )}
-                        >
-                          <item.icon className={cn("h-4 w-4", projectId && "h-3.5 w-3.5", isAI && "text-amber-500")} />
-                          {item.name}
-                        </button>
-                      );
-                    }
-
                     const href = projectId && item.projectHref
                       ? `/dashboard/projects/${projectId}${item.projectHref}`
                       : item.globalHref!;
 
+                    const isAI = "isAI" in item && item.isAI;
+                    const isAnalysis = "isAnalysis" in item && item.isAnalysis;
                     const isActive = pathname === href ||
                       pathname.startsWith(href + "/") ||
                       pathname === item.globalHref ||
