@@ -17,6 +17,8 @@ import {
   Trash2,
   Wrench,
   ArrowRight,
+  PanelLeftOpen,
+  PanelRightOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIChat } from "./ai-chat-provider";
@@ -124,6 +126,7 @@ export function AIChatSidebar() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSelectingConversation, setIsSelectingConversation] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasSentPending = useRef(false);
   const conversationIdRef = useRef<string | null>(currentConversationId);
@@ -272,7 +275,8 @@ export function AIChatSidebar() {
   return (
     <div
       className={cn(
-        "fixed top-16 right-0 bottom-0 w-[400px] z-40 border-l bg-background flex flex-col transition-transform duration-300 ease-in-out",
+        "fixed top-16 right-0 bottom-0 z-40 border-l bg-background flex flex-col transition-all duration-300 ease-in-out",
+        isExpanded ? "w-[800px]" : "w-[400px]",
         isOpen ? "translate-x-0" : "translate-x-full"
       )}
     >
@@ -286,6 +290,15 @@ export function AIChatSidebar() {
         <span className="font-semibold text-sm truncate flex-1">
           {currentTitle}
         </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          title={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {isExpanded ? <PanelRightOpen className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+        </Button>
         <Button
           variant="ghost"
           size="icon"
