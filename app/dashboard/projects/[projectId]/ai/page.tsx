@@ -4,7 +4,7 @@ import { getProjectAccess } from "@/lib/project-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, AlertTriangle, Sparkles, ArrowRight, Activity, BookOpen } from "lucide-react";
-import { AIChatSearchBar, OpenTroubleshootButton } from "@/components/ai/ai-chat-sidebar";
+import { AIChatSearchBar, TroubleshootToolCard } from "@/components/ai/ai-chat-sidebar";
 
 interface AIPageProps {
   params: Promise<{ projectId: string }>;
@@ -118,13 +118,10 @@ export default async function AIPage({ params }: AIPageProps) {
             </Card>
           </Link>
 
-          {/* Troubleshoot */}
-          <OpenTroubleshootButton />
-
           {/* AI Tool Cards */}
           <div className="space-y-3 mt-6">
             <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-1">More Tools</h3>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               {aiTools.map((tool) => (
                 <Link key={tool.href} href={tool.href}>
                   <Card className="group h-full border-border/60 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer">
@@ -143,6 +140,7 @@ export default async function AIPage({ params }: AIPageProps) {
                   </Card>
                 </Link>
               ))}
+              <TroubleshootToolCard />
             </div>
           </div>
         </>
