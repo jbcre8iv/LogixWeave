@@ -126,7 +126,7 @@ export function AIChatSidebar() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSelectingConversation, setIsSelectingConversation] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasSentPending = useRef(false);
   const conversationIdRef = useRef<string | null>(currentConversationId);
