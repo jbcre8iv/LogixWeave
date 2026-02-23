@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -371,13 +372,17 @@ export function UserActions({
                           key={project.id}
                           className="flex items-center justify-between p-3 rounded-lg border"
                         >
-                          <div className="flex items-center gap-3">
-                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{project.name}</p>
+                          <Link
+                            href={`/dashboard/projects/${project.id}/analysis`}
+                            className="flex items-center gap-3 min-w-0 flex-1 hover:text-primary transition-colors"
+                            onClick={() => setViewDialogOpen(false)}
+                          >
+                            <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{project.name}</p>
                               <p className="text-xs text-muted-foreground">{project.organization_name}</p>
                             </div>
-                          </div>
+                          </Link>
                           <div className="flex items-center gap-2">
                             <div className="text-right">
                               <Badge variant="secondary">{project.file_count} files</Badge>
