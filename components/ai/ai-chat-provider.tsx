@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, useRef } from "react";
 
+type ChatMode = "chat" | "troubleshoot";
+
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -24,7 +26,9 @@ interface AIChatContextValue {
   conversations: Conversation[];
   conversationsLoaded: boolean;
   showConversationList: boolean;
+  chatMode: ChatMode;
   setShowConversationList: (show: boolean) => void;
+  setChatMode: (mode: ChatMode) => void;
   open: (query?: string) => void;
   close: () => void;
   toggle: () => void;
@@ -60,12 +64,14 @@ export function AIChatProvider({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationsLoaded, setConversationsLoaded] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
+  const [chatMode, setChatModeState] = useState<ChatMode>("chat");
   const pendingQueryRef = useRef<string | null>(null);
   const [pendingQuery, setPendingQuery] = useState<string | null>(null);
+  const chatModeRef = useRef<ChatMode>("chat");
 
   const loadConversations = useCallback(async () => {
     try {
-      const res = await fetch(`/api/ai/chat/conversations?projectId=${projectId}`);
+      const res = await fetch(`/api/ai/chat/conversations?projectId=${projectId}&mode=${chatModeRef.current}`);
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data.conversations || []);
@@ -98,7 +104,7 @@ export function AIChatProvider({
       const res = await fetch("/api/ai/chat/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId }),
+        body: JSON.stringify({ projectId, mode: chatModeRef.current }),
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -148,13 +154,27 @@ export function AIChatProvider({
     }
   }, []);
 
+  const setChatMode = useCallback((mode: ChatMode) => {
+    setChatModeState(mode);
+    chatModeRef.current = mode;
+    setCurrentConversationId(null);
+    setMessages([]);
+    setConversations([]);
+    setConversationsLoaded(false);
+    setShowConversationList(false);
+  }, []);
+
   const open = useCallback((query?: string) => {
     if (query) {
       pendingQueryRef.current = query;
       setPendingQuery(query);
-      // Pending query from another page always starts a new conversation
+      // Pending query from another page always starts a new conversation in chat mode
+      setChatModeState("chat");
+      chatModeRef.current = "chat";
       setCurrentConversationId(null);
       setMessages([]);
+      setConversations([]);
+      setConversationsLoaded(false);
     }
     setIsOpen(true);
   }, []);
@@ -186,7 +206,9 @@ export function AIChatProvider({
         conversations,
         conversationsLoaded,
         showConversationList,
+        chatMode,
         setShowConversationList,
+        setChatMode,
         open,
         close,
         toggle,
@@ -204,4 +226,4 @@ export function AIChatProvider({
   );
 }
 
-export type { ChatMessage, Conversation };
+export type { ChatMode, ChatMessage, Conversation };

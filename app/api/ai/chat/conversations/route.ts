@@ -16,6 +16,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get("projectId");
+    const mode = searchParams.get("mode") || "chat";
 
     if (!projectId) {
       return NextResponse.json(
@@ -29,6 +30,7 @@ export async function GET(request: Request) {
       .select("id, title, created_at, updated_at, ai_chat_messages(count)")
       .eq("project_id", projectId)
       .eq("user_id", user.id)
+      .eq("mode", mode)
       .order("updated_at", { ascending: false })
       .limit(50);
 
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId } = await request.json();
+    const { projectId, mode } = await request.json();
 
     if (!projectId) {
       return NextResponse.json(
@@ -103,6 +105,7 @@ export async function POST(request: Request) {
       .insert({
         project_id: projectId,
         user_id: user.id,
+        mode: mode || "chat",
       })
       .select("id, title, created_at, updated_at")
       .single();

@@ -67,7 +67,7 @@ export default async function AIPage({ params }: AIPageProps) {
               <h1 className="text-2xl font-bold tracking-tight">AI Assistant</h1>
               <p className="text-sm text-muted-foreground mt-0.5">{project.name}</p>
               <p className="text-sm text-muted-foreground mt-3 max-w-xl leading-relaxed">
-                Analyze your PLC code, get explanations of complex logic, find potential issues, and search your project using natural language.
+                Analyze your PLC code, get explanations of complex logic, find potential issues, and search your project using natural language. Use the <strong>Troubleshoot</strong> mode in the chat sidebar for guided diagnostic help.
               </p>
               {hasData && <AIChatSearchBar />}
             </div>

@@ -15,10 +15,11 @@ import {
   Plus,
   Clock,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIChat } from "./ai-chat-provider";
-import type { ChatMessage, Conversation } from "./ai-chat-provider";
+import type { ChatMode, ChatMessage, Conversation } from "./ai-chat-provider";
 
 const MAX_MESSAGES = 20;
 
@@ -84,11 +85,18 @@ function formatTime(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-const SUGGESTIONS = [
-  "What programs and routines does this project have?",
-  "Summarize the tag structure",
-  "Are there any potential issues?",
-];
+const SUGGESTIONS: Record<ChatMode, string[]> = {
+  chat: [
+    "What programs and routines does this project have?",
+    "Summarize the tag structure",
+    "Are there any potential issues?",
+  ],
+  troubleshoot: [
+    "A motor won't start — help me trace the logic",
+    "An output is stuck ON — what could cause this?",
+    "I'm getting a major fault — help me diagnose it",
+  ],
+};
 
 export function AIChatSidebar() {
   const {
@@ -99,7 +107,9 @@ export function AIChatSidebar() {
     conversations,
     conversationsLoaded,
     showConversationList,
+    chatMode,
     setShowConversationList,
+    setChatMode,
     close,
     setMessages,
     consumePendingQuery,
@@ -126,9 +136,10 @@ export function AIChatSidebar() {
   const atLimit = totalMessages >= MAX_MESSAGES;
 
   // Get current conversation title
+  const defaultTitle = chatMode === "troubleshoot" ? "Troubleshooting" : "Project Chat";
   const currentTitle = currentConversationId
-    ? conversations.find((c) => c.id === currentConversationId)?.title || "Project Chat"
-    : "Project Chat";
+    ? conversations.find((c) => c.id === currentConversationId)?.title || defaultTitle
+    : defaultTitle;
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -162,7 +173,8 @@ export function AIChatSidebar() {
 
       async function doSend(updatedMessages: ChatMessage[], conversationId: string) {
         try {
-          const response = await fetch("/api/ai/chat", {
+          const endpoint = chatMode === "troubleshoot" ? "/api/ai/troubleshoot" : "/api/ai/chat";
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -192,7 +204,7 @@ export function AIChatSidebar() {
         }
       }
     },
-    [isLoading, projectId, setMessages, startNewConversation, loadConversations]
+    [isLoading, projectId, chatMode, setMessages, startNewConversation, loadConversations]
   );
 
   // Auto-scroll on new messages
@@ -265,7 +277,11 @@ export function AIChatSidebar() {
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b shrink-0">
-        <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+        {chatMode === "troubleshoot" ? (
+          <Wrench className="h-4 w-4 text-amber-500 shrink-0" />
+        ) : (
+          <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+        )}
         <span className="font-semibold text-sm truncate flex-1">
           {currentTitle}
         </span>
@@ -293,6 +309,34 @@ export function AIChatSidebar() {
         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={close}>
           <X className="h-4 w-4" />
         </Button>
+      </div>
+
+      {/* Mode toggle */}
+      <div className="flex items-center gap-1 px-3 py-2 border-b shrink-0">
+        <button
+          onClick={() => setChatMode("chat")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+            chatMode === "chat"
+              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Sparkles className="h-3 w-3" />
+          Chat
+        </button>
+        <button
+          onClick={() => setChatMode("troubleshoot")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+            chatMode === "troubleshoot"
+              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+        >
+          <Wrench className="h-3 w-3" />
+          Troubleshoot
+        </button>
       </div>
 
       {/* Conversation list view */}
@@ -353,10 +397,12 @@ export function AIChatSidebar() {
                 {messages.length === 0 && !isLoading && (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      Ask anything about your project:
+                      {chatMode === "troubleshoot"
+                        ? "Describe a symptom, fault, or unexpected behavior:"
+                        : "Ask anything about your project:"}
                     </p>
                     <div className="flex flex-col gap-2">
-                      {SUGGESTIONS.map((suggestion) => (
+                      {SUGGESTIONS[chatMode].map((suggestion) => (
                         <button
                           key={suggestion}
                           onClick={() => sendMessage(suggestion)}
@@ -432,7 +478,7 @@ export function AIChatSidebar() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask about your project..."
+                  placeholder={chatMode === "troubleshoot" ? "Describe the issue you're experiencing..." : "Ask about your project..."}
                   className="min-h-[40px] max-h-[120px] resize-none text-sm"
                   rows={1}
                   disabled={isLoading}
