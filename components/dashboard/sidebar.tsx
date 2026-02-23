@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -115,6 +115,21 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const [trashCount, setTrashCount] = useState(0);
   const supabase = createClient();
+  const navRef = useRef<HTMLElement>(null);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const check = () => {
+      setCanScrollDown(nav.scrollHeight - nav.scrollTop - nav.clientHeight > 8);
+    };
+    check();
+    nav.addEventListener("scroll", check);
+    const observer = new ResizeObserver(check);
+    observer.observe(nav);
+    return () => { nav.removeEventListener("scroll", check); observer.disconnect(); };
+  }, []);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -229,7 +244,8 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
 
   return (
     <>
-      <nav className="flex-1 overflow-y-auto space-y-1 p-4">
+      <div className="relative flex-1 flex flex-col min-h-0">
+      <nav ref={navRef} className="flex-1 overflow-y-auto space-y-1 p-4">
         <div className="space-y-1">
           {navigation.map((item) => {
             // Dashboard: active only on exact /dashboard
@@ -474,6 +490,10 @@ export function SidebarContent({ onNavClick, isPlatformAdmin: isPlatformAdminPro
           </div>
         </div>
       </nav>
+      {canScrollDown && (
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card to-transparent" />
+      )}
+      </div>
       <div className="border-t p-4 space-y-1">
         <Link
           href="/dashboard/trash"
