@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 import Anthropic from "@anthropic-ai/sdk";
 
 // Ensure this route is always dynamic (no caching)
@@ -11,12 +11,11 @@ export async function GET(
 ) {
   try {
     const { projectId } = await params;
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const access = await getProjectAccess();
+    if (!access) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { supabase, user } = access;
 
     // Get user's last visit to this project
     const { data: session, error: sessionError } = await supabase
@@ -237,12 +236,11 @@ export async function POST(
 ) {
   try {
     const { projectId } = await params;
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const access = await getProjectAccess();
+    if (!access) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { supabase, user } = access;
 
     const now = new Date().toISOString();
 

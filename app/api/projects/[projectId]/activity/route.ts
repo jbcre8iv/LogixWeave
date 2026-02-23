@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getProjectAccess } from "@/lib/project-access";
 
 export async function GET(
   request: NextRequest,
@@ -7,13 +7,11 @@ export async function GET(
 ) {
   try {
     const { projectId } = await params;
-    const supabase = await createClient();
-
-    // Verify user has access to project
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const access = await getProjectAccess();
+    if (!access) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { supabase } = access;
 
     // Get query params for pagination
     const { searchParams } = new URL(request.url);
