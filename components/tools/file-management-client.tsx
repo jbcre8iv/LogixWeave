@@ -119,7 +119,7 @@ export function FileManagementClient({
                 accent: "text-primary bg-primary/10 border-primary/20",
               },
               {
-                href: `/dashboard/projects/${projectId}/io`,
+                href: `/dashboard/projects/${projectId}/io-mapping`,
                 icon: HardDrive,
                 label: "I/O Mapping",
                 description: "View physical I/O and modules",
