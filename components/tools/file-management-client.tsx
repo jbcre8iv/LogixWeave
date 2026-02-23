@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileUploader } from "@/components/tools/file-uploader";
 import { DownloadAllButton } from "@/components/tools/download-all-button";
 import { FileBrowser } from "@/components/tools/file-browser";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, BarChart3, Sparkles, Tags, HardDrive, ArrowRight } from "lucide-react";
 
 interface FileItem {
   id: string;
@@ -50,6 +51,7 @@ export function FileManagementClient({
   const [reparseProgress, setReparseProgress] = useState({ done: 0, total: 0 });
 
   const completedFiles = files.filter((f) => f.parsing_status === "completed" || f.parsing_status === "failed");
+  const hasCompletedFiles = files.some((f) => f.parsing_status === "completed");
 
   const handleReparseAll = async () => {
     if (completedFiles.length === 0) return;
@@ -89,6 +91,61 @@ export function FileManagementClient({
           <FileUploader projectId={projectId} folderId={currentFolderId} />
         </CardContent>
       </Card>
+
+      {hasCompletedFiles && (
+        <div>
+          <h3 className="text-lg font-semibold mb-3">What&apos;s Next</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                href: `/projects/${projectId}/overview`,
+                icon: BarChart3,
+                label: "Project Overview",
+                description: "Health scores, charts, and project summary",
+                accent: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+              },
+              {
+                href: `/projects/${projectId}/ai`,
+                icon: Sparkles,
+                label: "AI Assistant",
+                description: "Ask questions, explain logic, find issues",
+                accent: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+              },
+              {
+                href: `/projects/${projectId}/tags`,
+                icon: Tags,
+                label: "Tag Explorer",
+                description: "Browse, search, and filter tags",
+                accent: "text-primary bg-primary/10 border-primary/20",
+              },
+              {
+                href: `/projects/${projectId}/io`,
+                icon: HardDrive,
+                label: "I/O Mapping",
+                description: "View physical I/O and modules",
+                accent: "text-primary bg-primary/10 border-primary/20",
+              },
+            ].map(({ href, icon: Icon, label, description, accent }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group flex flex-col gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+              >
+                <div className={`inline-flex h-9 w-9 items-center justify-center rounded-md border ${accent}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{label}</span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
