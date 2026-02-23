@@ -247,6 +247,7 @@ Available tools (use exact URLs below):
 - Health Coach: ${toolLinks.health}
 - Project Manual: ${toolLinks.documentation}
 - Bulk Tag Editor: ${toolLinks.bulkTags}
+- Troubleshoot Mode: switch to the **Troubleshoot** tab in this sidebar for guided fault diagnosis, symptom-based help, and step-by-step diagnostic workflows
 
 4. Only suggest 1-3 of the most relevant tools per response — don't list them all.
 
