@@ -560,8 +560,8 @@ export function TroubleshootToolCard() {
   const { openTroubleshoot } = useAIChat();
 
   return (
-    <button onClick={openTroubleshoot} className="text-left h-full">
-      <div className="group h-full rounded-lg border border-border/60 bg-card hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer">
+    <button onClick={openTroubleshoot} className="text-left h-full w-full group flex items-start">
+      <div className="h-full rounded-lg border border-border/60 bg-card hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/30 transition-all cursor-pointer">
         <div className="py-4 px-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 group-hover:bg-amber-500/15 transition-colors shrink-0 mt-0.5">
